@@ -27,8 +27,8 @@
   :gerbil/gambit/ports :gerbil/gambit/threads
   :std/actor :std/format :std/logger :std/misc/list :std/misc/ports :std/misc/process
   :std/pregexp :std/srfi/13 :std/sugar
-  :config/path
-  :utils/base :utils/basic-parsers :utils/date :utils/ffi :utils/files :utils/json :utils/list :utils/logger)
+  :utils/base :utils/basic-parsers :utils/date
+  :utils/ffi :utils/files :utils/json :utils/list :utils/logger :utils/path-config)
 
 ;; Class Daemon-Status-Register
 (defclass daemon-status-register ())
@@ -54,7 +54,7 @@
 ;; "previous" => previous process PID
 ;; "current" => current process PID
 
-(defonce (daemon-watch-logger) (json-logger "daemon-watch" top: *run-directory*))
+(defonce (daemon-watch-logger) (json-logger "daemon-watch" top: (run-directory)))
 
 ;; Kill a daemon of given pid.
 ;; But first check that the PID is still assigned to a relevant daemon process,

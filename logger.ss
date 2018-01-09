@@ -8,9 +8,8 @@
 (import
   :gerbil/gambit/ports
   :std/format :std/misc/list :std/misc/process :std/srfi/13 :std/sugar :std/text/json
-  :config/path
   :utils/base :utils/basic-parsers :utils/concurrency :utils/date :utils/filesystem
-  :utils/generator :utils/json :utils/list :utils/number :utils/version)
+  :utils/generator :utils/json :utils/list :utils/number :utils/path-config :utils/version)
 
 ;;; Logging text to a series of log files.
 (def (text-logger name: (name #f) on-new-file: (on-new-file #f))
@@ -36,7 +35,7 @@
        (void)))))
 
 ;;; Logging JSON into a directory
-(def (json-logger path top: (top *data-directory*) name: (name #f))
+(def (json-logger path top: (top (data-directory)) name: (name #f))
   (def directory (subpath top path))
   (def (text-line timestamp json)
     (call-with-output-string
