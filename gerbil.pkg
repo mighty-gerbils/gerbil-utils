@@ -1,0 +1,2 @@
+;; These free software utilities are meant to be compiled and loaded in the utils package.
+(package: utils)
