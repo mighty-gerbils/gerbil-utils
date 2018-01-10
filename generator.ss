@@ -105,8 +105,7 @@
 
 ;; (List A) <- (Generating A)
 (def (list<-generating generating)
-  (call-with-list-builder
-   (λ (c! _) (generating-for-each! generating c!))))
+  (with-list-builder (c!) (generating-for-each! generating c!)))
 
 ;; (Generating A) <- (Vector A) Nat (Or Nat '#f)
 (def (generating<-vector vector start: (start 0) end: (end #f))
