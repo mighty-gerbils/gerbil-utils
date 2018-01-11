@@ -1,2 +1,4 @@
 ;; These free software utilities are meant to be compiled and loaded in the utils package.
-(package: utils)
+;; so no prefix; when they move to clan (as fare and vyzo have been discussing, uncomment
+;; the following line
+;; (package: clan)
