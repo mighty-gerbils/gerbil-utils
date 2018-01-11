@@ -7,9 +7,15 @@ are headed for src/std/ but are not there yet (and for some of them may never be
 
 ## Using
 
-You may use git submodules or a symlink to checkout this repository as a subdirectory "utils"
-or your toplevel Gerbil source directory. Or you may put is as an independent entry in your
-`GERBIL_LOADPATH`.
+Clone the repo and build the utils using the build script:
+```
+$ git clone https://github.com/fare/gerbil-utils.git
+$ cd gerbil-utils
+$ ./build.ss deps && ./build.ss
+
+# if you want to build emacs TAGS
+$ ./build.ss tags
+```
 
 If you are using NixOS or nixpkgs, see also the file `gerbil-nix-env.sh`
 for interactive development of Gerbil software.
