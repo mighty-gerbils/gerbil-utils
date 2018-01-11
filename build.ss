@@ -1,7 +1,8 @@
 #!/usr/bin/env gxi
 ;; -*- Gerbil -*-
 
-(import :std/make)
+(import :std/make
+        (only-in :gerbil/tools/gxtags make-tags))
 
 (def srcdir
   (path-normalize (path-directory (this-source-file))))
@@ -21,7 +22,11 @@
      (cons-load-path srcdir)
      (let (build-deps (make-depgraph/spec build-spec))
        (call-with-output-file "build-deps" (cut write build-deps <>))))
+    (["tags"]
+     (add-load-path srcdir)
+     (make-tags ["utils"] "TAGS"))
     ([]
+     (add-load-path srcdir)
      (let (depgraph (call-with-input-file "build-deps" read))
        (make srcdir: srcdir
              optimize: #t
