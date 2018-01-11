@@ -11,10 +11,7 @@ Clone the repo and build the utils using the build script:
 ```
 $ git clone https://github.com/fare/gerbil-utils.git
 $ cd gerbil-utils
-$ ./build.ss deps && ./build.ss
-
-# if you want to build emacs TAGS
-$ ./build.ss tags
+$ ./build.ss
 ```
 
 If you are using NixOS or nixpkgs, see also the file `gerbil-nix-env.sh`

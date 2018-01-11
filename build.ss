@@ -16,6 +16,9 @@
 
 (def (main . args)
   (match args
+    (["meta"]
+     (write '("spec" "deps" "compile" "tags"))
+     (newline))
     (["spec"]
      (pretty-print build-spec))
     (["deps"]
@@ -23,14 +26,19 @@
      (let (build-deps (make-depgraph/spec build-spec))
        (call-with-output-file "build-deps" (cut write build-deps <>))))
     (["tags"]
-     (add-load-path srcdir)
      (make-tags ["utils"] "TAGS"))
-    ([]
-     (add-load-path srcdir)
+    (["compile"]
      (let (depgraph (call-with-input-file "build-deps" read))
        (make srcdir: srcdir
              optimize: #t
              debug: 'env
              static: #t
              depgraph: depgraph
-             build-spec)))))
+             build-spec)))
+    ([]
+     (displayln "... make deps")
+     (main "deps")
+     (displayln "... compile")
+     (main "compile")
+     (displayln "... make tags")
+     (main "tags"))))
