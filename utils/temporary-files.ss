@@ -13,6 +13,7 @@
 (import
   :gerbil/gambit/exceptions :gerbil/gambit/ports
   :std/sugar
+  ;; :std/os/error ; for commented out make-temporary-file
   :clan/utils/base :clan/utils/random)
 
 ;; TODO: upstream as std/os/temp.ss
@@ -103,6 +104,11 @@
 ;;  using arguments directory: prefix: suffix: settings:
 ;; 2- consume the temporary file as per use-temporary-file,
 ;;  using arguments while-open: after-close: keep:
+;;
+;; XXX vyzo: api issue
+;;           where is the thunk? it seems to be the while-open argument
+;;           this should be a required parameter for the function for compatibility
+;;           with other call-with-* forms.
 (def (call-with-temporary-file
       direction: (direction 'io)
       directory: (directory (current-temporary-directory))
@@ -139,19 +145,23 @@
 ;; The while-open: thunk (unless #f) will be called with two arguments, stream and pathname.
 ;; The after-close: thunk (unless #f) will be called with one argument, pathname.
 ;; Finally, the file will be deleted, unless the keep: argument is true.
+;;
+;; XXX vyzo - api issue
+;;     the thunk should be a required argument; it's meaningless to use a temporary
+;;     file without consuming it somehow.
 (def (use-temporary-file
       port path
       while-open: (while-open #f)
       after-close: (after-close #f)
       keep: (keep? #f))
   (try
-   (let ((results '()))
+   (let (result (void))
      (when while-open
-       (set! results (call-with-values (λ () (while-open port path)) list)))
+       (set! result (while-open port path)))
      (close-port port) ;; unhappily, there is no way to atomically clear a flag after that.
      (when after-close
-       (set! results (call-with-values (λ () (after-close path)) list)))
-     (apply values results))
+       (set! result (after-close path)))
+     result)
    (finally
     (close-port port) ;; happily, close-port is idempotent.
     (when (not keep?)
@@ -220,11 +230,9 @@ END-C
                     suffix: suffix))
          (suffixlen (u8vector-length (string->bytes suffix)))
          (flags 0) ;; TODO: deduce flags from settings
-         (fd-or-errno (_mkostemps template suffixlen flags)))
-    (if (> 0 fd-or-errno)
-      (error "mkostemps failed" fd-or-errno)
-      (let ((name (bytes->string template)))
-        (values (##open-predefined 'io name fd-or-errno settings)
-                name)))))
+         (fd (check-os-error (_mkostemps template suffixlen flags)
+                (make-temporary-file template suffixlen flags)))
+         (name (bytes->string template)))
+    (values (##open-predefined 'io name fd settings)
+            name)))
 |# ;|
-

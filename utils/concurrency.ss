@@ -20,6 +20,8 @@
 
 
 ;;; Basic protocol for managing process trees.
+;;; XXX vyzo: this is best accomplished with thread-groups
+;;            see TAGS spawn/group and thread-group-kill!
 
 ;; hash-table used to represent a set. TODO: use actual set data structure
 (def current-subprocesses
@@ -165,17 +167,12 @@
 (def (thread-named name)
   (find (λ (t) (equal? (thread-name t) name)) (all-threads)))
 
+(def (all-threads-named name)
+  (filter (lambda (t) (equal? (thread-name t) name)) (all-threads)))
 
 ;; Dump stack traces when things go wrong
 (def (call-with-stack-trace-dumping thunk)
-  (with-exception-handler
-      (let (E (current-exception-handler))
-        (lambda (exn)
-          (continuation-capture
-           (lambda (cont)
-             (dump-stack-trace! cont exn)
-             (E exn)))))
-    (thunk)))
+  (with-exception-stack-trace thunk))
 
 (defrules with-stack-trace-dumping ()
   ((_ body ...) (call-with-stack-trace-dumping (λ () body ...))))
@@ -189,4 +186,3 @@
 
 (defrules without-interaction ()
   ((_ body ...) (call-without-interaction (λ () body ...))))
-
