@@ -7,7 +7,7 @@
   :gerbil/gambit/exceptions
   :std/format :std/getopt :std/logger :std/iter
   :std/misc/list :std/misc/process :std/pregexp :std/srfi/1 :std/sugar
-  :utils/base :utils/error :utils/list :utils/filesystem :utils/multicall :utils/random)
+  :clan/utils/base :clan/utils/error :clan/utils/list :clan/utils/filesystem :clan/utils/multicall :clan/utils/random)
 
 (def (find-all-files regexp args)
   (call-with-list-builder

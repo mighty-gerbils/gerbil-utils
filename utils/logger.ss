@@ -8,8 +8,8 @@
 (import
   :gerbil/gambit/ports
   :std/format :std/misc/list :std/misc/process :std/srfi/13 :std/sugar :std/text/json
-  :utils/base :utils/basic-parsers :utils/concurrency :utils/date :utils/filesystem
-  :utils/generator :utils/json :utils/list :utils/number :utils/path-config :utils/version)
+  :clan/utils/base :clan/utils/basic-parsers :clan/utils/concurrency :clan/utils/date :clan/utils/filesystem
+  :clan/utils/generator :clan/utils/json :clan/utils/list :clan/utils/number :clan/utils/path-config :clan/utils/version)
 
 ;;; Logging text to a series of log files.
 (def (text-logger name: (name #f) on-new-file: (on-new-file #f))

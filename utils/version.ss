@@ -8,7 +8,7 @@
 
 (import
   :std/format :std/misc/ports :std/misc/process :std/misc/string :std/pregexp
-  :utils/base :utils/basic-parsers)
+  :clan/utils/base :clan/utils/basic-parsers)
 
 ;; NB: the (values ...) wrapper below prevent Gerbil constant inlining optimization. Yuck.
 (def software-name (values #f)) ;; : String

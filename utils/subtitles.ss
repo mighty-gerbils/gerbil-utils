@@ -7,9 +7,9 @@
   :gerbil/gambit/exact
   :scheme/base-impl :scheme/char
   :std/error :std/misc/string :std/srfi/13 :std/sugar
-  :utils/base :utils/basic-parsers :utils/files :utils/list :utils/number :utils/basic-parsers)
+  :clan/utils/base :clan/utils/basic-parsers :clan/utils/files :clan/utils/list :clan/utils/number :clan/utils/basic-parsers)
 
-(import :utils/debug)
+(import :clan/utils/debug)
 (def (expect-srt-time-offset port)
   (def hours ((expect-n-digits 2) port))
   ((expect-char #\:) port)

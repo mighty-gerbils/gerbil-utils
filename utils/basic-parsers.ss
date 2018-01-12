@@ -13,7 +13,7 @@
 (import
   :scheme/char
   :std/error :std/srfi/13 :std/sugar
-  :utils/base)
+  :clan/utils/base)
 
 (def (numeric-char? x)
   (and (char? x) (char-numeric? x)))

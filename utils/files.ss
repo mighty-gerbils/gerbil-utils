@@ -7,7 +7,7 @@
 (import
   :gerbil/gambit/ports
   :std/format :std/misc/ports :std/sugar :std/pregexp
-  :utils/base :utils/temporary-files)
+  :clan/utils/base :clan/utils/temporary-files)
 
 ;; Output some contents to a port.
 ;; The contents can be a string (display'ed), a u8vector (written),

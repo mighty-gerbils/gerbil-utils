@@ -9,7 +9,7 @@
   :gerbil/gambit/exact :gerbil/gambit/threads
   :scheme/base
   :std/format :std/srfi/19 :std/sugar
-  :utils/base :utils/basic-parsers :utils/number)
+  :clan/utils/base :clan/utils/basic-parsers :clan/utils/number)
 
 ;; Internally, our "timestamp" datatype represent time as a bignum integer counting nanoseconds
 ;; of "official time" (ignoring leap seconds) since the Unix epoch of 1970-01-01T00:00Z.

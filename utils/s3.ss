@@ -9,7 +9,7 @@
 (import
   :gerbil/gambit/ports
   :std/misc/ports :std/misc/process
-  :utils/base :utils/basic-parsers :utils/date)
+  :clan/utils/base :clan/utils/basic-parsers :clan/utils/date)
 
 (def (parse-s3-ls-output-line line)
   (call-with-input-string line

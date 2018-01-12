@@ -2,10 +2,10 @@
 
 (import
   :std/test
-  :utils/base :utils/temporary-files)
+  :clan/utils/base :clan/utils/temporary-files)
 
 (def temporary-files-test
-  (test-suite "test suite for utils/temporary-files"
+  (test-suite "test suite for clan/utils/temporary-files"
     (test-case "test use after initialization"
       (check-equal?
        (call-with-temporary-file

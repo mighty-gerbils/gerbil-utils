@@ -6,7 +6,7 @@
 (import
   :gerbil/gambit/ports
   :std/misc/ports :std/misc/rtd :std/text/json
-  :utils/base :utils/files :utils/subprocess)
+  :clan/utils/base :clan/utils/files :clan/utils/subprocess)
 
 (def (trivial-json<-object object)
   (match (class->list object)

@@ -3,10 +3,10 @@
 (import
   :gerbil/gambit/exceptions
   :std/test
-  :utils/base :utils/date :utils/number)
+  :clan/utils/base :clan/utils/date :clan/utils/number)
 
 (def date-test
-  (test-suite "test suite for utils/date"
+  (test-suite "test suite for clan/utils/date"
     (test-case "Check unix-epoch-offset"
       (check-equal? unix-epoch-offset 0))
     (test-case "Check periodically"

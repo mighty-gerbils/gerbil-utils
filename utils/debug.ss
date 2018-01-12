@@ -2,12 +2,12 @@
 ;;;; Debugging utilities
 
 (export #t)
-(export pr prn repr) ;; reexport from utils/repr
+(export pr prn repr) ;; reexport from clan/utils/repr
 
 (import
   :gerbil/gambit/ports :gerbil/gambit/threads
   :std/format
-  :utils/base :utils/concurrency :utils/repr)
+  :clan/utils/base :clan/utils/concurrency :clan/utils/repr)
 
 ;; DBG macro for easier print-debugging
 ;; as ported from Common Lisp's ASDF (in asdf/uiop/contrib/debug.lisp).

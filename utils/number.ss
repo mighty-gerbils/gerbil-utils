@@ -6,7 +6,7 @@
 (import
   :gerbil/gambit/bits :gerbil/gambit/exact
   :std/sugar
-  :utils/base)
+  :clan/utils/base)
 
 ;;;; Numbers
 (def (integer-part real)

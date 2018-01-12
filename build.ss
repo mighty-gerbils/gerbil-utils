@@ -20,7 +20,7 @@
      (write '("spec" "deps" "compile" "tags"))
      (newline))
     (["spec"]
-     (pretty-print build-spec))
+     (pretty-print (cons* prefix: "clan" build-spec)))
     (["deps"]
      (cons-load-path srcdir)
      (let (build-deps (make-depgraph/spec build-spec))
@@ -34,6 +34,7 @@
              debug: 'env
              static: #t
              depgraph: depgraph
+             prefix: "clan"
              build-spec)))
     ([]
      (displayln "... make deps")

@@ -8,7 +8,7 @@
 
 (import
   :std/format :std/sort :std/srfi/13
-  :utils/base :utils/list :utils/version)
+  :clan/utils/base :clan/utils/list :clan/utils/version)
 
 (def entry-points (make-hash-table))
 

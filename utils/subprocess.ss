@@ -6,7 +6,7 @@
 (import
   :gerbil/gambit/ports :gerbil/gambit/threads
   :std/misc/process :std/sugar
-  :utils/base)
+  :clan/utils/base)
 
 ;; write data into a filter process and read some data back.
 ;; process-options as per open-process, except you should only use
