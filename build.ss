@@ -20,7 +20,7 @@
      (write '("spec" "deps" "compile" "tags"))
      (newline))
     (["spec"]
-     (pretty-print (cons* prefix: "clan" build-spec)))
+     (pretty-print build-spec))
     (["deps"]
      (cons-load-path srcdir)
      (let (build-deps (make-depgraph/spec build-spec))
