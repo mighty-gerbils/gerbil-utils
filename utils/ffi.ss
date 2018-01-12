@@ -6,7 +6,8 @@
 ;; * Make it portable to Linux, Windows, macOS, FreeBSD, OpenBSD.
 ;;   define and register stubs for functions not present.
 ;; * Write tests
-
+;;
+;;; XXX vyzo: kill/getpid are candidates for stdlib integration; perhaps std/os/process
 (export #t)
 
 (import
