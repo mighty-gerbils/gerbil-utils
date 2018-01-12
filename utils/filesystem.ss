@@ -32,14 +32,16 @@
       visit
       recurse?: (recurse? true)
       follow-symlinks?: (follow-symlinks? #f))
-  (visit path)
-  (when (and (ignore-errors (path-is-directory? path follow-symlinks?))
-             (recurse? path))
-    (for-each!
-     (directory-files path)
-     (λ (name) (walk-filesystem-tree!
-                (path-expand name path) visit
-                recurse?: recurse? follow-symlinks?: follow-symlinks?)))))
+
+  (def (walk path)
+    (visit path)
+    (when (and (ignore-errors (path-is-directory? path follow-symlinks?))
+               (recurse? path))
+      (for-each!
+       (directory-files path)
+       (λ (name) (walk (path-expand name path))))))
+
+  (walk path))
 
 ;; find-files: traverse the filesystem and collect files that satisfy some predicates
 ;; path: a string that indicates the start point of the recursive filesystem traversal
