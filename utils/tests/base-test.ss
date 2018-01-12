@@ -2,7 +2,7 @@
 
 (import
   :std/test
-  :utils/base)
+  :clan/utils/base)
 
 (def (double x) (* x 2))
 (def (square x) (* x x))
@@ -10,7 +10,7 @@
 (def (copy-list lst) (foldr cons '() lst))
 
 (def base-test
-  (test-suite "test suite for utils/base"
+  (test-suite "test suite for clan/utils/base"
     (test-case "test compose operator"
       (check-eqv? (octosquare 1) 8)
       (check-eqv? (octosquare 2) 32)

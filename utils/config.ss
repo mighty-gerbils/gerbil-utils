@@ -3,7 +3,7 @@
 
 (import
   :gerbil/gambit/os
-  :utils/base)
+  :clan/utils/base)
 
 (def (user-home)
   (or (getenv "HOME" #f)

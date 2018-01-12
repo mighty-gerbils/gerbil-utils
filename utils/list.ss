@@ -6,7 +6,7 @@
 
 (import
   :std/misc/list :std/srfi/1
-  :utils/base)
+  :clan/utils/base)
 
 (defrules with-list-builder ()
   ((_ (c r) body1 body+ ...) (call-with-list-builder (λ (c r) body1 body+ ...)))

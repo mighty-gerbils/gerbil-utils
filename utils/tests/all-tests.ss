@@ -1,12 +1,12 @@
 (import
-  :utils/tests/base-test
-  :utils/tests/date-test
-  :utils/tests/generator-test
-  :utils/tests/list-test
-  :utils/tests/logger-test
-  :utils/tests/number-test
-  :utils/tests/stateful-avl-map-test
-  :utils/tests/temporary-files-test)
+  :clan/utils/tests/base-test
+  :clan/utils/tests/date-test
+  :clan/utils/tests/generator-test
+  :clan/utils/tests/list-test
+  :clan/utils/tests/logger-test
+  :clan/utils/tests/number-test
+  :clan/utils/tests/stateful-avl-map-test
+  :clan/utils/tests/temporary-files-test)
 
 (export
   unit-tests)

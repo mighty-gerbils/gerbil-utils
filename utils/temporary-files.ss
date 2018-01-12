@@ -13,7 +13,7 @@
 (import
   :gerbil/gambit/exceptions :gerbil/gambit/ports
   :std/sugar
-  :utils/base :utils/random)
+  :clan/utils/base :clan/utils/random)
 
 ;; TODO: upstream as std/os/temp.ss
 
@@ -185,7 +185,7 @@ END-C
            (##fx- (__errno))
            r))))
 
-  (namespace ("utils/temporary-files#"
+  (namespace ("clan/utils/temporary-files#"
               __mkostemps _mkostemps
               __errno))
 

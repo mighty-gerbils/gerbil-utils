@@ -4,7 +4,7 @@
 (import
   :gerbil/gambit/exceptions
   :std/sort :std/test
-  :utils/base :utils/generator :utils/list :utils/vector)
+  :clan/utils/base :clan/utils/generator :clan/utils/list :clan/utils/vector)
 
 (def stupid-list [1 2 3 4 5])
 (def (generating-stupid-list) (generating<-list stupid-list))
@@ -23,7 +23,7 @@
 
 
 (def generator-test
-  (test-suite "test suite for utils/generator"
+  (test-suite "test suite for clan/utils/generator"
     (test-case "Check contents"
       (check-equal? (list<-generating (generating-stupid-list)) stupid-list)
       (check-equal? (vector<-generating (generating-stupid-vector)) stupid-vector)

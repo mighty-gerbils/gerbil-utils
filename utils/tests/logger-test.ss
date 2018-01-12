@@ -2,10 +2,10 @@
 
 (import
   :std/sugar :std/test
-  :utils/json :utils/logger)
+  :clan/utils/json :clan/utils/logger)
 
 (def logger-test
-  (test-suite "test suite for utils/logger"
+  (test-suite "test suite for clan/utils/logger"
     (test-case "test metadata recognition"
       (check-eqv? (metadata-line? (json<- (metadata))) #t)
       (check-eqv? (metadata-line? (json<- (hash ("hello" "world")))) #f))))

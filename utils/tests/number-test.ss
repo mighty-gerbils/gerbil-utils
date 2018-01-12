@@ -3,14 +3,14 @@
 (import
   :gerbil/gambit/exceptions
   :std/test
-  :utils/base :utils/number)
+  :clan/utils/base :clan/utils/number)
 
 (def (fit-to-string n width)
   (call-with-output-string []
     (λ (out) (display-integer/fit n width out))))
 
 (def number-test
-  (test-suite "test suite for utils/number"
+  (test-suite "test suite for clan/utils/number"
     (test-case "display-integer/fit positive integer with extra width"
       (check-equal? (fit-to-string 5 5) "00005"))
     (test-case "display-integer/fit 0 with extra width"

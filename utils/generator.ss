@@ -58,7 +58,7 @@
 (import
   :gerbil/gambit/threads
   :std/actor :std/coroutine :std/iter :std/misc/list :std/misc/pqueue :std/misc/queue :std/sugar
-  :utils/base :utils/list :utils/number :utils/vector)
+  :clan/utils/base :clan/utils/list :clan/utils/number :clan/utils/vector)
 
 
 ;; A generating function of type A is a function that each time it is called,

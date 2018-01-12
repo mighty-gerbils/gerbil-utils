@@ -6,7 +6,7 @@
 (import
   :gerbil/gambit/continuations :gerbil/gambit/threads
   :std/actor :std/error :std/logger :std/sugar
-  :utils/base :utils/error :utils/list :utils/repr)
+  :clan/utils/base :clan/utils/error :clan/utils/list :clan/utils/repr)
 
 ;;; Protocol for process shutdown: periodically check for the (shutdown?) flag,
 ;; so you can shutdown gracefully after having received a signal,

@@ -6,7 +6,7 @@
 
 (import
   :std/iter :std/misc/list :std/sugar
-  :utils/base :utils/generator :utils/list :utils/repr)
+  :clan/utils/base :clan/utils/generator :clan/utils/list :clan/utils/repr)
 
 ;; NB: this field order makes the representation naturally sorted.
 (defstruct avl-map

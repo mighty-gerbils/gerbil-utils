@@ -5,7 +5,7 @@
 
 (import
   :std/iter
-  :utils/base)
+  :clan/utils/base)
 
 ;;;; Basic helpers for common data structures
 

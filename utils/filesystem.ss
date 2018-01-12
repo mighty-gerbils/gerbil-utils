@@ -6,7 +6,7 @@
 (import
   :gerbil/gambit/exceptions :gerbil/gambit/os :gerbil/gambit/ports
   :std/misc/list :std/srfi/1 :std/sugar
-  :utils/base :utils/list)
+  :clan/utils/base :clan/utils/list)
 
 (def (subpath top . sub-components)
   (path-expand (string-join sub-components "/") top))

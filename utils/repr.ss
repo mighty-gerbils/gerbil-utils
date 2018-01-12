@@ -6,7 +6,7 @@
 (import
   :gerbil/gambit/hash :gerbil/gambit/ports
   :std/format :std/misc/rtd :std/sort :std/srfi/1
-  :utils/base :utils/list)
+  :clan/utils/base :clan/utils/list)
 
 ;; Default options. Keep it empty.
 ;; Note: we don't actually use options yet, but

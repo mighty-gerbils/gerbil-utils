@@ -12,7 +12,7 @@
 (import
   :gerbil/gambit/exceptions :gerbil/gambit/ports
   :std/sugar
-  :utils/base :std/misc/process)
+  :clan/utils/base :std/misc/process)
 
 (begin-foreign
   (c-declare #<<END-C
@@ -39,7 +39,7 @@ END-C
   (define-c-lambda __errno () int
     "___return (errno);")
 
-  (namespace ("utils/ffi#"
+  (namespace ("clan/utils/ffi#"
               __kill _kill getpid
               ))
 

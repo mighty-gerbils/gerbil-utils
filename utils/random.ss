@@ -7,7 +7,7 @@
 (import
   :gerbil/gambit/random
   :std/misc/list :std/srfi/1 :std/sugar
-  :utils/base :utils/list :utils/number)
+  :clan/utils/base :clan/utils/list :clan/utils/number)
 
 (def (random-char bag)
   (string-ref bag (random-integer (string-length bag))))

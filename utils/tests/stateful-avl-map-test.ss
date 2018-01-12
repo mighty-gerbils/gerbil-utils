@@ -3,7 +3,7 @@
 
 (import
   :std/iter :std/misc/list :std/sort :std/srfi/1 :std/test
-  :utils/base :utils/generator :utils/list :utils/number :utils/random :utils/stateful-avl-map)
+  :clan/utils/base :clan/utils/generator :clan/utils/list :clan/utils/number :clan/utils/random :clan/utils/stateful-avl-map)
 
 ;; NB: these functions assume no repeated / shadowed keys in alist-s, which is the case in these tests.
 (def N number-comparer)
@@ -25,7 +25,7 @@
 (def *al-5* (delete-duplicates (append *al-2* *al-3*) (comparing-key key: car)))
 
 (def stateful-avl-map-test
-  (test-suite "test suite for utils/stateful-avl-map"
+  (test-suite "test suite for clan/utils/stateful-avl-map"
 
     (test-case "empty"
       (check-predicate (alist<- (make-empty-avl-map)) null?)
