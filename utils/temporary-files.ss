@@ -233,6 +233,6 @@ END-C
          (fd (check-os-error (_mkostemps template suffixlen flags)
                 (make-temporary-file template suffixlen flags)))
          (name (bytes->string template)))
-    (values (##open-predefined 'io name fd-or-errno settings)
-                name)))
+    (values (##open-predefined 'io name fd settings)
+            name)))
 |# ;|
