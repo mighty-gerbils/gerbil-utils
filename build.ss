@@ -31,7 +31,7 @@
      (let (depgraph (call-with-input-file "build-deps" read))
        (make srcdir: srcdir
              optimize: #t
-             debug: 'env
+             debug: 'src
              static: #t
              depgraph: depgraph
              prefix: "clan"
