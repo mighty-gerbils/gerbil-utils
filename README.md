@@ -15,7 +15,13 @@ can contribute code, documentation, and suggestions.
 
 ## Using
 
-Clone the repo and build the utils using the build script:
+You can install using the Gerbil package manager:
+
+```
+gxpkg install github.com/fare/gerbil-utils
+```
+
+Alternatively, you can clone the repo and build the utils using the build script:
 ```
 $ git clone https://github.com/fare/gerbil-utils.git
 $ cd gerbil-utils
