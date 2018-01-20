@@ -13,7 +13,7 @@
    (lambda (filename)
      (and (equal? (path-extension filename) ".ss")
           (path-expand (path-strip-extension filename) "utils")))
-   (read-all (open-directory "utils"))))
+   (directory-files "utils")))
 
 
 ;; the script should support 4 basic actions
