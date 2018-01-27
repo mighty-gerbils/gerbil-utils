@@ -9,10 +9,22 @@
 (import
   :std/format :std/misc/ports :std/misc/process :std/misc/string :std/pregexp
   :clan/utils/base :clan/utils/basic-parsers)
+(extern namespace: #f gerbil-greeting)
 
+;; Name and version of the topmost software layer, typically your application.
 ;; NB: the (values ...) wrapper below prevent Gerbil constant inlining optimization. Yuck.
 (def software-name (values #f)) ;; : String
 (def software-version (values #f)) ;; : String
+
+;; Register the (so far) topmost software layer.
+;; If you build your software in layers, a further specialized application may later override it.
+;; : <- String String
+(def (register-software name version)
+  ;; Update the name and version to just the topmost software layer (application)
+  (set! software-name name)
+  (set! software-version version)
+  ;; Update the Gerbil-Greeting to include all layers of software loaded.
+  (set! gerbil-greeting (format "~a ~a on ~a" name version gerbil-greeting)))
 
 ;; : String <-
 (def (software-identifier)
