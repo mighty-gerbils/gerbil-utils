@@ -52,7 +52,7 @@
   ;;(DBG "cll" name options)
   (defvalues (update-timestamp get-ticket return-ticket)
     (apply make-limiter name: name now: (current-monotonic-timestamp) options))
-  (rpc-register (current-rpc-server) name limiter-service::proto)
+  (rpc-register (current-rpc-server) name)
   (let loop ()
     (<- ((!limiter-service.get-ticket param k)
          (try
@@ -86,12 +86,13 @@
    (begin
      ;;(let ((n name) (opts [options ...]))
      ;;  (DBG "dcl" n opts))
+     (bind-protocol! 'name limiter-service::proto)
      (defonce (limiter-actor)
        (spawn/name 'name call-limiter-loop 'name options ...))
      (push! ['name limiter-actor] all-limiters)
      (def (limiter-end-point)
        (if (use-limiter-server)
-         (rpc-connect (current-rpc-server) 'name +limiter-server-address+ limiter-service::proto)
+         (rpc-connect (current-rpc-server) 'name +limiter-server-address+)
          (limiter-actor)))
      (def (name param fun . args) (apply call-limiter (limiter-end-point) param fun args)))))
 
