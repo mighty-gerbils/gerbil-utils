@@ -5,7 +5,9 @@
 (export
   use-limiter-server
   define-call-limiter
-  all-limiters
+  registered-limiters
+  sorted-limiters
+  spawn-limiters
   run-limiter-server
   unlimited-limiter)
 
@@ -75,7 +77,7 @@
 
 ;; Abstracting over whether we use a limiter server or not (yes we do in production)
 (def use-limiter-server (make-parameter #f))
-(def all-limiters (values '()))
+(def registered-limiters (values '()))
 
 ;;;(import :clan/utils/debug)
 ;; Given a name, a limiter function and some arguments to that function,
@@ -89,7 +91,7 @@
      (bind-protocol! 'name limiter-service::proto)
      (defonce (limiter-actor)
        (spawn/name 'name call-limiter-loop 'name options ...))
-     (push! ['name limiter-actor] all-limiters)
+     (push! ['name limiter-actor] registered-limiters)
      (def (limiter-end-point)
        (if (use-limiter-server)
          (rpc-connect (current-rpc-server) 'name +limiter-server-address+)
@@ -102,17 +104,26 @@
   timeout: (* 1000 one-second)
   tokens-per-period: 100)
 
+;; Return the list of limiters in sorted order.
+;; (List (Tuple Symbol (Thread <-))) <-
+(def (sorted-limiters)
+  (sort registered-limiters (λ (x y) (apply string<? (map (compose symbol->string car) [x y])))))
+
+;; Spawn the limiters in as many threads, return them in a list.
+;; (List Thread) <- (List (Tuple Symbol (Thread <-)))
+(def (spawn-limiters (limiters (sorted-limiters)))
+  (map (λ-match ([name actor] (actor))) limiters))
+
 ;; Limiter server that ensures processes at current IP address don't overuse call limits
 (define-entry-point (run-limiter-server (address +limiter-server-address+))
   "Run the limiter server that enforces exchange access limits"
   (current-rpc-server (start-rpc-server! +limiter-server-address+))
-  (let ((sorted-limiters
-         (sort all-limiters (λ (x y) (apply string<? (map (compose symbol->string car) [x y])))))
+  (let ((sorted-limiters (sorted-limiters))
 	(now (current-timestamp)))
     (printf "~a (~a) Serving the following limiters: ~a~%"
 	    now (string<-timestamp now)
             (string-join (map (compose symbol->string car) sorted-limiters) " "))
-    (for-each thread-join! (map (λ-match ([name actor] (actor))) sorted-limiters))))
+    (for-each thread-join! (spawn-limiters sorted-limiters))))
 
 ;; Given a number of tokens that regenerate only every given period,
 ;; make sure that every call waits enough before it is issued,
