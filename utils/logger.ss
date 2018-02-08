@@ -7,7 +7,7 @@
 
 (import
   :gerbil/gambit/ports
-  :std/format :std/misc/list :std/misc/process :std/srfi/13 :std/sugar :std/text/json
+  :std/format :std/misc/list :std/logger :std/misc/process :std/srfi/13 :std/sugar :std/text/json
   :clan/utils/base :clan/utils/basic-parsers :clan/utils/concurrency
   :clan/utils/date :clan/utils/filesystem
   :clan/utils/generator :clan/utils/json :clan/utils/list :clan/utils/number
@@ -81,6 +81,7 @@
 ;; (skipping leading whitespace) a string containing the rest of the line.
 ;; : (Pair Integer String) <- Port
 (def (read-log-entry port)
+  ;; TODO: gracefully handle bad input
   (cons (expect-timestamp port)
         (begin (expect-and-skip-any-whitespace port)
                (read-line port))))
@@ -166,9 +167,15 @@
       metadata-hook: (metadata-hook void))
   (λ-match
    ([timestamp . line]
-    (if (metadata-line? line)
-      (metadata-hook timestamp (delay (<-json line)))
-      (entry-processor (cons timestamp (delay (object-decoder (<-json line)))))))))
+    (let-syntax ((delay-warn
+                  (syntax-rules ()
+                    ((_ form) (delay (try form
+                                          (catch (_)
+                                            (warning "Bad log entry ~a ~a" timestamp line)
+                                            (void))))))))
+      (if (metadata-line? line)
+        (metadata-hook timestamp (delay-warn (<-json line)))
+        (entry-processor (cons timestamp (delay-warn (object-decoder (<-json line))))))))))
 
 ;; Generate log entries for compressed logs between two timestamps.
 ;; Given a function file<-datestring that turns the timestamp for beginning of day (UTC)
