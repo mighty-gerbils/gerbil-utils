@@ -18,9 +18,9 @@
 
 (import
   :gerbil/gambit/threads
-  :std/actor :std/format :std/logger :std/misc/pqueue :std/sort
+  :std/actor :std/format :std/logger :std/misc/list :std/misc/pqueue :std/sort
   :std/srfi/1 :std/srfi/19 :std/sugar
-  :clan/utils/base :clan/utils/concurrency :clan/utils/date :clan/utils/list :clan/utils/multicall :clan/utils/number)
+  :clan/utils/base :clan/utils/concurrency :clan/utils/date :clan/utils/multicall :clan/utils/number)
 
 ;;; Some infrastructure for call limiters:
 

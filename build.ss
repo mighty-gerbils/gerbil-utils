@@ -1,11 +1,15 @@
 #!/usr/bin/env gxi
 ;; -*- Gerbil -*-
 
-(import :std/build-script)
+(import
+  :std/build-script :std/srfi/1)
 
 (defbuild-script
-  (filter-map
-   (lambda (filename)
-     (and (equal? (path-extension filename) ".ss")
-          (path-expand (path-strip-extension filename) "utils")))
-   (directory-files "utils")))
+  (append-map
+   (lambda (dir)
+     (filter-map
+      (lambda (filename)
+        (and (equal? (path-extension filename) ".ss")
+             (path-expand (path-strip-extension filename) dir)))
+      (directory-files dir)))
+   ["utils" "scripts"]))

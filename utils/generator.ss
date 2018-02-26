@@ -145,11 +145,10 @@
   seed)
 
 (def (generating-take generating n (short-ok? #f))
-  (call-with-list-builder
-   (λ (collect _)
-     (try
-      (for ((_ (in-range 0 n))) (collect (generating)))
-      (catch (λ (c) (and short-ok? (eof-object? c))) => void)))))
+  (with-list-builder (collect!)
+    (try
+     (for ((_ (in-range 0 n))) (collect! (generating)))
+     (catch (λ (c) (and short-ok? (eof-object? c))) => void))))
 
 (def (generating-take-reverse generating n (short-ok? #f))
   (reverse (generating-take generating n short-ok?)))
@@ -209,7 +208,7 @@
   (generating-for-each-until generating peek pred void eof))
 
 (def (generating-elements-until generating peek pred)
-  (call-with-list-builder (λ (c _) (generating-for-each-until generating peek pred c))))
+  (with-list-builder (c!) (generating-for-each-until generating peek pred c!)))
 
 ;;;; Control inversion using an actor.
 ;; Because Gambit doesn't seem to have delimited continuations that play well with finally blocks,

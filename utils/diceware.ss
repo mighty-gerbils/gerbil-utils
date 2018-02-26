@@ -8,7 +8,7 @@
   :gerbil/gambit/random
   :std/format :std/iter :std/misc/list :std/misc/ports :std/pregexp :std/srfi/13 :std/sugar
   :clan/utils/base :clan/utils/basic-parsers :clan/utils/basic-printers
-  :clan/utils/basic-parsers :clan/utils/list :clan/utils/number :clan/utils/random)
+  :clan/utils/basic-parsers :clan/utils/number :clan/utils/random)
 
 
 (def diceware-file (getenv "DICEWARE_FILE" #f))
@@ -92,7 +92,4 @@
 
 ;; 20 words of 5 dice is just over 258 bits.
 (def (diceware-phrase (n-words 20))
-  (string-join
-   (call-with-list-builder
-    (λ (c _) (for (_ (in-range 0 n-words)) (c (diceware-word)))))
-   " "))
+  (string-join (with-list-builder (c _) (for (_ (in-range 0 n-words)) (c (diceware-word)))) " "))

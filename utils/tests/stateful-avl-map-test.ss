@@ -108,7 +108,7 @@
 
     (test-case "for-each!"
       (check-equal?
-       (call-with-list-builder (λ (c! _) (avl-map-for-each! (<-alist *alist-10-roman*) c!)))
+       (with-list-builder (c!) (avl-map-for-each! (<-alist *alist-10-roman*) c!))
        *alist-10-roman*))
 
     (test-case "put!"

@@ -50,7 +50,7 @@
       (function i (vector-ref vector i)))))
 
 (def (list<-vector vector start: (start 0) end: (end #f))
-  (call-with-list-builder (λ (c _) (vector-for-each! vector start: start end: end))))
+  (with-list-builder (c!) (vector-for-each! vector c! start: start end: end)))
 
 (def vector<-cons (λ-match ([car . cdr] (vector car cdr)) (_ #f)))
 

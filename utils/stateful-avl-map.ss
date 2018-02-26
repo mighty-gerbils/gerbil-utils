@@ -5,8 +5,8 @@
 (export #t)
 
 (import
-  :std/iter :std/misc/list :std/sugar
-  :clan/utils/base :clan/utils/generator :clan/utils/list :clan/utils/repr)
+  :std/iter :std/misc/list :std/misc/repr :std/sugar
+  :clan/utils/base :clan/utils/generator)
 
 ;; NB: this field order makes the representation naturally sorted.
 (defstruct avl-map
@@ -227,19 +227,15 @@
     m))
 
 (def (alist<-avl-map map)
-  (nest
-   (call-with-list-builder) (λ (c! _))
-   (avl-map-for-each! map c!)))
+  (with-list-builder (c!) (avl-map-for-each! map c!)))
 
 (def (avl-map-singleton key value)
   (make-avl-map #f 0 key value #f))
 
 ;; Print low-level representation.
-(defmethod {:print-representation avl-map}
-  (λ (m
-      port: (port (current-output-port))
-      options: (options (current-representation-options)))
-    (def (p y) (pr y port: port options: options))
+(defmethod {:pr avl-map}
+  (λ (m (port (current-output-port)) (options (current-representation-options)))
+    (def (p y) (pr y port options))
     (def (d y) (display y port))
     (d "(make-avl-map ")
     (p (avl-map-left m)) (d " ")

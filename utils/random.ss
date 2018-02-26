@@ -7,7 +7,7 @@
 (import
   :gerbil/gambit/random
   :std/misc/list :std/srfi/1 :std/sugar
-  :clan/utils/base :clan/utils/list :clan/utils/number)
+  :clan/utils/base :clan/utils/number)
 
 (def (random-char bag)
   (string-ref bag (random-integer (string-length bag))))
@@ -31,7 +31,7 @@
   (nest
    (let* ((vec (list->vector list))
           (len (vector-length vec))))
-   (call-with-list-builder) (λ (collect _))
+   (with-list-builder (collect _))
    (let loop ((end (if n (min n len) len))))
    (when (< 0 end))
    (let* ((i (random-integer end))

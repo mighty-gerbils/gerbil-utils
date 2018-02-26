@@ -6,20 +6,9 @@
 (import
   :gerbil/gambit/exceptions
   :std/format :std/getopt :std/logger :std/iter
-  :std/misc/list :std/misc/process :std/pregexp :std/srfi/1 :std/sugar
-  :clan/utils/base :clan/utils/error :clan/utils/list :clan/utils/filesystem :clan/utils/multicall :clan/utils/random)
-
-(def (find-all-files regexp args)
-  (call-with-list-builder
-   (λ (collect _)
-     (for-each!
-      args
-      (λ (arg)
-        (walk-filesystem-tree!
-         arg
-         (λ (path) (when (and (path-is-file? path)
-                              (pregexp-match regexp path))
-                     (collect path)))))))))
+  :std/misc/list :std/misc/process :std/srfi/1 :std/sugar
+  :clan/utils/base :clan/utils/error :clan/utils/list
+  :clan/utils/filesystem :clan/utils/multicall :clan/utils/random)
 
 (define-entry-point (random-run . arguments)
   "Run a command with arguments in random order"
@@ -44,7 +33,7 @@
           (rest (drop arguments (+ pos 1)))
           (arguments-to-randomize
            (if files?
-             (find-all-files rest regex)
+             (find-regexp-files rest regex)
              rest))
           (randomized-arguments (shuffle-list arguments-to-randomize))
           (do-it (λ (logger)

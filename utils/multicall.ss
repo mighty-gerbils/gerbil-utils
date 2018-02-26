@@ -7,7 +7,7 @@
   call-entry-point)
 
 (import
-  :std/format :std/sort :std/srfi/13
+  :std/format :std/misc/list :std/sort :std/srfi/13
   :clan/utils/base :clan/utils/list :clan/utils/version)
 
 (def entry-points (make-hash-table))

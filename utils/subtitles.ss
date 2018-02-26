@@ -6,8 +6,8 @@
 (import
   :gerbil/gambit/exact
   :scheme/base-impl :scheme/char
-  :std/error :std/misc/string :std/srfi/13 :std/sugar
-  :clan/utils/base :clan/utils/basic-parsers :clan/utils/files :clan/utils/list :clan/utils/number :clan/utils/basic-parsers)
+  :std/error :std/misc/list :std/misc/string :std/srfi/13 :std/sugar
+  :clan/utils/base :clan/utils/basic-parsers :clan/utils/files :clan/utils/number :clan/utils/basic-parsers)
 
 (import :clan/utils/debug)
 (def (expect-srt-time-offset port)

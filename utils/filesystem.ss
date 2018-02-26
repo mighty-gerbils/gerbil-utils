@@ -5,7 +5,7 @@
 
 (import
   :gerbil/gambit/exceptions :gerbil/gambit/os :gerbil/gambit/ports
-  :std/misc/list :std/srfi/1 :std/sugar
+  :std/misc/list :std/pregexp :std/srfi/1 :std/sugar
   :clan/utils/base :clan/utils/list)
 
 (def (subpath top . sub-components)
@@ -60,3 +60,14 @@
 
 (def (total-file-size list-of-files)
   (reduce + 0 (map file-size list-of-files)))
+
+(def (find-regexp-files regexp args)
+  (with-list-builder (collect!)
+    (for-each!
+     args
+     (λ (arg)
+       (walk-filesystem-tree!
+        arg
+        (λ (path) (when (and (path-is-file? path)
+                             (pregexp-match regexp path))
+                    (collect! path))))))))
