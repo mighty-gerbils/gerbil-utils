@@ -41,12 +41,24 @@
   ((_ var) (increment! var 1))
   ((_ var increment) (set! var (+ var increment))))
 
+(defrules pre-increment! ()
+  ((_ var . opt-increment) (begin (increment! var . opt-increment) var)))
+
+(defrules post-increment! ()
+  ((_ var . opt-increment) (begin0 var (increment! var . opt-increment))))
+
 (defrules decrement! ()
   ((_ var) (decrement! var 1))
   ((_ var decrement) (set! var (- var decrement))))
 
+(defrules pre-decrement! ()
+  ((_ var . opt-decrement) (begin (decrement! var . opt-decrement) var)))
+
+(defrules post-decrement! ()
+  ((_ var . opt-decrement) (begin0 var (decrement! var . opt-decrement))))
+
 (def (make-counter (n 0))
-  (λ () (begin0 n (increment! n))))
+  (λ () (post-increment! n)))
 
 ;;; Assuming pred? is "increasing", i.e. if true for some integer, true for all larger integers,
 ;;; find the smallest integer in interval [start, end) for which pred? holds.
