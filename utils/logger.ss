@@ -7,10 +7,11 @@
 
 (import
   :gerbil/gambit/ports
-  :std/format :std/misc/list :std/logger :std/misc/process :std/srfi/13 :std/sugar :std/text/json
+  :std/format :std/misc/list :std/logger :std/misc/process :std/misc/sync
+  :std/srfi/13 :std/sugar :std/text/json
   :clan/utils/base :clan/utils/basic-parsers :clan/utils/concurrency
   :clan/utils/date :clan/utils/filesystem
-  :clan/utils/generator :clan/utils/json :clan/utils/list :clan/utils/number
+  :clan/utils/generator :clan/utils/json :clan/utils/list :clan/utils/memo :clan/utils/number
   :clan/utils/path-config :clan/utils/version)
 
 ;;; Logging text to a series of log files.
@@ -20,7 +21,7 @@
 ;; and the hook (which defaults to the hook passed to the logger)
 ;; is called whe the file name changed.
 ;; (<- String String) <- name: (Optional Any) on-new-file: (Optional FunctionDesignator)
-(def (text-logger name: (name #f) on-new-file: (on-new-file #f))
+(define-memo-function (text-logger name: (name #f) on-new-file: (on-new-file #f))
   (sequentialize
    ['text-logger name]
    (let ((current-port #f)
@@ -42,6 +43,12 @@
        (force-output current-port)
        (void)))))
 
+(def (log-line<-json timestamp json)
+  (call-with-output-string
+    '() (λ (o) (display-timestamp timestamp o) (display " " o)
+           (write-json json o) (newline o))))
+
+
 ;;; Logging JSON into a directory
 ;; Start a new JSON logger, given a path of a subdirectory relative to an optional top: directory,
 ;; the latter which defaults to (data-directory), and a name that defaults to that path.
@@ -53,29 +60,33 @@
 ;; and the hook (which defaults to the hook passed to the logger)
 ;; is called whe the file name changed.
 ;; (<- Any (Optional Timestamp)) <- String top: (Optional String) name: (Optional Any)
-(def (json-logger path top: (top (data-directory)) name: (name #f))
+(define-memo-function ((json-logger
+                        normalization: (λ (path top: (top (data-directory)) name: (name #f))
+                                         [path top name]))
+                       path top name)
   (def directory (subpath top path))
-  (def (text-line timestamp json)
-    (call-with-output-string
-      '() (λ (o) (display-timestamp timestamp o) (display " " o)
-             (write-json json o) (newline o))))
   (def log (text-logger name: (or name path)))
   (def date-string<-timestamp (caching-date-string<-timestamp))
   (sequentialize
    ['json-logger (or name path)]
    (λ (json (timestamp (current-timestamp)))
-     (let* ((text (text-line timestamp json))
+     (let* ((text (log-line<-json timestamp json))
             (date (date-string<-timestamp timestamp))
             (file (string-append directory "/" date ".log")))
        (log file text
             on-new-file:
             (λ (previous-file: _ previous-port: _ current-file: _ current-port: port)
-              (display (text-line timestamp (metadata name: (or name path))) port)))))))
+              (display (log-line<-json timestamp (metadata name: (or name path))) port)))))))
 
-;;; Logging JSON into a directory named after the arguments
+;;; Logging JSON into a directory named after the arguments under the data-directory
 ;; (<- Any (Optional Timestamp)) <- String *
 (def (json-data-logger . x)
   (json-logger (string-join x "/")))
+
+;;; Logging JSON into a directory named after the arguments under the run-directory
+;; (<- Any (Optional Timestamp)) <- String *
+(def (json-run-logger . x)
+  (json-logger (string-join x "/") top: (run-directory)))
 
 ;; Read from a log port a log entry as a cons of a timestamp and
 ;; (skipping leading whitespace) a string containing the rest of the line.
