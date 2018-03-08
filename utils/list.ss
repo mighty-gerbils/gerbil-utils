@@ -34,3 +34,5 @@
 ;; extract a list of the elements in the monoid.
 ;; (List A) <- (Monoid A) (B <- (Monoid A) B (B <- A B))
 (def (list<-monoid m fold) (fold m '() cons))
+
+(def list<-cons (λ-match ([x . y] [x y])))
