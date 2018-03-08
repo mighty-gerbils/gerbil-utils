@@ -47,21 +47,21 @@
    (define-memo-function ((name) . formals) . body)))
 
 ;;; This is your generic memoized function.
+;;;
 ;;; If you want to make sure that a given function is only ever called once
 ;;; with the "same" list of arguments and thus ensure that it always returns
 ;;; the same value for a "same" list of arguments, it is up to YOU
 ;;; to normalize the arguments of the function you call such that EQUAL
 ;;; will properly compare argument lists. You may pass any additional
 ;;; arguments that you don't want memoized in dynamic variable bindings.
+;;;
+;;; Note that if you use this on an internal function, the function will thereby escape its scope,
+;;; and won't be garbage-collected, and neither will all the context it closes over.
+;;; In general, this global memoization table is mostly good only for interactive experiment.
+;;; When you identify a function that definitely needs memoization, use memoizing.
 (def global-memoization-table (make-hash-table))
 (def global-memoization-mutex (make-mutex 'memoized-funcall))
-
-;; This is a generic memoized function
-(define-memo-function ((memoized-funcall
-                        table: global-memoization-table
-                        mutex: global-memoization-mutex)
-                       function . arguments)
-  (apply function arguments))
-
+(def memoized-funcall
+  (memoizing funcall table: global-memoization-table mutex: global-memoization-mutex))
 (def (memoized-apply function . arguments)
   (apply apply memoized-funcall function arguments))
