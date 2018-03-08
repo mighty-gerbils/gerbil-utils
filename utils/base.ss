@@ -114,7 +114,12 @@
    (else (rcompose fun (iterated-function (- n 1) fun)))))
 
 ;; A bit like CL:FUNCALL, as a trivial higher-order function.
-(def (funcall fun . args) (apply fun args))
+(def funcall ;; same as (lambda (fun . args) (apply fun args)), but optimizing a bit
+  (case-lambda
+    ((f) (f))
+    ((f x) (f x))
+    ((f x y) (f x y))
+    ((f x y z . t) (apply f x y z t))))
 
 ;; A bit like CL:CONSTANTLY, except it accepts multiple values.
 (def (constantly . x) (lambda _ (apply values x)))
