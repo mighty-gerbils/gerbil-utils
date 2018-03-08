@@ -108,3 +108,14 @@
 ;; : (Table V K) <- (Table V K) (Optional V) (Optional (Table V K))
 (def (hash-remove-value from (value #f) (to (make-hash-table)))
   (hash-remove from (λ (_ v) (equal? v value)) to))
+
+;;; Remove entry from the table if it exists, return two values:
+;; the value that was removed, if any, or #f if none was found,
+;; and a boolean that tells if there was a value.
+(def hash-ensure-removed!
+  (let ((none '#(none))) ;; generate a *private* object (a vector) to mark absence
+    (λ (table key)
+      (let ((val (hash-ref table key none)))
+        (if (eq? val none)
+          (values #f #f)
+          (values val #t))))))
