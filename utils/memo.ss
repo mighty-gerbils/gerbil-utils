@@ -22,14 +22,15 @@
   (unless call (set! call apply))
   (when (eq? mutex #t) (set! mutex (make-mutex 'memoizing)))
   (let* ((compute
-          (λ (arguments) (values->list (call function arguments))))
+          (λ (arguments)
+            (values->list (call function arguments))))
          (cached-or-compute
           (λ (arguments)
             (apply values (hash-ensure-ref table arguments (λ () (compute arguments))))))
          (synced-cached-or-compute
           (if mutex
             (λ (arguments)
-              (with-lock mutex (cached-or-compute)))
+              (with-lock mutex (λ () (cached-or-compute arguments))))
             cached-or-compute)))
     (if normalization
       (λ arguments (synced-cached-or-compute (apply normalization arguments)))
