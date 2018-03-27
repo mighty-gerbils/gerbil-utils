@@ -32,6 +32,9 @@ export MY_GERBIL_SRC=$(realpath "$(dirname "$this")")
 # If you want other library directories in your loadpath, adjust this, too:
 export GERBIL_LOADPATH=$MY_GERBIL_SRC
 
+# Pick gerbil or gerbil-unstable for the gerbil package to use from nixpkgs
+: ${GERBIL_PACKAGE:=gerbil}
+
 ###### END OF USER-EDITABLE SETTINGS #####
 
 # Enable more debugging, plus all I/O and source UTF-8 by default
@@ -40,7 +43,7 @@ export GAMBOPT=t8,f8,-8,dRr
 export GERBIL_HOME=$(dirname "$(dirname "$(realpath "$(which gxc)")")")
 
 # Get the flags for compiling and linking against openssl and other libraries.
-eval "$(nix-shell '<nixpkgs>' --pure --attr gerbil --command \
+eval "$(nix-shell '<nixpkgs>' --pure --attr ${GERBIL_PACKAGE} --command \
   'echo "export \
      NIX_SHELL_PATH=\"$PATH\" \
      NIX_LDFLAGS=\"$NIX_LDFLAGS\" \
