@@ -10,7 +10,7 @@
 
 (def (whois-domain name)
   (assert! (valid-domain? name))
-  (def whois (run-process ["whois" name] coprocess: read-all-as-lines))
+  (def whois (run-process ["whois" name] coprocess: read-all-as-lines check-status: void))
   (nest
    (let/cc return)
    (if (pregexp-match "^No match for \".*\"." (first whois)) #f)
