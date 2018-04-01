@@ -70,6 +70,6 @@
          ((!rpc.shutdown)
           (shutdown))
          (bogus
-          (error "unexpected message: ~s" bogus))))
+          (error "unexpected message" bogus))))
    (finally
     (websocket-close client hard: #t))))
