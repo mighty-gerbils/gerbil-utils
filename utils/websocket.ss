@@ -51,9 +51,8 @@
 
   (def (receiver-loop)
     (try
-     (let loop ()
-       (!!websocket-client.receive controller (receive-message))
-       (loop))
+     (while #t
+       (!!websocket-client.receive controller (receive-message)))
      (catch (e)
        (!!websocket-client.close-connection controller e))))
 
@@ -73,4 +72,4 @@
          (bogus
           (error "unexpected message: ~s" bogus))))
    (finally
-    (websocket-close client))))
+    (websocket-close client hard: #t))))
