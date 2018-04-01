@@ -114,16 +114,19 @@
 (def (spawn-limiters (limiters (sorted-limiters)))
   (map (λ-match ([name actor] (actor))) limiters))
 
-;; Limiter server that ensures processes at current IP address don't overuse call limits
-(define-entry-point (run-limiter-server (address +limiter-server-address+))
-  "Run the limiter server that enforces exchange access limits"
-  (current-rpc-server (start-rpc-server! +limiter-server-address+))
+(def (serve-limiters)
   (let ((sorted-limiters (sorted-limiters))
 	(now (current-timestamp)))
     (printf "~a (~a) Serving the following limiters: ~a~%"
 	    now (string<-timestamp now)
             (string-join (map (compose symbol->string car) sorted-limiters) " "))
     (for-each thread-join! (spawn-limiters sorted-limiters))))
+
+;; Limiter server that ensures processes at current IP address don't overuse call limits
+(define-entry-point (run-limiter-server (address +limiter-server-address+))
+  "Run the limiter server that enforces exchange access limits"
+  (current-rpc-server (start-rpc-server! +limiter-server-address+))
+  (serve-limiters))
 
 ;; Given a number of tokens that regenerate only every given period,
 ;; make sure that every call waits enough before it is issued,
