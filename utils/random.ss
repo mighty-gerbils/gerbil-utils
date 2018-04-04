@@ -43,9 +43,7 @@
 (def (dice (n 1) (sides 6))
   (let loop ((sum 0))
     (cond
-     ((zero? sides) sum)
+     ((zero? n) sum)
      (else
-      (increment! sum (+ 1 (random-integer n)))
-      (decrement! sides)
-      (loop)))))
-
+      (decrement! n)
+      (loop (+ sum 1 (random-integer sides)))))))

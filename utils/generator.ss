@@ -193,7 +193,7 @@
   (for (x iter) (fun x)))
 
 (def (generating<-iter iter)
-  (generating<-for-each (cut iter-for-each! iter)))
+  (generating<-for-each (cut iter-for-each! iter <>)))
 
 (def generating-for-each-until
   (let ((my-eof #(#!eof)))
