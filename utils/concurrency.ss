@@ -83,9 +83,22 @@
 	 (void)))))
 
 ;; TODO: does this leak resources when this wrapper is garbage collected but maybe not the actor?
-(def (sequentialize name fun)
+(def (sequentialize/actor name fun)
   (let ((actor (spawn/name name applicable-actor fun)))
     (λ arguments (!!applicable.apply actor arguments))))
+
+;; vyzo: this is a version of sequentialize that uses a plain mutex
+;; + much more efficient
+;; + easier to debug deadlocks
+;; - downside is that the application context (thread and dynamic environment)
+;;   is the caller's context.
+(def (sequentialize/mutex name fun)
+  (let (mx (make-mutex name))
+    (lambda args
+      (with-lock mx (cut apply fun args)))))
+
+;; Choose which you use by default in your code
+(def sequentialize (values sequentialize/mutex))
 
 
 ;;;; Race
