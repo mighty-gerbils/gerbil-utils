@@ -3,13 +3,16 @@
 ;; Respect limits of external APIs so we do not get banned.
 
 (export
-  use-limiter-server
   define-call-limiter
   registered-limiters
+  run-limiter-server
+  serve-limiters
   sorted-limiters
   spawn-limiters
-  run-limiter-server
-  unlimited-limiter)
+  unlimited-limiter
+  use-limiter-server
+  +limiter-server-address+
+  )
 
 ;;#; ;; for debugging...
 (export
@@ -73,7 +76,7 @@
         ((!rpc.shutdown)
          (void)))))
 
-(def +limiter-server-address+ "/tmp/limiter-server.sock")
+(def +limiter-server-address+ (values "/tmp/limiter-server.sock"))
 
 ;; Abstracting over whether we use a limiter server or not (yes we do in production)
 (def use-limiter-server (make-parameter #f))
