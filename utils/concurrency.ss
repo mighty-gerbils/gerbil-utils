@@ -199,3 +199,7 @@
 
 (defrules without-interaction ()
   ((_ body ...) (call-without-interaction (λ () body ...))))
+
+;; Join a list of threads. TODO: do it without blocking sequentially on each thread?
+(def (join-threads! threads)
+  (for-each thread-join! threads))
