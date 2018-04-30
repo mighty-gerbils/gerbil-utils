@@ -1,28 +1,37 @@
 ;; -*- Gerbil -*-
 ;;;; hash-table utilities
 
-(export #t)
+(export
+  hash-ensure-ref
+  invert-hash invert-hash* invert-hash<-vector invert-hash*<-vector
+  hash-restriction
+  hash-value-map
+  hash-filter
+  hash-remove
+  hash-remove-value
+  hash-ensure-removed!
+  hash-ensure-modify
+  )
 
 (import
   :std/iter
   :clan/utils/base)
 
-;;;; Basic helpers for common data structures
+;; *private* object (a vector) to mark absence of parameter given. NOT EXPORTED.
+(def %none '#(none))
 
 ;; type (Table V K) ;; hash-tables mapping key K to values V (note that V comes before K)
 
 ;; Lookup a table for a
 ;; If the key is missing, compute a default value, and put it in the table.
 ;; : V <- (Table V K) K (V <-)
-(def hash-ensure-ref
-  (let ((none '#(none))) ;; generate a *private* object (a vector) to mark absence
-    (λ (table key default)
-      (let ((val (hash-ref table key none)))
-        (if (eq? val none)
-          (let ((value (default)))
-            (hash-put! table key value)
-            value)
-          val)))))
+(def (hash-ensure-ref table key default)
+  (let ((val (hash-ref table key %none)))
+    (if (eq? val %none)
+      (let ((value (default)))
+        (hash-put! table key value)
+        value)
+      val)))
 
 ;; Given a hash-table to (a new equal? hash-table by default,
 ;; but e.g. an eqv? or eq? hash-table could be given instead), invert the hash-table from
@@ -112,10 +121,17 @@
 ;;; Remove entry from the table if it exists, return two values:
 ;; the value that was removed, if any, or #f if none was found,
 ;; and a boolean that tells if there was a value.
-(def hash-ensure-removed!
-  (let ((none '#(none))) ;; generate a *private* object (a vector) to mark absence
-    (λ (table key)
-      (let ((val (hash-ref table key none)))
-        (if (eq? val none)
-          (values #f #f)
-          (values val #t))))))
+(def (hash-ensure-removed! table key)
+  (let ((val (hash-ref table key %none)))
+    (if (eq? val %none)
+      (values #f #f)
+      (values val #t))))
+
+;; Modify an entry in a table. If no entry exists yet, call the provided default thunk.
+;; Return the new value.
+;; : V <- (Table V K) K (V <-) (V <- V)
+(def (hash-ensure-modify table key default function)
+  (let* ((val (hash-ensure-ref table key default))
+         (new-val (function val)))
+    (hash-put! table key new-val)
+    new-val))
