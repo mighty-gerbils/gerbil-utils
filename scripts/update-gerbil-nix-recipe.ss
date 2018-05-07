@@ -87,4 +87,11 @@
    package-path: "pkgs/development/compilers/gerbil"
    source-url: "https://github.com/vyzo/gerbil"))
 
+(def (update-gambit-unstable)
+  (update-unstable-recipe
+   source-directory: gambit-src
+   package-path: "pkgs/development/compilers/gambit"
+   source-url: "https://github.com/feeley/gambit"))
+
 (update-gerbil-unstable)
+(update-gambit-unstable)
