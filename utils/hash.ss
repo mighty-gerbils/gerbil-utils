@@ -11,11 +11,15 @@
   hash-remove-value
   hash-ensure-removed!
   hash-ensure-modify
+  hash-empty?
   )
 
 (import
   :std/iter
   :clan/utils/base)
+
+(def (hash-empty? h)
+  (zero? (hash-length h)))
 
 ;; *private* object (a vector) to mark absence of parameter given. NOT EXPORTED.
 (def %none '#(none))
