@@ -93,5 +93,5 @@
    package-path: "pkgs/development/compilers/gambit"
    source-url: "https://github.com/feeley/gambit"))
 
-(update-gerbil-unstable)
 (update-gambit-unstable)
+(update-gerbil-unstable)

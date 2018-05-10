@@ -31,7 +31,7 @@
   call:
   (get-ticket param) ;; ticket <- param
   event:
-  (return-ticket ticket)) ;; bottom <- ticket
+  (return-ticket ticket)) ;; <- ticket
 
 ;; Given an call-limiter actor, a limiter-dependent parameter and a thunk,
 ;; execute the thunk while holding a ticket reserved from the call-limiter with given parameter.
