@@ -13,12 +13,12 @@
   (def whois (run-process ["whois" name] coprocess: read-all-as-lines check-status: void))
   (nest
    (let/cc return)
-   (if (pregexp-match "^No match for \".*\"." (first whois)) #f)
+   (if (pregexp-match "^No match for (domain )?\".*\"." (first whois)) #f)
    (with-list-builder (c! results))
    (for-each! whois) (λ (line))
    (cond
     ((pregexp-match "^ *([-/ A-Za-z0-9]+):(?: (.*))?$" line)
      => (λ-match ([all key val] (c! (cons key val)))))
-    ((pregexp-match ">>> Last update of WHOIS database: (.*) <<<" line)
+    ((pregexp-match ">>> Last update of [Ww][Hh][Oo][Ii][Ss] database: (.*) <<<" line)
      => (λ-match ([all val] (c! (cons "Last update of whois database" val)) (return (results)))))
     (else (error "bad whois response" line whois)))))
