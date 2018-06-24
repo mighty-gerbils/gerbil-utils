@@ -12,11 +12,14 @@
   hash-ensure-removed!
   hash-ensure-modify
   hash-empty?
+  hash-merge
+  hash-merge!
   )
 
 (import
   :std/iter
-  :clan/utils/base)
+  :clan/utils/base
+  :gerbil/gambit/hash)
 
 (def (hash-empty? h)
   (zero? (hash-length h)))
@@ -139,3 +142,27 @@
          (new-val (function val)))
     (hash-put! table key new-val)
     new-val))
+
+;; Improved hash-merge variant which accepts an optional keyword argument indicating whether the base
+;; table should have its key/value bindings replaced by the other table's binding
+;; if same key exists in both base table and other table.
+;; If more than one other table is given after the base table and bindings for the same key exist
+;; in multiple other tables and the optional keyword argument is not #f then the rightmost table's
+;; binding takes precedence.
+;; Replaces the existing hash-merge binding in Gerbil Prelude.
+;; : Table <- Table (Optional-Keyword Bool) Table ...
+(def (hash-merge base-table other-table-takes-precedence?: (other-table-takes-precedence? #f) . rest)
+  (foldl (lambda (tab r) (table-merge r tab other-table-takes-precedence?))
+         base-table rest))
+
+;; Improved hash-merge! variant which accepts an optional keyword argument indicating whether the base
+;; table should have its key/value bindings replaced by the other table's binding
+;; if same key exists in both base table and other table.
+;; If more than one other table is given after the base table and bindings for the same key exist
+;; in multiple other tables and the optional keyword argument is not #f then the rightmost table's
+;; binding takes precedence.
+;; Replaces the existing hash-merge! binding in Gerbil Prelude.
+;; : Table <- Table (Optional-Keyword Bool) Table ...
+(def (hash-merge! base-table other-table-takes-precedence?: (other-table-takes-precedence? #f) . rest)
+  (foldl (lambda (tab r) (table-merge! r tab other-table-takes-precedence?))
+         base-table rest))
