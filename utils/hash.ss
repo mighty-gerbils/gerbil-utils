@@ -12,8 +12,10 @@
   hash-ensure-removed!
   hash-ensure-modify
   hash-empty?
-  hash-merge
-  hash-merge!
+  hash-prefer-left
+  hash-prefer-left!
+  hash-prefer-right
+  hash-prefer-right!
   )
 
 (import
@@ -143,26 +145,36 @@
     (hash-put! table key new-val)
     new-val))
 
-;; Improved hash-merge variant which accepts an optional keyword argument indicating whether the base
-;; table should have its key/value bindings replaced by the other table's binding
-;; if same key exists in both base table and other table.
-;; If more than one other table is given after the base table and bindings for the same key exist
-;; in multiple other tables and the optional keyword argument is not #f then the rightmost table's
-;; binding takes precedence.
-;; Replaces the existing hash-merge binding in Gerbil Prelude.
+;; Merge hash tables together and produce a new hash table. If same key exists in both base table
+;; and rest of other tables then the key/value binding of the base table takes precedence.
 ;; : Table <- Table (Optional-Keyword Bool) Table ...
-(def (hash-merge base-table other-table-takes-precedence?: (other-table-takes-precedence? #f) . rest)
-  (foldl (lambda (tab r) (table-merge r tab other-table-takes-precedence?))
+(def (hash-prefer-left base-table . rest)
+  (foldl (lambda (tab r) (table-merge r tab))
          base-table rest))
 
-;; Improved hash-merge! variant which accepts an optional keyword argument indicating whether the base
-;; table should have its key/value bindings replaced by the other table's binding
-;; if same key exists in both base table and other table.
-;; If more than one other table is given after the base table and bindings for the same key exist
-;; in multiple other tables and the optional keyword argument is not #f then the rightmost table's
-;; binding takes precedence.
-;; Replaces the existing hash-merge! binding in Gerbil Prelude.
+;; Merge hash tables together and update the base table's bindings. If same key exists in both base
+;; table and rest of other tables then the key/value binding of the base table takes precedence.
 ;; : Table <- Table (Optional-Keyword Bool) Table ...
-(def (hash-merge! base-table other-table-takes-precedence?: (other-table-takes-precedence? #f) . rest)
-  (foldl (lambda (tab r) (table-merge! r tab other-table-takes-precedence?))
+(def (hash-prefer-left! base-table . rest)
+  (foldl (lambda (tab r) (table-merge! r tab))
          base-table rest))
+
+;; Merge hash tables together and produce a new hash table. If same key exists in both base table
+;; and rest of other tables then the key/value binding of the other tables takes precedence.
+;; If more than one other table is given after the base table and bindings for the same key exist
+;; in multiple other tables then the rightmost table's binding takes precedence.
+;; : Table <- Table (Optional-Keyword Bool) Table ...
+(def (hash-prefer-right base-table . rest)
+  (foldl (lambda (tab r) (table-merge r tab #t))
+         base-table rest))
+
+;; Merge hash tables together and update the base table's bindings. If same key exists in both base
+;; table and rest of other tables then the key/value binding of the other tables takes precedence.
+;; If more than one other table is given after the base table and bindings for the same key exist
+;; in multiple other tables then the rightmost table's binding takes precedence.
+;; : Table <- Table (Optional-Keyword Bool) Table ...
+(def (hash-prefer-right! base-table . rest)
+  (foldl (lambda (tab r) (table-merge! r tab #t))
+         base-table rest))
+
+
