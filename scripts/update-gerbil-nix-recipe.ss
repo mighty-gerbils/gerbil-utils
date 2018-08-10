@@ -77,7 +77,7 @@
    recipe-file
    (compose
     (pregexp-string-replacer "  version = \"" "[-.0-9A-Za-z]+" "\";" package-version)
-    (pregexp-string-replacer "  git-version = \"" "[-.0-9A-Za-z]+" "\";" git-version)
+    (pregexp-string-replacer  " git-version = \"" "[-.0-9A-Za-z]+" "\";" git-version)
     (pregexp-string-replacer "    rev = \"" "[0-9a-f]+" "\";" latest-commit-hash)
     (pregexp-string-replacer "    sha256 = \"" "[0-9a-z]+" "\";" nix-source-hash))))
 
