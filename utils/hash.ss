@@ -12,11 +12,16 @@
   hash-ensure-removed!
   hash-ensure-modify
   hash-empty?
+  hash-prefer-left
+  hash-prefer-left!
+  hash-prefer-right
+  hash-prefer-right!
   )
 
 (import
   :std/iter
-  :clan/utils/base)
+  :clan/utils/base
+  :gerbil/gambit/hash)
 
 (def (hash-empty? h)
   (zero? (hash-length h)))
@@ -139,3 +144,37 @@
          (new-val (function val)))
     (hash-put! table key new-val)
     new-val))
+
+;; Merge hash tables together and produce a new hash table. If same key exists in both base table
+;; and rest of other tables then the key/value binding of the base table takes precedence.
+;; : Table <- Table (Optional-Keyword Bool) Table ...
+(def (hash-prefer-left base-table . rest)
+  (foldl (lambda (tab r) (table-merge r tab))
+         base-table rest))
+
+;; Merge hash tables together and update the base table's bindings. If same key exists in both base
+;; table and rest of other tables then the key/value binding of the base table takes precedence.
+;; : Table <- Table (Optional-Keyword Bool) Table ...
+(def (hash-prefer-left! base-table . rest)
+  (foldl (lambda (tab r) (table-merge! r tab))
+         base-table rest))
+
+;; Merge hash tables together and produce a new hash table. If same key exists in both base table
+;; and rest of other tables then the key/value binding of the other tables takes precedence.
+;; If more than one other table is given after the base table and bindings for the same key exist
+;; in multiple other tables then the rightmost table's binding takes precedence.
+;; : Table <- Table (Optional-Keyword Bool) Table ...
+(def (hash-prefer-right base-table . rest)
+  (foldl (lambda (tab r) (table-merge r tab #t))
+         base-table rest))
+
+;; Merge hash tables together and update the base table's bindings. If same key exists in both base
+;; table and rest of other tables then the key/value binding of the other tables takes precedence.
+;; If more than one other table is given after the base table and bindings for the same key exist
+;; in multiple other tables then the rightmost table's binding takes precedence.
+;; : Table <- Table (Optional-Keyword Bool) Table ...
+(def (hash-prefer-right! base-table . rest)
+  (foldl (lambda (tab r) (table-merge! r tab #t))
+         base-table rest))
+
+
