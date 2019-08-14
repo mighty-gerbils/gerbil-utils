@@ -19,6 +19,7 @@
    (cond
     ((pregexp-match "^ *([-/ A-Za-z0-9]+):(?: (.*))?$" line)
      => (λ-match ([all key val] (c! (cons key val)))))
+    ((equal? line ""))
     ((pregexp-match ">>> Last update of [Ww][Hh][Oo][Ii][Ss] database: (.*) <<<" line)
      => (λ-match ([all val] (c! (cons "Last update of whois database" val)) (return (results)))))
     (else (error "bad whois response" line whois)))))
