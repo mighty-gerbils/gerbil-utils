@@ -12,8 +12,7 @@
   :clan/utils/base :clan/utils/basic-parsers :clan/utils/date :clan/utils/files)
 
 ;; Initialize paths from the environment
-(def fricfrac-src (getenv "FRICFRAC_SRC"))
-(def source-repos (path-normalize (path-expand ".." fricfrac-src)))
+(def source-repos (path-normalize (path-expand "../.." (path-directory (this-source-file)))))
 (def gambit-src (path-expand "gambit" source-repos))
 (def gerbil-src (path-expand "gerbil" source-repos))
 (def nixpkgs-src (path-expand "nixpkgs" source-repos))
