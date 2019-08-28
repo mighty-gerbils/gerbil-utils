@@ -107,6 +107,11 @@
 ;; TODO: Should we define this unicode alias?
 ;; (defalias ‎▷ !>)
 
+(def (iterate-function n fun . v)
+  (if (zero? n)
+    (apply values v)
+    (apply iterate-function (- n 1) fun (apply fun v))))
+
 (def (iterated-function n fun)
   (cond
    ((equal? n 0) values)
@@ -294,6 +299,10 @@
    (let ((tmp place1))
      (shift! place1 place2 places ... tmp))))
 
-;; Bool <- Number Number
+;; Integer <- Number Number
 (def (number-comparer x y)
   (if (= x y) 0 (if (< x y) -1 1)))
+
+;; Integer <- Char Char
+(def (char-comparer x y)
+  (if (char=? x y) 0 (if (char<? x y) -1 1)))
