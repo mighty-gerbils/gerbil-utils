@@ -88,7 +88,7 @@
 ;; return a generator function that, each time it is called, evaluates a bit of the generating
 ;; function and returns the next value generated that 'yield' is called with,
 ;; until the generating function returns, at which point always raise the eof object.
-;; Beware: this doesn't play well with try/finally blocks; for these use generating<-coroutine
+;; Beware: this doesn't play well with try/finally blocks; for these use generating<-cothread
 ;; (Generating A) <- (... <-* (<-* A))
 (def (generating<-for-each for-each)
   (letrec
@@ -216,7 +216,7 @@
 ;; The solution is to run the routine in another thread, the coroutine.
 
 ;; (Generating A) <- (... <- (<- A))
-(def (generating<-coroutine generating-function)
+(def (generating<-cothread generating-function)
   ;; The naive generating<-for-each works great as long as
   ;; the generating function doesn't have any finally clause,
   ;; because these clauses are triggered by the inversion, and then the generation fails.
@@ -225,15 +225,15 @@
   ;; A workaround is to run the generating function in a generating thread;
   ;; the thread will be started at the first call, and blocked until needed again.
   (def (coroutine-function) (try (generating-function yield) (finally (raise #!eof))))
-  (def cort (coroutine coroutine-function))
+  (def cort (cothread coroutine-function))
   (def (generating (on-eof eof!))
     (try (continue cort) (catch (eof-object? _) (on-eof))))
-  (def (shutdown) (coroutine-stop! cort))
+  (def (shutdown) (cothread-stop! cort))
   (values generating shutdown))
 
-(def (generating-peeking<-coroutine generating-function)
+(def (generating-peeking<-cothread generating-function)
   (defvalues (generating shutdown)
-    (generating<-coroutine generating-function))
+    (generating<-cothread generating-function))
   (defvalues (next peek)
     (make-generating-peeking generating))
   (values next peek shutdown))

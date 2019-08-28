@@ -35,7 +35,7 @@
                      (generating<-for-each (λ (yield) (for-each yield stupid-list))))
                     stupid-list)
       (check-equal? (list<-generating
-                     (first-value (generating<-coroutine (λ (yield) (for-each yield stupid-list)))))
+                     (first-value (generating<-cothread (λ (yield) (for-each yield stupid-list)))))
                     stupid-list))
     (test-case "Check count"
       (check-equal? (generating-count (generating-stupid-list)) 5))
