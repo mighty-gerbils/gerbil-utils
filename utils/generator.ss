@@ -58,7 +58,7 @@
 (import
   :gerbil/gambit/threads
   :std/actor :std/coroutine :std/iter :std/misc/list :std/misc/pqueue :std/misc/queue :std/sugar
-  :clan/utils/base :clan/utils/list :clan/utils/number :clan/utils/vector)
+  :clan/utils/base :clan/utils/list :clan/utils/number :clan/utils/peekable-iterator :clan/utils/vector)
 
 
 ;; A generating function of type A is a function that each time it is called,
@@ -71,7 +71,7 @@
 ;; that only generates eof.
 ;; type Eof = (Exception '#!eof)
 ;; _ ... <-[Eof] _ ...
-(def (eof! . _) (while #t (raise #!eof)))
+(def eof! (keep-raising #!eof))
 
 ;; A function to call if a yield function was called unexpectedly,
 ;; e.g. due to undesired continuation capture.
@@ -81,7 +81,6 @@
 ;; The empty generating function, does not generate any element.
 ;; : (Generating _)
 (def (generating-empty (on-eof eof!)) (on-eof))
-
 
 ;; Control inversion: given a generating function that takes a 'yield' function,
 ;; and call 'yield' it with various values until it eventually returns (if it does),
@@ -93,9 +92,9 @@
 (def (generating<-for-each for-each)
   (letrec
       ((yield-k unexpected-yield)
+       (yield (λ vals (let/cc k (set! generating k) (!!> vals yield-k))))
        (eof-k eof!)
-       (generating (λ () (for-each yield) (eof-k)))
-       (yield (λ vals (let/cc k (set! generating k) (!!> vals yield-k)))))
+       (generating (λ () (for-each yield) (eof-k))))
     (λ ((on-eof eof!))
       (let/cc k (set! yield-k k) (set! eof-k on-eof) (generating)))))
 
@@ -109,7 +108,7 @@
 
 ;; (Generating A) <- (Vector A) Nat (Or Nat '#f)
 (def (generating<-vector vector start: (start 0) end: (end #f))
-  (generating<-for-each (λ (yield) (vector-for-each! vector yield start: start end: end))))
+  (generating<-for-each (λ (y) (vector-for-each! vector y start: start end: end))))
 
 ;; (Generating A) <- (Vector A) Nat (Or Nat '#f)
 (def (generating-reverse<-vector vector start: (start 0) end: (end #f))
@@ -147,7 +146,7 @@
 (def (generating-take generating n (short-ok? #f))
   (with-list-builder (collect!)
     (try
-     (for ((_ (in-range 0 n))) (collect! (generating)))
+     (for ((_ (in-iota n))) (collect! (generating)))
      (catch (λ (c) (and short-ok? (eof-object? c))) => void))))
 
 (def (generating-take-reverse generating n (short-ok? #f))
@@ -157,37 +156,8 @@
   (let ((next (generating)))
     (if (pred next) next (generating-drop-until generating pred))))
 
-(def (make-generating-peeking generating)
-  (letrec
-      ((eof? #f)
-       (peeked? #f)
-       (next #f)
-       (get
-        (λ ()
-          (unless eof?
-            (set! peeked? #t)
-            (set! next (generating (λ () (set! eof? #t) (set! generating #f) #f))))))
-       (peek
-        (λ ((eof #!eof))
-          (cond
-           (eof? eof)
-           (peeked? next)
-           (else (get) (peek eof)))))
-       (generate
-        (λ ((on-eof eof!))
-          (cond
-           (eof? (on-eof))
-           (peeked? (set! peeked? #f) next)
-           (else (get) (generate on-eof))))))
-    (values generate peek)))
-
-(def (iter<-generating-peeking generating peeking)
-  (def (value-e _) (peeking iter-end))
-  (def (next-e _) (generating))
-  (make-iterator #f void value-e next-e))
-
-(def (iter<-generating generating)
-  (call-with-values (λ () (make-generating-peeking generating)) iter<-generating-peeking))
+(def (in-cothread/peekable generating)
+  (:peekable-iter (in-cothread generating)))
 
 (def (iter-for-each! iter fun)
   (for (x iter) (fun x)))
@@ -225,18 +195,11 @@
   ;; A workaround is to run the generating function in a generating thread;
   ;; the thread will be started at the first call, and blocked until needed again.
   (def (coroutine-function) (try (generating-function yield) (finally (raise #!eof))))
-  (def cort (cothread coroutine-function))
+  (def cothr (cothread coroutine-function))
   (def (generating (on-eof eof!))
-    (try (continue cort) (catch (eof-object? _) (on-eof))))
-  (def (shutdown) (cothread-stop! cort))
+    (try (continue cothr) (catch (eof-object? _) (on-eof))))
+  (def (shutdown) (cothread-stop! cothr))
   (values generating shutdown))
-
-(def (generating-peeking<-cothread generating-function)
-  (defvalues (generating shutdown)
-    (generating<-cothread generating-function))
-  (defvalues (next peek)
-    (make-generating-peeking generating))
-  (values next peek shutdown))
 
 ;; Split a generating into two generatings,
 ;; the generated elements of which respectively satisfy and don't satisfy the given predicate
@@ -332,5 +295,4 @@
     ((g1 g2 g3 . gs) (generating-flatten (generating<-list [g1 g2 g3 . gs])))))
 
 (def (generating-peeking-shutting<-shutdown-generating shutdown generating)
-  (defvalues (next peek) (make-generating-peeking generating))
-  (values next peek shutdown))
+  (in-cothread/peekable (λ () (try (generating yield) (finally (shutdown))))))

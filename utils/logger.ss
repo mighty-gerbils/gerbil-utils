@@ -160,7 +160,7 @@
 ;; : (Values (Generator (Pair Timestamp String)) (Peeker (Pair Timestamp String))) <- \
 ;;   (String <- Timestamp) Timestamp Timestamp
 (def (generating<-xz-logdir file<-date-string start-timestamp end-timestamp)
-  (generating-peeking<-cothread
+  (in-cothread/peekable
    (cut for-each-xz-logdir-entry! file<-date-string start-timestamp end-timestamp <>)))
 
 ;; Given a entry-processor function to run on non-metadata entries,
@@ -208,7 +208,7 @@
       file<-date-string start-timestamp end-timestamp
       object-decoder: (object-decoder identity)
       metadata-hook: (metadata-hook void))
-  (generating-peeking<-cothread
+  (in-cothread/peekable
    (λ (yield)
      (for-each-xz-logdir-entry!
       file<-date-string start-timestamp end-timestamp

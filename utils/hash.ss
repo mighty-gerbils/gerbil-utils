@@ -71,7 +71,7 @@
 ;; *one* possible index for each value.
 ;; : (Table Nat V) <- (Vector V) to: (Optional (Table Nat V))
 (def (invert-hash<-vector from to: (to (make-hash-table)))
-  (for ((i (in-range 0 (vector-length from))))
+  (for ((i (in-iota (vector-length from))))
     (hash-put! to (vector-ref from i) i))
   to)
 
@@ -84,7 +84,7 @@
 ;; : (Table (M Nat) V) <- (Vector V) \
 ;;     to: (Optional (Table (List V) Nat)) nil: (M V) cons: ((M V) <- V (M V))
 (def (invert-hash*<-vector from to: (to (make-hash-table)) nil: (nil '()) cons: (cons cons))
-  (for ((i (in-range 0 (vector-length from))))
+  (for ((i (in-iota (vector-length from))))
     (let ((val (vector-ref from i)))
       (hash-put! to val (cons i (hash-ref to val nil)))))
   to)

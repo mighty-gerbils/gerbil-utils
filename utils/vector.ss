@@ -32,16 +32,16 @@
       (subvector vector start end))))
 
 (def (vector-for-each! vector function start: (start 0) end: (end #f))
-  (for ((i (in-range start (- (or end (vector-length vector)) start))))
+  (for ((i (in-iota (- (or end (vector-length vector)) start) start)))
     (function (vector-ref vector i))))
 
 (def (vector-for-each-indexed! vector function start: (start 0) end: (end #f))
-  (for ((i (in-range start (- (or end (vector-length vector)) start))))
+  (for ((i (in-iota (- (or end (vector-length vector)) start) start)))
     (function i (vector-ref vector i))))
 
 (def (vector-reverse-for-each! vector function start: (start 0) end: (end #f))
   (let ((end (or end (vector-length vector))))
-    (for ((i (in-range (- end 1) (- end start) -1)))
+    (for ((i (in-iota (- end start) (- end 1) -1)))
       (function (vector-ref vector i)))))
 
 (def (vector-reverse-for-each-indexed! vector function start: (start 0) end: (end #f))

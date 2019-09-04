@@ -9,7 +9,7 @@
 (def N number-comparer)
 (def (sort-alist alist) (sort alist (comparing-key test: < key: car)))
 (def (make-alist n (fun number->string))
-  (for/collect (i (in-range 1 n)) (cons i (fun i))))
+  (for/collect (i (in-iota n 1)) (cons i (fun i))))
 (def (alist-equal? x y) (equal? (sort-alist x) (sort-alist y)))
 (def (alist<- l) (alist<-avl-map l))
 (def (<-alist l) (avl-map<-alist N l))

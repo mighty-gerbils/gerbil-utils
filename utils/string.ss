@@ -17,7 +17,7 @@
   (let* ((l (string-length string))
          (new-string (make-string l))
          (k 0))
-    (for ((i (in-range 0 l)))
+    (for ((i (in-iota l)))
       (let ((char (string-ref string i)))
         (string-set! new-string i (if (and (eqv? char old-char)
                                            (or (not start) (<= start i))

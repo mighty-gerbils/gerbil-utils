@@ -6,6 +6,7 @@
   :clan/utils/tests/logger-test
   :clan/utils/tests/memo-test
   :clan/utils/tests/number-test
+  :clan/utils/tests/peekable-iterator-test
   :clan/utils/tests/stateful-avl-map-test
   :clan/utils/tests/temporary-files-test)
 
@@ -20,6 +21,7 @@
    logger-test
    memo-test
    number-test
+   peekable-iterator-test
    stateful-avl-map-test
    temporary-files-test
    ])

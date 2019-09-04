@@ -81,7 +81,7 @@
     (call-with-output-file
         path-and-settings
       (λ (port)
-        (for (i (in-range 0 (vector-length words)))
+        (for (i (in-iota (vector-length words)))
            (fprintf port "~a ~a\n" (string<-diceware-index i n-dice) (vector-ref words i)))))))
 
 (def (diceware-word (index #f))
@@ -92,4 +92,4 @@
 
 ;; 20 words of 5 dice is just over 258 bits.
 (def (diceware-phrase (n-words 20))
-  (string-join (with-list-builder (c _) (for (_ (in-range 0 n-words)) (c (diceware-word)))) " "))
+  (string-join (with-list-builder (c _) (for (_ (in-iota n-words)) (c (diceware-word)))) " "))
