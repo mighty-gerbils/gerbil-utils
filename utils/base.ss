@@ -110,7 +110,7 @@
 (def (iterate-function n fun . v)
   (if (zero? n)
     (apply values v)
-    (apply iterate-function (- n 1) fun (apply fun v))))
+    (call/values (λ () (apply fun v)) (λ v (apply iterate-function (- n 1) fun v)))))
 
 (def (iterated-function n fun)
   (cond
