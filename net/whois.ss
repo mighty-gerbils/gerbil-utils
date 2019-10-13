@@ -13,7 +13,7 @@
   (def whois (run-process ["whois" name] coprocess: read-all-as-lines check-status: void))
   (nest
    (let/cc return)
-   (if (pregexp-match "^No match for (domain )?\".*\"." (first whois)) #f)
+   (if (pregexp-match "^(No match for (domain )?\".*\"\\.|NOT FOUND|not found)" (first whois)) #f)
    (with-list-builder (c! results))
    (for-each! whois) (λ (line))
    (cond
