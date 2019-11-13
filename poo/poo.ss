@@ -4,7 +4,7 @@
 ;; Trivial implementation of Prototypes Of Objects in Gerbil Scheme
 ;;
 ;; An Instance is a list of layers of fields, each layer being a cons of
-;; (a) a table mapping field to value together with
+;; (a) a table mapping field to value together, and
 ;; (b) a table mapping field to function to lazily compute the value.
 ;; type Instance = Instance (List (Cons (Map Any <-- Symbol) (Fn Any <-- Symbol)))
 ;;
@@ -21,7 +21,14 @@
 ;;
 ;; A macro (poo ...) is provided to make defining objects easier. To be improved.
 ;;
-;; TODO: add support for checking constraints when a prototype is instantiated.
+;; TODO:
+;; - DOCUMENTATION!!!
+;; - export only Object, but neither Instance nor Prototype?
+;; - add support for checking constraints when a prototype is instantiated?
+;; - handle mutability: finalize prototypes before you may instantiate anything that inherits from them?
+;; - represent prototypes as pure persistent maps vs instances still as stateful hash tables?
+;; - better instance representation as vector, indexed based on hash-consed prototype shapes?
+;; - mutable instances: non-heritable local state plus sealed inherited slots? separate state slot?
 
 ;;XXX: For debugging: (import :std/interactive)
 
@@ -31,11 +38,6 @@
   :std/sugar
   :clan/utils/base :clan/utils/list)
 
-
-;; TODO: use pure persistent maps instead of stateful hash tables for prototype representation,
-;; but still hash for instance representation?
-;; Even better instance representation:
-;; vector, with hash-consed prototype table shapes for name to index map.
 
 ;; Below: instances and prototypes in 21 lines of code!
 (defstruct Instance (layers))
@@ -62,6 +64,15 @@
    ((hash-get (cdar layers) field) =>
     (λ (fun) (hash-ensure-ref (caar layers) field fun)))
    (else (compute-instance-layers-field (cdr layers) field))))
+
+(def (instance-set! instance field value)
+  (def layers (Instance-layers instance))
+  (when (null? layers) (error "trying to modify the empty instance"))
+  (hash-put! (first layers) field value))
+
+(def (prototype-set-method! prototype field method)
+  (hash-put! prototype field method))
+
 
 (def (instantiate-prototypes prototypes)
   (def instance (Instance []))
@@ -122,3 +133,15 @@
 (defrules poo ()
   ((_ (supers ...) selfsuper slots slot-defs ...)
    (poo<-proto (cons (proto selfsuper slots slot-defs ...) (append-map Poo-prototypes [supers ...])))))
+
+(defrules poo. ()
+  ((_ obj field) (poo-ref obj 'field)))
+
+;; TODO: check mutability status of the first prototype
+(defrules defpoo. ()
+  ((_ obj field (self super) form)
+   (hash-put! (first (Poo-prototypes poos)) 'field (λ (self super) form))))
+
+;; TODO: check mutability status of the outer instance
+(defrules poo.set! ()
+  ((_ obj field value) (hash-put! (first (Poo-instances obj)) 'field value)))
