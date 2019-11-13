@@ -1,3 +1,6 @@
+(export
+  poo-test)
+
 (import
   :clan/poo/poo
   :std/test

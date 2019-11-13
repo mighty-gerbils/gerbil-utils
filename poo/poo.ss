@@ -26,6 +26,7 @@
 ;; - export only Object, but neither Instance nor Prototype?
 ;; - add support for checking constraints when a prototype is instantiated?
 ;; - handle mutability: finalize prototypes before you may instantiate anything that inherits from them?
+;; - mutability: make prototype a structure? add fields to Object and use that instead of Prototypes?
 ;; - represent prototypes as pure persistent maps vs instances still as stateful hash tables?
 ;; - better instance representation as vector, indexed based on hash-consed prototype shapes?
 ;; - mutable instances: non-heritable local state plus sealed inherited slots? separate state slot?
@@ -36,26 +37,24 @@
   :std/format :std/lazy :std/misc/list :std/misc/rbtree :std/misc/repr
   :std/srfi/1
   :std/sugar
-  :clan/utils/base :clan/utils/list)
+  :clan/utils/base :clan/utils/hash :clan/utils/list)
 
-
-;; Below: instances and prototypes in 21 lines of code!
 (defstruct Instance (layers))
 
-(def (check-layers layers field)
-  (when (null? layers) (error "Field undefined" field)))
+(def (instance-layers instance field)
+  (def layers (Instance-layers instance))
+  (when (null? layers) (error "Field undefined" field))
+  layers)
 
 ;; variant that caches field values globally in addition to each layer that computes them
 (def (instance-ref instance field)
-  (def layers (Instance-layers instance))
-  (check-layers layers field)
+  (def layers (instance-layers instance field))
   (hash-ensure-ref
    (caar layers) field (λ () (compute-instance-layers-field layers field))))
 
 ;; variant that only caches values at layers that compute them
 (def (instance-ref% instance field)
-  (def layers (Instance-layers instance))
-  (check-layers layers field)
+  (def layers (instance-layers instance field))
   (compute-instance-layers-field layers field))
 
 (def (compute-instance-layers-field layers field)
