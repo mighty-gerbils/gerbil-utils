@@ -40,13 +40,27 @@
 ;; Below: instances and prototypes in 21 lines of code!
 (defstruct Instance (layers))
 
+(def (check-layers layers field)
+  (when (null? layers) (error "Field undefined" field)))
+
+;; variant that caches field values globally in addition to each layer that computes them
 (def (instance-ref instance field)
-  (compute-instance-layers-field (Instance-layers instance) field))
+  (def layers (Instance-layers instance))
+  (check-layers layers field)
+  (hash-ensure-ref
+   (caar layers) field (λ () (compute-instance-layers-field layers field))))
+
+;; variant that only caches values at layers that compute them
+(def (instance-ref% instance field)
+  (def layers (Instance-layers instance))
+  (check-layers layers field)
+  (compute-instance-layers-field layers field))
 
 (def (compute-instance-layers-field layers field)
   (cond
    ((null? layers) (error "Field undefined" field))
-   ((hash-get (cdar layers) field) => (λ (fun) (fun)))
+   ((hash-get (cdar layers) field) =>
+    (λ (fun) (hash-ensure-ref (caar layers) field fun)))
    (else (compute-instance-layers-field (cdr layers) field))))
 
 (def (instantiate-prototypes prototypes)
@@ -64,9 +78,24 @@
   ((_ (self super) (slot form) ...)
    (hash (slot (λ (self super) form)) ...)))
 
+;; Here is next-field defined as a function
+#;
+(defsyntax (wrap-next-field stx)
+  (with-syntax ((next-field (syntax-local-introduce 'next-field)))
+    (syntax-case stx ()
+      ((_ self super slot form)
+       #'(let ((next-field (λ () (instance-ref% super 'slot)))) form)))))
+
+;; Define next-field as a macro instead
+(defsyntax (wrap-next-field stx)
+  (with-syntax ((next-field (syntax-local-introduce 'next-field)))
+    (syntax-case stx ()
+      ((_ self super slot form)
+       #'(let-syntax ((next-field (syntax-rules () ((_) (instance-ref% super 'slot))))) form)))))
+
 (defrules wrap-slots (next-field)
   ((_ self super slot () form)
-   (let-syntax ((next-field (syntax-rules (next-field) ((_) (instance-ref super 'slot))))) form))
+   (wrap-next-field self super slot form))
   ((_ self super slot (slot1 slots ...) form)
    (let-syntax ((slot1 (syntax-rules () (_ (instance-ref self 'slot1)))))
      (wrap-slots self super slot (slots ...) form))))

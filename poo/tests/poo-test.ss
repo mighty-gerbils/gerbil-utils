@@ -10,4 +10,5 @@
     (def instance1 (instantiate-prototypes [proto0 proto1]))
     (assert-equal! (instance-ref instance1 'x) 2)
     (assert-equal! (instance-ref instance1 'z) 11)
-    (assert-equal! (instance-ref instance1 'y) 3)))
+    (assert-equal! (instance-ref instance1 'y) 3)
+    ))
