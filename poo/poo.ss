@@ -78,19 +78,10 @@
   ((_ (self super) (slot form) ...)
    (hash (slot (λ (self super) form)) ...)))
 
-;; Here is next-field defined as a function
-#;
 (defsyntax (wrap-next-field stx)
-  (with-syntax ((next-field (syntax-local-introduce 'next-field)))
-    (syntax-case stx ()
-      ((_ self super slot form)
-       #'(let ((next-field (λ () (instance-ref% super 'slot)))) form)))))
-
-;; Define next-field as a macro instead
-(defsyntax (wrap-next-field stx)
-  (with-syntax ((next-field (syntax-local-introduce 'next-field)))
-    (syntax-case stx ()
-      ((_ self super slot form)
+  (syntax-case stx ()
+    ((_ self super slot form)
+     (with-syntax ((next-field (syntax-local-introduce 'next-field)))
        #'(let-syntax ((next-field (syntax-rules () ((_) (instance-ref% super 'slot))))) form)))))
 
 (defrules wrap-slots (next-field)
@@ -112,7 +103,7 @@
 
 (defstruct Poo (prototypes instance))
 
-(def (poo<-proto . prototypes)
+(def (poo<-proto prototypes)
   (Poo prototypes #f))
 
 (def (poo-instance obj)
@@ -126,12 +117,8 @@
     ((Instance _) (instance-ref obj field))))
 
 (def (mix-poo . poos)
-  (Poo (append-map Poo-prototypes poos) #f))
-
-(defrules poo* ()
-  ((_ (supers ...) selfsuper slots (slot form) ...)
-   (poo<-proto (proto selfsuper (slot form) ...) supers ...)))
+  (poo<-proto (append-map Poo-prototypes poos)))
 
 (defrules poo ()
-  ((_ (supers ...) selfsuper (slot form) ...)
-   (poo<-proto (proto selfsuper (slot form) ...) supers ...)))
+  ((_ (supers ...) selfsuper slots slot-defs ...)
+   (poo<-proto (cons (proto selfsuper slots slot-defs ...) (append-map Poo-prototypes [supers ...])))))
