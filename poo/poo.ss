@@ -1,26 +1,9 @@
 ;;-*- Gerbil -*-
-(export #t)
+;; Trivial implementation of Prototypes Of Objects in Gerbil Scheme. See poo.md
 
-;; Trivial implementation of Prototypes Of Objects in Gerbil Scheme
-;;
-;; An Instance is a list of layers of fields, each layer being a cons of
-;; (a) a table mapping field to value together, and
-;; (b) a table mapping field to function to lazily compute the value.
-;; type Instance = Instance (List (Cons (Map Any <-- Symbol) (Fn Any <-- Symbol)))
-;;
-;; A Prototype is a table mapping a field to a function to compute that field from
-;; (a) an instance for the self fields (including layers for all prototypes), and
-;; (b) and instance for the super fields (only layers corresponding to parent prototypes).
-;; type Prototype = (Map (Fn Any <-- Instance Instance) <-- Symbol)
-;;
-;; You can compute an instance as the fixed point of computing fields from a list of prototypes;
-;; each prototype may define fields that will be computed from the complete "self" instance,
-;; and the "super" instance with layers for the parent prototypes that it inherits from.
-;;
-;; Some Poo is the datum of a list of prototypes and the lazily computed instance for those prototypes.
-;;
-;; A macro (poo ...) is provided to make defining objects easier. To be improved.
-;;
+(export
+  mix-poo poo-ref poo-put! poo .ref .call .set! .def)
+
 ;; TODO:
 ;; - DOCUMENTATION!!!
 ;; - export only Object, but neither Instance nor Prototype?
@@ -41,37 +24,34 @@
 
 (defstruct Instance (layers))
 
-(def (instance-layers instance field)
-  (def layers (Instance-layers instance))
-  (when (null? layers) (error "Field undefined" field))
-  layers)
+(defrules with-instance-layers ()
+  ((_ (layers instance default) body ...)
+   (let ((layers (Instance-layers instance)))
+     (if (null? layers) (default)
+         body))))
+
+(def (no-such-field instance field) (error "No such field" instance field))
 
 ;; variant that caches field values globally in addition to each layer that computes them
-(def (instance-ref instance field)
-  (def layers (instance-layers instance field))
-  (hash-ensure-ref
-   (caar layers) field (λ () (compute-instance-layers-field layers field))))
+(def (instance-ref instance field (default (no-such-field instance field)))
+  (with-instance-layers (layers instance default)
+    (hash-ensure-ref (caar layers) field (λ () (compute-instance-layers-field layers field default)))))
 
 ;; variant that only caches values at layers that compute them
-(def (instance-ref% instance field)
-  (def layers (instance-layers instance field))
-  (compute-instance-layers-field layers field))
+(def (layers-ref instance field (default (no-such-field instance field)))
+  (with-instance-layers (layers instance default)
+     (compute-instance-layers-field layers field default)))
 
-(def (compute-instance-layers-field layers field)
+(def (compute-instance-layers-field layers field (default (no-such-field instance field)))
   (cond
-   ((null? layers) (error "Field undefined" field))
+   ((null? layers) (default))
    ((hash-get (cdar layers) field) =>
     (λ (fun) (hash-ensure-ref (caar layers) field fun)))
-   (else (compute-instance-layers-field (cdr layers) field))))
+   (else (compute-instance-layers-field (cdr layers) field default))))
 
-(def (instance-set! instance field value)
-  (def layers (Instance-layers instance))
-  (when (null? layers) (error "trying to modify the empty instance"))
-  (hash-put! (first layers) field value))
-
-(def (prototype-set-method! prototype field method)
-  (hash-put! prototype field method))
-
+(def (instance-put! instance field value)
+  (with-instance-layers (layers instance (λ () (error "trying to modify the empty instance")))
+     (hash-put! (first layers) field value)))
 
 (def (instantiate-prototypes prototypes)
   (def instance (Instance []))
@@ -88,11 +68,16 @@
   ((_ (self super) (slot form) ...)
    (hash (slot (λ (self super) form)) ...)))
 
+;; TODO: Maybe next-field should use syntax like
+;; (slot => transformer args ...) to filter the next-field through a transformer function,
+;; or (slot (next-field) form) to lazily compute the next field
+;; instead of (slot form) to plainly assign a value oblivious of inherited ones.
+
 (defsyntax (wrap-next-field stx)
   (syntax-case stx ()
     ((_ self super slot form)
      (with-syntax ((next-field (syntax-local-introduce 'next-field)))
-       #'(let-syntax ((next-field (syntax-rules () ((_) (instance-ref% super 'slot))))) form)))))
+       #'(let-syntax ((next-field (syntax-rules () ((_) (layers-ref super 'slot))))) form)))))
 
 (defrules wrap-slots (next-field)
   ((_ self super slot () form)
@@ -121,26 +106,45 @@
     (set! (Poo-instance obj) (instantiate-prototypes (Poo-prototypes obj))))
   (Poo-instance obj))
 
-(def (poo-ref obj field)
+(def (poo-ref obj field (default false))
   (match obj
     ((Poo _) (instance-ref (poo-instance obj) field))
-    ((Instance _) (instance-ref obj field))))
+    ((Instance _) (instance-ref obj field))
+    (else (error "Not a prototype object" obj field))))
+
+(def (collect-prototypes c obj)
+  (match obj
+    ((Poo prototypes _) (for-each c prototypes))
+    ((? hash?) obj)
+    ((? list?) (for-each (cut collect-prototypes c) obj))
+    (_ (error "invalid prototype specification" obj))))
+
+(def (prototypes<- obj)
+  (with-list-builder (c) (collect-prototypes c poos)))
 
 (def (mix-poo . poos)
-  (poo<-proto (append-map Poo-prototypes poos)))
+  (poo<-proto (prototypes<- poos)))
 
 (defrules poo ()
   ((_ (supers ...) selfsuper slots slot-defs ...)
    (poo<-proto (cons (proto selfsuper slots slot-defs ...) (append-map Poo-prototypes [supers ...])))))
 
-(defrules poo. ()
-  ((_ obj field) (poo-ref obj 'field)))
+(defrules .ref ()
+  ((_ obj) obj)
+  ((_ obj field fields ...) (_ (poo-ref obj 'field) fields ...)))
+
+(defrules .ref ()
+  ((_ obj) obj)
+  ((_ obj field fields ...) (_ (poo-ref obj 'field) fields ...)))
+
+(defrules .call ()
+  ((_ obj field args ...) ((.ref obj field) args ...)))
 
 ;; TODO: check mutability status of the first prototype
-(defrules defpoo. ()
+(defrules .def ()
   ((_ obj field (self super) form)
    (hash-put! (first (Poo-prototypes poos)) 'field (λ (self super) form))))
 
 ;; TODO: check mutability status of the outer instance
-(defrules poo.set! ()
+(defrules .set! ()
   ((_ obj field value) (hash-put! (first (Poo-instances obj)) 'field value)))
