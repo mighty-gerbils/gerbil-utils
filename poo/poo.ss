@@ -1,20 +1,11 @@
 ;;-*- Gerbil -*-
-;; Trivial implementation of Prototypes Of Objects in Gerbil Scheme. See poo.md
+;; Trivial implementation of Prototype Object Orientation in Gerbil Scheme.
+;;
+;; See poo.md for documentation
+;; TODO: see Future Features and the Internals TODO sections in document above.
 
 (export
-  mix-poo poo-ref poo-put! poo .ref .call .set! .def)
-
-;; TODO:
-;; - DOCUMENTATION!!!
-;; - export only Object, but neither Instance nor Prototype?
-;; - add support for checking constraints when a prototype is instantiated?
-;; - handle mutability: finalize prototypes before you may instantiate anything that inherits from them?
-;; - mutability: make prototype a structure? add fields to Object and use that instead of Prototypes?
-;; - represent prototypes as pure persistent maps vs instances still as stateful hash tables?
-;; - better instance representation as vector, indexed based on hash-consed prototype shapes?
-;; - mutable instances: non-heritable local state plus sealed inherited slots? separate state slot?
-
-;;XXX: For debugging: (import :std/interactive)
+  poo defpoo .mix .ref .instantiate .get .call .set! .def)
 
 (import
   :std/format :std/lazy :std/misc/list :std/misc/rbtree :std/misc/repr
@@ -22,129 +13,115 @@
   :std/sugar
   :clan/utils/base :clan/utils/hash :clan/utils/list)
 
-(defstruct Instance (layers))
+(defstruct Poo (prototypes layers))
 
-(defrules with-instance-layers ()
-  ((_ (layers instance default) body ...)
-   (let ((layers (Instance-layers instance)))
-     (if (null? layers) (default)
-         body))))
+(def (no-such-slot instance slot) (λ () (error "No such slot" instance slot)))
 
-(def (no-such-field instance field) (error "No such field" instance field))
+(def (.instantiate poo)
+  (match poo
+    ((Poo prototypes #f) (set! (Poo-layers poo) (map (λ _ (hash)) prototypes)))
+    ((Poo _ _) (void)) ;; already instantiated
+    (else (error "No poo" poo))))
 
-;; variant that caches field values globally in addition to each layer that computes them
-(def (instance-ref instance field (default (no-such-field instance field)))
-  (with-instance-layers (layers instance default)
-    (hash-ensure-ref (caar layers) field (λ () (compute-instance-layers-field layers field default)))))
+(def (.ref poo slot (default (no-such-slot poo slot)))
+  (.instantiate poo)
+  (match poo
+    ((Poo [] []) (default))
+    ((Poo prototypes layers)
+     (hash-ensure-ref
+      (car layers) slot
+      (λ () (compute-poo-slot poo prototypes layers slot default))))))
 
-;; variant that only caches values at layers that compute them
-(def (layers-ref instance field (default (no-such-field instance field)))
-  (with-instance-layers (layers instance default)
-     (compute-instance-layers-field layers field default)))
+(def (compute-poo-slot poo prototypes layers slot (default (no-such-slot poo slot)))
+  (match prototypes
+    ([] (default))
+    ([prototype . super-prototypes]
+     (match layers
+       ([layer . super-layers]
+        (if-let (fun (hash-get prototype slot))
+           (hash-ensure-ref layer slot (λ () (fun poo super-prototypes super-layers)))
+           (compute-poo-slot poo super-prototypes super-layers slot default)))))))
 
-(def (compute-instance-layers-field layers field (default (no-such-field instance field)))
-  (cond
-   ((null? layers) (default))
-   ((hash-get (cdar layers) field) =>
-    (λ (fun) (hash-ensure-ref (caar layers) field fun)))
-   (else (compute-instance-layers-field (cdr layers) field default))))
+(def (append-prototypes x (prototypes []))
+  (match x
+    ([] prototypes)
+    ((cons x y) (append-prototypes x (append-prototypes y prototypes)))
+    ((Poo ps _) (append ps prototypes))
+    (_ (error "invalid prototype specification" x))))
 
-(def (instance-put! instance field value)
-  (with-instance-layers (layers instance (λ () (error "trying to modify the empty instance")))
-     (hash-put! (first layers) field value)))
+(def (.mix . poos)
+  (Poo (append-prototypes poos) #f))
 
-(def (instantiate-prototypes prototypes)
-  (def instance (Instance []))
-  (def (layer proto super-layers)
-    (def fields (hash))
-    (def super (Instance super-layers))
-    (def compute (hash))
-    (hash-for-each (λ (field fun) (hash-put! compute field (λ () (fun instance super)))) proto)
-    (cons (cons fields compute) super-layers))
-  (set! (Instance-layers instance) (foldr layer [] prototypes))
-  instance)
 
-(defrules proto** ()
-  ((_ (self super) (slot form) ...)
-   (hash (slot (λ (self super) form)) ...)))
-
-;; TODO: Maybe next-field should use syntax like
-;; (slot => transformer args ...) to filter the next-field through a transformer function,
-;; or (slot (next-field) form) to lazily compute the next field
-;; instead of (slot form) to plainly assign a value oblivious of inherited ones.
-
-(defsyntax (wrap-next-field stx)
-  (syntax-case stx ()
-    ((_ self super slot form)
-     (with-syntax ((next-field (syntax-local-introduce 'next-field)))
-       #'(let-syntax ((next-field (syntax-rules () ((_) (layers-ref super 'slot))))) form)))))
-
-(defrules wrap-slots (next-field)
-  ((_ self super slot () form)
-   (wrap-next-field self super slot form))
-  ((_ self super slot (slot1 slots ...) form)
-   (let-syntax ((slot1 (syntax-rules () (_ (instance-ref self 'slot1)))))
-     (wrap-slots self super slot (slots ...) form))))
-
-(defrules proto* ()
-  ((_ (self super) slots (slot form) ...)
-   (proto** (self super) (slot (wrap-slots self super slot slots form)) ...))
-  ((_ () slots (slot form) ...)
-   (proto* (self super) slots (slot form) ...)))
-
-(defrules proto ()
-  ((_ selfsuper (slots ...) (slot form) ...)
-   (proto* selfsuper (slots ... slot ...) (slot form) ...)))
-
-(defstruct Poo (prototypes instance))
-
-(def (poo<-proto prototypes)
-  (Poo prototypes #f))
-
-(def (poo-instance obj)
-  (unless (Poo-instance obj)
-    (set! (Poo-instance obj) (instantiate-prototypes (Poo-prototypes obj))))
-  (Poo-instance obj))
-
-(def (poo-ref obj field (default false))
-  (match obj
-    ((Poo _) (instance-ref (poo-instance obj) field))
-    ((Instance _) (instance-ref obj field))
-    (else (error "Not a prototype object" obj field))))
-
-(def (collect-prototypes c obj)
-  (match obj
-    ((Poo prototypes _) (for-each c prototypes))
-    ((? hash?) obj)
-    ((? list?) (for-each (cut collect-prototypes c) obj))
-    (_ (error "invalid prototype specification" obj))))
-
-(def (prototypes<- obj)
-  (with-list-builder (c) (collect-prototypes c poos)))
-
-(def (mix-poo . poos)
-  (poo<-proto (prototypes<- poos)))
-
+;; A poo specification is of the form:
+;;  (poo ([self]) (super-poo ...) (extra-slot-names-to-bind ...) slot-definitions ...))
 (defrules poo ()
-  ((_ (supers ...) selfsuper slots slot-defs ...)
-   (poo<-proto (cons (proto selfsuper slots slot-defs ...) (append-map Poo-prototypes [supers ...])))))
+  ((_ args ...) (poo/self poo/slots args ...)))
 
-(defrules .ref ()
-  ((_ obj) obj)
-  ((_ obj field fields ...) (_ (poo-ref obj 'field) fields ...)))
+(defrules poo/self ()
+  ((_ k () args ...) (k self args ...))
+  ((_ k (self) args ...) (k self args ...)))
 
-(defrules .ref ()
-  ((_ obj) obj)
-  ((_ obj field fields ...) (_ (poo-ref obj 'field) fields ...)))
+(defrules poo/slots ()
+  ((_ self supers (slots ...) (slot slotspec ...) ...)
+   (poo/init self supers (slots ... slot ...) (slot slotspec ...) ...)))
+
+(defrules poo/init ()
+  ((_ self (supers ...) slots (slot slotspec ...) ...)
+   (Poo (cons (hash (slot (poo/slot-init-form self slots slot slotspec ...)) ...)
+              (append-prototypes [supers ...])) #f)))
+
+;; A slot specification has one of these forms:
+;; (slot form)
+;;    the slot value will be computed by evaluating the form
+;; (slot => transformer args ...)
+;;    the inherited value is passed to the transformer function
+;;    with additional args.
+;; (slot (next-method) form)
+;;    the slot value will be computed by evaluating the form, wherein
+;;    the form (next-method) will evaluate to the inherited value for the slot.
+
+(defrules poo/slot-init-form (=>)
+  ((_ self slots slot form)
+   (poo/slot-fun self slots slot next-method form))
+  ((_ self slots slot => form args ...)
+   (poo/slot-fun self slots slot next-method (form (next-method) args ...)))
+  ((_ self slots slot (next-method) form)
+   (poo/slot-fun self slots slot next-method form))
+  ((_ self slots slot)
+   (poo/slot-fun self () slot next-method slot)))
+
+(defrules poo/slot-fun ()
+  ((_ self slots slot next-method form)
+   (λ (self super-prototypes super-layers)
+     (let-syntax ((next-method (syntax-rules ()
+                                 ((_) (compute-poo-slot self super-prototypes super-layers 'slot)))))
+       (poo/wrap-slots self slots form)))))
+
+(defrules poo/wrap-slots ()
+  ((_ self () form)
+   form)
+  ((_ self (slot1 slots ...) form)
+   (let-syntax ((slot1 (syntax-rules () (_ (.ref self 'slot1)))))
+     (poo/wrap-slots self (slots ...) form))))
+
+(defrules defpoo ()
+  ((_ name (supers ...) slots slot-defs ...)
+   (def name (poo (name) (supers ...) slots slot-defs ...))))
+
+(defrules .get ()
+  ((_ poo) poo)
+  ((_ poo slot slots ...) (.get (.ref poo 'slot) slots ...)))
 
 (defrules .call ()
-  ((_ obj field args ...) ((.ref obj field) args ...)))
+  ((_ poo slot args ...) ((.get poo slot) args ...)))
 
-;; TODO: check mutability status of the first prototype
+;; TODO: check poo mutability status first
 (defrules .def ()
-  ((_ obj field (self super) form)
-   (hash-put! (first (Poo-prototypes poos)) 'field (λ (self super) form))))
+  ((_ poo slot (slots ...) slotspec ...)
+   (hash-put! (first (Poo-prototypes poo)) 'slot
+              (poo/slot-init-form poo (slot slots ...) slot slotspec ...))))
 
 ;; TODO: check mutability status of the outer instance
 (defrules .set! ()
-  ((_ obj field value) (hash-put! (first (Poo-instances obj)) 'field value)))
+  ((_ poo slot value) (hash-put! (first (Poo-layers poo)) 'slot value)))

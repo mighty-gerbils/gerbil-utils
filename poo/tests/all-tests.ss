@@ -1,5 +1,5 @@
 (import
-  :clan/poo/tests/poo-test)
+  "poo-test")
 
 (export
   unit-tests)
