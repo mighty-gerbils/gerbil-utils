@@ -4,7 +4,8 @@ This directory implements POO, a system for Prototype Object Orientation,
 with a pure lazy functional interface.
 Its semantics is very close to the object system of the
 [Nix Expression Language](https://nixos.wiki/wiki/Nix_Expression_Language)
-(as defined as a library in `nixpkgs/lib/fixed-points.nix`),
+(as defined as a library in a few lines in
+[`nixpkgs/lib/fixed-points.nix`](https://github.com/NixOS/nixpkgs/blob/master/lib/fixed-points.nix)),
 itself essentially identical to that builtin to [Jsonnet](https://jsonnet.org/).
 Another influence of note is the [Slate language](https://github.com/briantrice/slate-language).
 
@@ -176,6 +177,33 @@ to recursively access slots of nested objects:
 ```
 (.get poo x y z)
 ```
+
+You can recognize whether an object is POO with `poo?`
+```
+(assert-equal! (poo? (poo () () () (x 1) (y 2))) #t)
+(assert-equal! (poo? 42) #f)
+```
+
+Two special forms allow for side-effects — use with caution.
+The `.def` form adds a slot definition after the fact to an existing object prototype,
+without changing the instance; it will only affect instances using the prototype
+if they haven't used the previous definition yet.
+```
+(defpoo foo () () (x 1))
+(.def foo y (x) (+ x 3))
+(assert-equal! (.get foo y) 4)
+```
+
+The `.set!` form modifies the value of an object instance without changing the prototype.
+```
+(defpoo bar () () (x 1))
+(assert-equal! (.get bar x) 1)
+(.set! bar x 18)
+(assert-equal! (.get bar x) 18)
+```
+
+
+
 
 ## Examples
 

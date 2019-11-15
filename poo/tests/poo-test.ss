@@ -16,6 +16,12 @@
 (def poo-test
   (test-suite "test suite for clan/poo/poo"
     (test-case "simple tests from poo.md"
+      (assert-equal! (poo? (poo () () () (x 1) (y 2))) #t)
+      (assert-equal! (poo? 42) #f)
+      (defpoo bar () () (x 1))
+      (assert-equal! (.get bar x) 1)
+      (.set! bar x 18)
+      (assert-equal! (.get bar x) 18)
       (def my-point (poo () () () (x 3) (y 4)))
       (defpoo blued () () (color 'blue))
       (def my-colored-point (.mix blued my-point))

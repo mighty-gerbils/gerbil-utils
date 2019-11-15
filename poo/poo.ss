@@ -5,7 +5,7 @@
 ;; TODO: see Future Features and the Internals TODO sections in document above.
 
 (export
-  poo defpoo .mix .ref .instantiate .get .call .set! .def)
+  poo defpoo poo? .mix .ref .instantiate .get .call .set! .def)
 
 (import
   :std/format :std/lazy :std/misc/list :std/misc/rbtree :std/misc/repr
@@ -14,6 +14,8 @@
   :clan/utils/base :clan/utils/hash :clan/utils/list)
 
 (defstruct Poo (prototypes layers))
+
+(def poo? Poo?)
 
 (def (no-such-slot instance slot) (λ () (error "No such slot" instance slot)))
 
