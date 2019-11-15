@@ -82,6 +82,8 @@
 ;; (slot (next-method) form)
 ;;    the slot value will be computed by evaluating the form, wherein
 ;;    the form (next-method) will evaluate to the inherited value for the slot.
+;; (slot)
+;;    the slot value will be that of a same-named variable in the current lexical environment.
 
 (defrules poo/slot-init-form (=>)
   ((_ self slots slot form)

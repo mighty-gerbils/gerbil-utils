@@ -105,6 +105,19 @@ the corresponding slot is accessed using the `.ref` function
 Slot computations are thus *lazy*, and may in turn trigger the lazy computation of further slots.
 They don't directly use the standard module `std/lazy` but will work well in combination with it.
 
+When incrementally describing a configuration, often a hierarchy of prototypes is defined.
+That's where the dual nature of objects as both prototypes and instances becomes really handy:
+an object slot may itself contain an object, and so on, and you don't need to track which is which
+to recursively instantiate them — every recursive object will be automatically and lazily instantiated
+right at the place it is expected when you print or otherwise use the final configuration object.
+Internal objects typically contain references back to the surrounding containing object,
+from which they can access configuration for parent and sibling configuration objects;
+for instance a server's IP address and configuration port will be propagated for use by clients,
+that may in turn offer services for use by further clients.
+When a mixin adding a service may incrementally refine recursive configuration objects
+for many clients and servers...
+Beautiful incremental configuration.
+
 ### POO Definition Syntax
 
 You can define a *poo* with the special form `poo`, with the following template:
@@ -201,7 +214,6 @@ The `.set!` form modifies the value of an object instance without changing the p
 (.set! bar x 18)
 (assert-equal! (.get bar x) 18)
 ```
-
 
 
 
