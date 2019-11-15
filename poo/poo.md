@@ -215,7 +215,13 @@ The `.set!` form modifies the value of an object instance without changing the p
 (assert-equal! (.get bar x) 18)
 ```
 
-
+For reflection on what slots an object does or doesn't define, two functions are available:
+```
+(assert-equal! (.has? foo 'y) #t)
+(assert-equal! (.has? foo 'z) #f)
+(def (sort-symbols symbols) (sort symbols (λ (a b) (string< (symbol->string a) (symbol->string b)))))
+(assert-equal! (sort-symbols (.all-slots foo)) '(x y))
+```
 
 ## Examples
 

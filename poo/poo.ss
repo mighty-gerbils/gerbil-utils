@@ -5,7 +5,7 @@
 ;; TODO: see Future Features and the Internals TODO sections in document above.
 
 (export
-  poo defpoo poo? .mix .ref .instantiate .get .call .set! .def)
+  poo defpoo poo? .mix .ref .instantiate .get .call .set! .def .has? .all-slots)
 
 (import
   :std/format :std/lazy :std/misc/list :std/misc/rbtree :std/misc/repr
@@ -14,8 +14,6 @@
   :clan/utils/base :clan/utils/hash :clan/utils/list)
 
 (defstruct Poo (prototypes layers))
-
-(def poo? Poo?)
 
 (def (no-such-slot instance slot) (λ () (error "No such slot" instance slot)))
 
@@ -49,10 +47,34 @@
     ([] prototypes)
     ((cons x y) (append-prototypes x (append-prototypes y prototypes)))
     ((Poo ps _) (append ps prototypes))
-    (_ (error "invalid prototype specification" x))))
+    (_ (error "invalid poo spec" x))))
 
 (def (.mix . poos)
   (Poo (append-prototypes poos) #f))
+
+(def poo? Poo?)
+
+(def (.has? poo slot)
+  (match poo
+    ((Poo prototypes layers)
+     (or (and layers (pair? layers) (hash-key? (car layers) slot)) ;; fast check for already-present slot, also supports slots from .set!
+         (let/cc return
+           (for-each! prototypes (λ (p) (when (hash-key? p slot) (return #t))))
+           #f)))
+    (else (error ".has?: not poo" poo slot))))
+
+(def (.all-slots poo)
+  (match poo
+    ((Poo prototypes _)
+     (nest
+       (with-list-builder (c))
+       (let (h (hash)))
+       (for-each! prototypes) (λ (p))
+       ((cut hash-for-each <> p)) (λ (k _))
+       (unless (hash-key? h k)
+         (hash-put! h k #t)
+         (c k))))
+    (else (error ".all-slots: not poo" poo))))
 
 
 ;; A poo specification is of the form:
@@ -128,4 +150,6 @@
 
 ;; TODO: check mutability status of the outer instance
 (defrules .set! ()
-  ((_ poo slot value) (hash-put! (first (Poo-layers poo)) 'slot value)))
+  ((_ poo slot value)
+   (begin (.instantiate poo)
+          (hash-put! (first (Poo-layers poo)) 'slot value))))

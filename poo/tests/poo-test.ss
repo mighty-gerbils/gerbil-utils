@@ -6,7 +6,7 @@
 (import
   :clan/poo/poo
   :gerbil/gambit/ports
-  :std/format :std/test
+  :std/format :std/sort :std/srfi/13 :std/test
   :clan/utils/assert :clan/utils/base)
 
 (defrules with-output-to-string ()
@@ -18,10 +18,18 @@
     (test-case "simple tests from poo.md"
       (assert-equal! (poo? (poo () () () (x 1) (y 2))) #t)
       (assert-equal! (poo? 42) #f)
+      (defpoo foo () () (x 1))
+      (.def foo y (x) (+ x 3))
+      (assert-equal! (.get foo y) 4)
       (defpoo bar () () (x 1))
       (assert-equal! (.get bar x) 1)
       (.set! bar x 18)
       (assert-equal! (.get bar x) 18)
+      (assert-equal! (.has? foo 'y) #t)
+      (assert-equal! (.has? foo 'z) #f)
+      (def (sort-symbols symbols) (sort symbols (λ (a b) (string< (symbol->string a) (symbol->string b)))))
+      (assert-equal! (sort-symbols (.all-slots foo)) '(x y))
+      (assert-equal! (sort-symbols (.all-slots foo)) '(x y))
       (def my-point (poo () () () (x 3) (y 4)))
       (defpoo blued () () (color 'blue))
       (def my-colored-point (.mix blued my-point))
