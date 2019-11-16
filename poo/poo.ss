@@ -13,37 +13,30 @@
   :std/sugar
   :clan/utils/base :clan/utils/hash :clan/utils/list)
 
-(defstruct Poo (prototypes layers))
-
-(def (no-such-slot instance slot) (λ () (error "No such slot" instance slot)))
+(defstruct Poo (prototypes instance))
 
 (def (.instantiate poo)
   (match poo
-    ((Poo prototypes #f) (set! (Poo-layers poo) (map (λ _ (hash)) prototypes)))
+    ((Poo _ #f) (set! (Poo-instance poo) (hash))) ;; TODO: call .init method?
     ((Poo _ _) (void)) ;; already instantiated
     (else (error "No poo" poo))))
 
-(def (.ref poo slot (default (no-such-slot poo slot)))
+(def (.ref poo slot)
   (.instantiate poo)
   (match poo
-    ((Poo [] []) (default))
-    ((Poo prototypes layers)
-     (hash-ensure-ref
-      (car layers) slot
-      (λ () (compute-poo-slot poo prototypes layers slot default))))))
+    ((Poo prototypes instance)
+     (hash-ensure-ref instance slot (cut compute-slot poo prototypes slot)))))
 
-(def (compute-poo-slot poo prototypes layers slot (default (no-such-slot poo slot)))
+(def (compute-slot poo prototypes slot)
   (match prototypes
-    ([] (default))
+    ([] (error "No such slot" poo slot))
     ([prototype . super-prototypes]
-     (match layers
-       ([layer . super-layers]
-        (if-let (fun (hash-get prototype slot))
-           (hash-ensure-ref layer slot (λ () (fun poo super-prototypes super-layers)))
-           (compute-poo-slot poo super-prototypes super-layers slot default)))))))
+     (if-let (fun (hash-get prototype slot))
+        (fun poo super-prototypes)
+        (compute-slot poo super-prototypes slot)))))
 
 (def (append-prototypes x (prototypes []))
-  (match x
+  (match x ;; TODO: use lazy merging of patricia trees to maximize the sharing of structure? hash-consing?
     ([] prototypes)
     ((cons x y) (append-prototypes x (append-prototypes y prototypes)))
     ((Poo ps _) (append ps prototypes))
@@ -56,8 +49,8 @@
 
 (def (.has? poo slot)
   (match poo
-    ((Poo prototypes layers)
-     (or (and layers (pair? layers) (hash-key? (car layers) slot)) ;; fast check for already-present slot, also supports slots from .set!
+    ((Poo prototypes instance)
+     (or (and instance (hash-key? instance slot)) ;; fast check for already-present slot, also includes slots from .set!
          (let/cc return
            (for-each! prototypes (λ (p) (when (hash-key? p slot) (return #t))))
            #f)))
@@ -109,20 +102,19 @@
 
 (defrules poo/slot-init-form (=>)
   ((_ self slots slot form)
-   (poo/slot-fun self slots slot next-method form))
+   (λ (self super-prototypes)
+     (poo/wrap-slots self slots form)))
   ((_ self slots slot => form args ...)
-   (poo/slot-fun self slots slot next-method (form (next-method) args ...)))
+   (λ (self super-prototypes)
+     (let ((inherited-value (compute-slot self super-prototypes 'slot)))
+       (poo/wrap-slots self slots (form inherited-value args ...)))))
   ((_ self slots slot (next-method) form)
-   (poo/slot-fun self slots slot next-method form))
+   (λ (self super-prototypes)
+     (let ((inherited-value (lazy (compute-slot self super-prototypes 'slot))))
+       (let-syntax ((next-method (syntax-rules () ((_) (force inherited-value)))))
+         (poo/wrap-slots self slots form)))))
   ((_ self slots slot)
-   (poo/slot-fun self () slot next-method slot)))
-
-(defrules poo/slot-fun ()
-  ((_ self slots slot next-method form)
-   (λ (self super-prototypes super-layers)
-     (let-syntax ((next-method (syntax-rules ()
-                                 ((_) (compute-poo-slot self super-prototypes super-layers 'slot)))))
-       (poo/wrap-slots self slots form)))))
+   (λ (self super-prototypes) slot)))
 
 (defrules poo/wrap-slots ()
   ((_ self () form)
@@ -152,4 +144,4 @@
 (defrules .set! ()
   ((_ poo slot value)
    (begin (.instantiate poo)
-          (hash-put! (first (Poo-layers poo)) 'slot value))))
+          (hash-put! (Poo-instance poo) 'slot value))))

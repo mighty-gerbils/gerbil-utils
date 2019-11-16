@@ -24,7 +24,8 @@ Pure lazy functional prototype object systems are ideal to incrementally define 
 In POO, an object, or *poo*, embodies two related but different concepts,
 that it is important to distinguish: a *prototype*, and an *instance*.
 
-An *instance* is conceptually a mapping from *slot names* to values
+An *instance* is conceptually a mapping
+from *slot names* to values bound to the named slot.
 Slot names are typically symbols or string constants.
 Each value is the result of a computation specified by the *prototype*;
 the value will be computed lazily the first time it is referenced.
@@ -55,8 +56,17 @@ If the last prototype in an inheritance list
 implicitly or explicitly invokes its inherited slot computation,
 then the combined prototype will in turn invoke its direct super-prototype when further combined;
 if the prototype is instantiated without further combination, then
-it an error is raised when a slot is computed that invokes an inherited computation past
+an error is raised when a slot is computed that invokes an inherited computation past
 the end of the inheritance list.
+
+Note that in the current model, the only way the super-prototype is by invoking
+the inherited computation of a slot within the computation of that very same slot:
+they are not currently allowed to access a reified "super-instance"
+with a notional mapping of slot names to values, or
+to access other slots than the current one in that notional mapping.
+This allows for notable simplifications in the implementation,
+compared to indeed allowing access to such a reified "super-instance",
+or to layers of slot bindings, one for each prototype involved in an instance.
 
 In a pure functional lazy setting, all instances of a prototype are the same;
 it is appropriate to speak of *the* instance of that prototype, and
@@ -103,7 +113,7 @@ Slot computations aren't evaluated until an prototype is instantiated and
 the corresponding slot is accessed using the `.ref` function
 (or derivative special forms `.call` and `.get`).
 Slot computations are thus *lazy*, and may in turn trigger the lazy computation of further slots.
-They don't directly use the standard module `std/lazy` but will work well in combination with it.
+Internally, the implementation uses the standard module `std/lazy` where appropriate.
 
 When incrementally describing a configuration, often a hierarchy of prototypes is defined.
 That's where the dual nature of objects as both prototypes and instances becomes really handy:
@@ -174,11 +184,6 @@ To refer to a slot in an object, use the function `.ref`:
 ```
 (.ref poo 'x)
 ```
-Pass an extra function to `.ref` to explicitly handle the case when a slot is undefined
-differently from raising an error (e.g. the standard function `false`):
-```
-(.ref poo 'x (lambda () 'undefined))
-```
 
 To access a slot named by a constant symbol, use the macro `.get` as short-hand:
 ```
@@ -197,7 +202,7 @@ You can recognize whether an object is POO with `poo?`
 (assert-equal! (poo? 42) #f)
 ```
 
-Two special forms allow for side-effects — use with caution.
+Two special forms allow for side-effects, breaking the pure functional interface — use with caution.
 The `.def` form adds a slot definition after the fact to an existing object prototype,
 without changing the instance; it will only affect instances using the prototype
 if they haven't used the previous definition yet.
@@ -345,41 +350,38 @@ In the future, we may add the following features:
 
 ### Current internals
 
-Internally, in the current implementation, a prototype object is `Poo` struct, with two slots:
-a list of elementary prototypes and a list of layers.
+Internally, in the current implementation, an object, or poo, is `Poo` struct, with two slots:
+a list of elementary prototypes and an instance.
 
 Each elementary prototype is a hash-table mapping each defined slot name to a function
-that computes the slot value from three arguments:
+that computes the slot value from two arguments:
   1. a reference to the object itself,
-  2. the list of prototypes involved in this computation (current prototype and its super-prototypes),
-  3. the list of corresponding super-layers (current layer and its super-layers).
+  2. the list of super-prototypes.
 
-The layers are hash-tables mapping for each slot name the value computed
-by the corresponding elementary prototype.
-The first layer in an instance, also known as its base layer,
-also contains all the known values of slots for the object,
-whereas other layers only contain the slots defined by the corresponding elementary prototype.
-Importantly, layers are *not* shared between objects that share the same prototype:
-indeed, since slot computations may refer to other slots or to inherited computations,
-the same prototype computation shared by two instances may for each of them yield a different value,
-even in absence of any side-effect.
+The instance is a hash-table mapping for each slot name the value computed
+by using the prototypes, or otherwise explicitly set as a side-effectful override.
 
-Note that this layer-based model is capable of supporting a slightly more expressive object model
-where computations can access arbitrary slots of the super-object.
-If such an extension is considered useful, it may be trivially implemented in the future.
-If such an extension is considered useless, a more optimized instance representation may be used instead
-with a single layer of mapping from slot name to value.
+Note that this model is not capable of supporting a slightly more expressive object model
+where computations can access arbitrary slots of the super-object,
+or a reified version of the super-object itself.
+If such an extension is considered useful, it may be implemented by resurrecting
+a notion of "layers" present in a previous version of the code, wherein each instance
+contains a list of layers, one for each prototype in the list, that maps slot names to values
+for the definitions present in that given prototype.
+The first layer can also serve to cache all slot computations and
+hold values of slots modified by side-effects.
 
 ### Internals TODO
 
   * Represent prototypes as pure persistent maps, instead of hash-tables and/or lists thereof?
+    Merge them in a way that maximizes sharing of state, maybe even with hash-consing.
 
-  * Represent the instance (or its base layer) as a vector, wherein
-    the indexes are based on the hash-consed "shape" of the prototype,
+  * Represent the instance (or its base layer, if there are many layers) as a vector,
+    wherein the indexes are based on the hash-consed "shape" of the prototype,
     the shape being the sorted list of its slot names.
 
   * Combine the two above optimizations with a third, wherein any name used in a prototype
-    is assigned a unique integer number (based on tree walking the entire program?),
-    and hash-consed word-granular (rather than bitwise) FMIM datastructures are used for shapes.
+    is assigned a unique integer number (based on tree walking the entire program?), and
+    hash-consed word-granular (rather than bitwise) patricia tree datastructures are used for shapes.
 
   * Better debugging for circular definitions with a variant of hash-ensure-ref that detects them.
