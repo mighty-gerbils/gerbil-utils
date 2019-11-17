@@ -130,13 +130,36 @@ Beautiful incremental configuration.
 
 ### POO Definition Syntax
 
-You can define a *poo* with the special form `poo`, with the following template:
+You can define a *poo* with the special form `.o`, with the following template:
 
 ```
-(poo ([self]) (super-poo ...) (extra-slots ...) slot-specification-entries ...)
+(.o [([:: [self [super [extra-slots ...]]]])] slot-definitions ...)
 ```
 
-Each entry in `slot-specification-entries` specifies how to compute a given named slot:
+The first list of parameters is optional;
+it can be omitted, or it can specified as an empty list `()`
+to prevent confusion in case you define a macro the users of which
+might want to use the keyword `::` as the name of a slot.
+In that list:
+
+  * The optional symbol `self` will bound to
+    the object being instantiated when the slot values are computed.
+    Note that this object may be any object that inherits from the object being currently defined,
+    and not necessarily that object itself.
+
+  * The optional value `super` will be used as an object
+    or (potentially nested) list of objects
+    that the current object will inherit from.
+    Specify `[]` for an empty list of objects.
+
+  * The optional list of slot names that follow will be bound to macros
+    that will access the relevant slots of the object being instantiated,
+    when the slot value is computed. Definitions for these slots
+    are presumably to be provided by other prototypes
+    in the object being instantiated, since those in the current prototype
+    will already be implicitly included in the list of symbols to bind.
+
+Each entry in `slot-definitions` specifies how to compute a given named slot:
 
   1. When the computation `form` wholly ignores the inherited computation, and *overrides* it,
      the entry is simply:
@@ -168,9 +191,10 @@ Each entry in `slot-specification-entries` specifies how to compute a given name
 
 As a short-hand, a new variable may be defined and bound to a prototype object with the form:
 ```
-(defpoo name (supers ...) (slots ...) slot-definitions ...)
+(.def (name [self] [super] [slots ...]) slot-definitions ...)
 ```
-Which is equivalent to `(def name (poo (name) (super-poo ...) (slots ...) slot-definitions ...))`
+That form is equivalent to `(def name (.o (:: name super slots ...) slot-definitions ...))`.
+The `name` can be a simple symbol in which case the options are omitted.
 
 ### POO Usage Syntax
 
@@ -198,7 +222,7 @@ to recursively access slots of nested objects:
 
 You can recognize whether an object is POO with `poo?`
 ```
-(assert-equal! (poo? (poo () () () (x 1) (y 2))) #t)
+(assert-equal! (poo? (.o (x 1) (y 2))) #t)
 (assert-equal! (poo? 42) #f)
 ```
 
@@ -207,14 +231,14 @@ The `.def` form adds a slot definition after the fact to an existing object prot
 without changing the instance; it will only affect instances using the prototype
 if they haven't used the previous definition yet.
 ```
-(defpoo foo () () (x 1))
-(.def foo y (x) (+ x 3))
+(.def foo (x 1))
+(.def! foo y (x) (+ x 3))
 (assert-equal! (.get foo y) 4)
 ```
 
 The `.set!` form modifies the value of an object instance without changing the prototype.
 ```
-(defpoo bar () () (x 1))
+(.def bar () () (x 1))
 (assert-equal! (.get bar x) 1)
 (.set! bar x 18)
 (assert-equal! (.get bar x) 18)
@@ -236,12 +260,12 @@ The following form defines a point with two coordinates `x` and `y`;
 the first three empty lists stand for the omitted `self` variable,
 the empty list of super-prototypes, and the empty list of extra slots:
 ```
-(def my-point (poo () () () (x 3) (y 4)))
+(def my-point (.o (x 3) (y 4)))
 ```
 Similarly, here is a prototype object for a colored object,
-using the short-hand `defpoo` special form:
+using the short-hand `.def` special form:
 ```
-(defpoo blued () () (color 'blue))
+(.def blued (color 'blue))
 ```
 The two can be combined in a single object using the function `.mix`:
 ```
@@ -260,14 +284,15 @@ You could use `.get` instead of `.ref` to skip a quote:
 
 ### Simple mixins
 
-This mixin defines a complex number `x+iy` for an object that with slots `x` and `y`,
-to be defined in a different mixin:
+This mixin defines (using `.o` syntax) a complex number `x+iy`
+for an object that with slots `x` and `y`,
+to be defined in a different mixin (note the use of `@` as an unused symbol for self):
 ```
-(defpoo complex () (x y) (x+iy (+ x (* 0+1i y))))
+(def complex (.o (:: @ [] x y) (x+iy (+ x (* 0+1i y)))))
 ```
-And this mixin defines polar coordinates for an object with a slot `x+iy`:
+And this mixin defines (using `.def` syntax) polar coordinates for an object with a slot `x+iy`:
 ```
-(defpoo polar () (x+iy) (rho (magnitude x+iy)) (theta (angle x+iy)))
+(.def (polar @ [] x+iy) (rho (magnitude x+iy)) (theta (angle x+iy)))
 ```
 You can mix these together and see POO at work:
 ```
@@ -279,16 +304,16 @@ You can mix these together and see POO at work:
 A slot defined from the lexical scope:
 ```
 (let ((x 1) (y 2))
-  (defpoo point () () (x) (y))
+  (.def point (x) (y))
   (assert-equal! (map (cut .ref point <>) '(x y)) [1 2]))
 ```
 
 A slot defined by modifying the inherited value:
 ```
-(defpoo gerbil-config () ()
+(.def gerbil-config
   (modules => prepend '(gerbil gambit)))
 (def (prepend x y) (append y x))
-(defpoo base-config () ()
+(.def base-config
   (modules '(kernel stdlib init)))
 (assert-equal! (.get (.mix gerbil-config base-config) modules)
                '(gerbil gambit kernel stdlib init))
@@ -296,14 +321,14 @@ A slot defined by modifying the inherited value:
 
 A slot defined by conditionally using the inherited computation:
 ```
-(defpoo hello () (name)
+(.def (hello @ [] name)
   (language 'en)
   (greeting (format greeting-fmt name))
   (greeting-fmt "hello, ~a"))
-(defpoo localize-hello (hello) (language)
+(defpoo (localize-hello @ [hello] language)
   (name "poo")
-  (greeting-fmt (previous) (if (eq? language 'fr) "salut, ~a" (previous))))
-(defpoo french-hello (localize-hello) ()
+  (greeting-fmt (next) (if (eq? language 'fr) "salut, ~a" (next))))
+(defpoo (french-hello @ localize-hello)
   (language 'fr))
 (assert-equal! (.get localize-hello greeting) "hello, poo")
 (assert-equal! (.get french-hello greeting) "salut, poo")
@@ -317,8 +342,8 @@ There are more examples are in the file [`poo-test.ss`](tests/poo-test.ss).
 
 In the future, we may add the following features:
 
-  * Consider improving the definition syntax by using keywords, as in e.g.
-    `(poo self: self super: super inherit: [supers ...] bind: (x y z) bind-these: #t (slot forms) ...)`
+  * Maybe improve the object definition syntax using keywords, as in e.g.
+    `(.o self: self super: super inherit: [supers ...] bind: (x y z) bind-these: #t (slot forms) ...)`
 
   * Make it optional whether to include the currently-defined slots in the list of slots to be bound.
 
