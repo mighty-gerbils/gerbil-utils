@@ -5,7 +5,7 @@
 ;; TODO: see Future Features and the Internals TODO sections in document above.
 
 (export
-  .o .def poo? .mix .ref .instantiate .get .call .set! .def! .put! .has? .all-slots)
+  .o .def poo? .mix .ref .instantiate .get .call .def! .set! .put! .putslot! .has? .all-slots)
 
 (import
   :clan/utils/base :clan/utils/hash :std/lazy :std/misc/list :std/srfi/1 :std/sugar)
@@ -118,10 +118,14 @@
 (defrules .call ()
   ((_ poo slot args ...) ((.get poo slot) args ...)))
 
+(def (.putslot! poo slot definition)
+  (match poo
+    ((Poo [proto . protos] _) (hash-put! proto slot definition))
+    (else (error ".putdef!: bad poo" poo))))
+
 (defrules .def! () ;; TODO: check prototype mutability status first
   ((_ poo slot (slots ...) slotspec ...)
-   (hash-put! (first (Poo-prototypes poo)) 'slot
-              (poo/slot-init-form poo (slot slots ...) slot slotspec ...))))
+   (.putslot! poo 'slot (poo/slot-init-form poo (slot slots ...) slot slotspec ...))))
 
 (def (.put! poo slot value) ;; TODO: check instance mutability status first
   (.instantiate poo)

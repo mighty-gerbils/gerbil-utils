@@ -130,7 +130,9 @@ Beautiful incremental configuration.
 
 ### POO Definition Syntax
 
-You can define a *poo* with the special form `.o`, with the following template:
+You can define a *poo* with the special form `.o`
+(where the dot is a marker for special POO syntax, where the "o" stands for "object",
+and where the syntax is deliberately kept short), with the following template:
 
 ```
 (.o [([:: [self [super [extra-slots ...]]]])] slot-definitions ...)
