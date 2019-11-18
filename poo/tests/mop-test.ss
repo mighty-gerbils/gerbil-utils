@@ -2,7 +2,7 @@
   mop-test)
 
 (import
-  :clan/poo/poo :clan/poo/mop
+  :clan/poo/poo :clan/poo/mop :clan/poo/type
   :gerbil/gambit/ports
   :std/format :std/sort :std/srfi/13 :std/sugar :std/test
   :clan/utils/assert :clan/utils/base)
