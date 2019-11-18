@@ -240,7 +240,7 @@ if they haven't used the previous definition yet.
 
 The `.set!` form modifies the value of an object instance without changing the prototype.
 ```
-(.def bar () () (x 1))
+(.def bar (x 1))
 (assert-equal! (.get bar x) 1)
 (.set! bar x 18)
 (assert-equal! (.get bar x) 18)
@@ -248,10 +248,16 @@ The `.set!` form modifies the value of an object instance without changing the p
 
 For reflection on what slots an object does or doesn't define, two functions are available:
 ```
-(assert-equal! (.has? foo 'y) #t)
-(assert-equal! (.has? foo 'z) #f)
+(assert-equal! (.key? foo 'y) #t)
 (def (sort-symbols symbols) (sort symbols (λ (a b) (string< (symbol->string a) (symbol->string b)))))
 (assert-equal! (sort-symbols (.all-slots foo)) '(x y))
+```
+
+A short-hand for one or multiple nested checks of `.key?` with unquoted key is available:
+```
+(.def baz (a (.o (b (.o (c 1))))))
+(assert-equal! (.has? baz a b c) #t)
+(assert-equal! (.has? baz a d) #f)
 ```
 
 ## Examples

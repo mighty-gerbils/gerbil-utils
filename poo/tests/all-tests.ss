@@ -1,8 +1,8 @@
 (import
-  "poo-test")
+  "poo-test" "mop-test")
 
 (export
   unit-tests)
 
 (def unit-tests
-  [poo-test])
+  [poo-test mop-test])

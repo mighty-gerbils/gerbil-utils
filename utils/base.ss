@@ -3,7 +3,6 @@
 
 (export #t)
 
-
 ;;;; Basic syntax for control flow
 
 ;; One-character λ
@@ -12,6 +11,12 @@
 ;; Function that matches its argument against given clauses
 (defrules lambda-match () ((_ clauses ...) (match <> clauses ...)))
 (defalias λ-match lambda-match)
+
+;; Variant of match that errors out in case of no match.
+(defrules ematch ()
+  ((_ expr clauses ...) (match expr clauses ... (else (error "no matching clause")))))
+(defrules lambda-ematch () ((_ clauses ...) (ematch <> clauses ...)))
+(defalias λ-ematch lambda-ematch)
 
 ;; The anti-indentation macro: nest each form onto the end of the previous form.
 ;; This way, you can (nest (form1 ...) (form2 ...) ... (formN ...)) and
@@ -306,3 +311,6 @@
 ;; Integer <- Char Char
 (def (char-comparer x y)
   (if (char=? x y) 0 (if (char<? x y) -1 1)))
+
+(def (symbol<? x y)
+  (string<? (symbol->string x) (symbol->string y)))

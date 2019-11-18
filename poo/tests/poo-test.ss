@@ -9,10 +9,6 @@
   :std/format :std/sort :std/srfi/13 :std/test
   :clan/utils/assert :clan/utils/base)
 
-(defrules with-output-to-string ()
-  ((_ forms ...)
-   (call-with-output-string (λ (port) (with-output-to-port port (λ () forms ...))))))
-
 (def poo-test
   (test-suite "test suite for clan/poo/poo"
     (test-case "simple tests from poo.md"
@@ -25,8 +21,8 @@
       (assert-equal! (.get bar x) 1)
       (.set! bar x 18)
       (assert-equal! (.get bar x) 18)
-      (assert-equal! (.has? foo 'y) #t)
-      (assert-equal! (.has? foo 'z) #f)
+      (assert-equal! (.key? foo 'y) #t)
+      (assert-equal! (.has? foo z) #f)
       (def (sort-symbols symbols) (sort symbols (λ (a b) (string< (symbol->string a) (symbol->string b)))))
       (assert-equal! (sort-symbols (.all-slots foo)) '(x y))
       (assert-equal! (sort-symbols (.all-slots foo)) '(x y))
@@ -81,8 +77,8 @@
       (assert-equal! (.get alice name) "Alice")
       (assert-equal! (.get bob name) "Bob")
       (assert-equal! (.get alice greeting) "Hello, Alice.")
-      (assert-equal! (with-output-to-string (.call bob greet)) "Hello, Bob.\n")
-      (assert-equal! (with-output-to-string (.call (.mix french bob) greet)) "Salut, Bob.\n"))
+      (assert-equal! (with-output-to-string (λ () (.call bob greet))) "Hello, Bob.\n")
+      (assert-equal! (with-output-to-string (λ () (.call (.mix french bob) greet))) "Salut, Bob.\n"))
     (test-case "testing side-effects"
       (def foo (.o (x 6)))
       (.def! foo y (x) (* x 7))

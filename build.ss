@@ -12,4 +12,4 @@
         (and (equal? (path-extension filename) ".ss")
              (path-expand (path-strip-extension filename) dir)))
       (directory-files dir)))
-   ["utils" "net"]))
+   ["utils" "net" "poo"]))
