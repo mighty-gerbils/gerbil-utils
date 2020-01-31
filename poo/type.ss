@@ -19,7 +19,6 @@
              (for ((i (in-iota l)))
                (unless (element? (vector-ref types i) (vector-ref x i)) (return #f)))
              #t)))))
-
 (def (Tuple . types) ;; type of tuples, heterogeneous arrays of given length and type
   (def types (list->vector (map (cut validate Type <>) types)))
   (.o (:: @ Tuple.) (types)))
@@ -33,7 +32,6 @@
      ((vector _ #f) (λ (x) (and (exact-integer? x) (<= minimum x))))
      ((vector #f _) (λ (x) (and (exact-integer? x) (<= x maximum))))
      ((vector _ _) (λ (x) (and (exact-integer? x) (<= minimum x maximum)))))))
-
 (def (IntegerRange min: (minimum #f) max: (maximum #f))
   (assert! (or (not minimum) (exact-integer? minimum)))
   (assert! (or (not maximum) (exact-integer? maximum)))
@@ -42,7 +40,6 @@
 (.def (List. @ Type. type)
   (name (symbolify `(List ,(.@ type name))))
   (element? (λ (x) (and (list? x) (every (cut element? type <>) x)))))
-
 (def (List type)
   (typecheck Type type)
   (.o (:: @ List.) (type)))
@@ -50,11 +47,11 @@
 (.def (Or. @ Type. types)
   (name (symbolify `(Or ,@(map (cut .@ <> name) types))))
   (element? (λ (x) (any (cut element? <> x) types))))
+(def (Or . types) (.o (:: @ Or.) (types)))
 
 (.def (Exactly. @ Type. value)
   (name (symbolify `(Exactly ,(repr value))))
   (element? (λ (x) (equal? x value))))
-
 (def (Exactly value) (.o (:: @ Exactly.) (value)))
 
 (def Null (Exactly '()))

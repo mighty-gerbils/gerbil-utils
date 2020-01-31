@@ -63,7 +63,7 @@
 (defrules .has? ()
   ((_ x) #t)
   ((_ x slot) (.key? x 'slot))
-  ((_ x slot1 slot2 slot3 ...) (and (.has? x slot1) (.has*? x slot2 slot3 ...))))
+  ((_ x slot1 slot2 slot3 ...) (and (.has? x slot1) (.has? x slot2 slot3 ...))))
 
 (def .all-slots
   (nest
