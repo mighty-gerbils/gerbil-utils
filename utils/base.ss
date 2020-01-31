@@ -4,18 +4,20 @@
 (export #t)
 
 ;;;; Basic syntax for control flow
+(defrules defrule ()
+  ((_ (name args ...) body ...)
+   (defrules name () ((_ args ...) body ...))))
 
 ;; One-character λ
 (defalias λ lambda)
 
 ;; Function that matches its argument against given clauses
-(defrules lambda-match () ((_ clauses ...) (match <> clauses ...)))
+(defrule (lambda-match clauses ...) (match <> clauses ...))
 (defalias λ-match lambda-match)
 
 ;; Variant of match that errors out in case of no match.
-(defrules ematch ()
-  ((_ expr clauses ...) (match expr clauses ... (else (error "no matching clause")))))
-(defrules lambda-ematch () ((_ clauses ...) (ematch <> clauses ...)))
+(defrule (ematch expr clauses ...) (match expr clauses ... (else (error "no matching clause"))))
+(defrule (lambda-ematch clauses ...) (ematch <> clauses ...))
 (defalias λ-ematch lambda-ematch)
 
 ;; The anti-indentation macro: nest each form onto the end of the previous form.
@@ -42,8 +44,7 @@
             #'inner
             #'(outer ...))))) ; NB: On Racket, #'(outer ...) must be wrapped in a syntax->list
 
-(defrules when-match ()
-  ((_ expr pattern body ...) (match expr (pattern body ...) (else (void)))))
+(defrule (when-match expr pattern body ...) (match expr (pattern body ...) (else (void))))
 
 ;; From CL's ALEXANDRIA library
 (defrules if-let ()
@@ -56,8 +57,7 @@
   ((_ (id expr) then else)
    (let ((id expr)) (if id then else))))
 
-(defrules when-let ()
-  ((_ bindings body ...) (if-let bindings (begin body ...) (void))))
+(defrule (when-let bindings body ...) (if-let bindings (begin body ...) (void)))
 
 ;; Force left-to-right evaluation of the arguments of a function call
 ;; NB: the function itself might be evaluated after.
@@ -162,22 +162,17 @@
 
 
 ;;;; Multiple values
-(defrules first-value ()
-  ((_ form) (with ((values x . _) form) x)))
+(defrule (first-value form) (with ((values x . _) form) x))
 
-(defrules nth-value ()
-  ((_ n form) (with ((values . x) form) (list-ref x n))))
+(defrule (nth-value n form) (with ((values . x) form) (list-ref x n)))
 
-(defrules values->vector ()
-  ((_ form) (list->vector (values->list form))))
+(defrule (values->vector form) (list->vector (values->list form)))
 
-(defrules values->cons ()
-  ((_ form) (let-values (((a b) form)) (cons a b))))
+(defrule (values->cons form) (let-values (((a b) form)) (cons a b)))
 
 
 ;;;; Stupid error non-handling
-(defrules ignore-errors ()
-  ((_ form ...) (with-catch (λ (_) #f) (λ () form ...))))
+(defrule (ignore-errors form ...) (with-catch (λ (_) #f) (λ () form ...)))
 
 ;;;; Basic error cases
 
@@ -239,8 +234,7 @@
 ;;;; Basic defining forms
 
 ;; Define a nullary function that caches its resulting value
-(defrules defonce ()
-  ((_ (id) body) (def id (let ((id (delay body))) (λ () (force id))))))
+(defrule (defonce (id) body) (def id (let ((id (delay body))) (λ () (force id)))))
 
 
 ;;; Generic (read-only) accessor for builtin data structures...
