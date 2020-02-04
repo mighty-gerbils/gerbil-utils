@@ -38,6 +38,8 @@
 
 ;; symdict-has-key? : [Symdictof V] Symbol -> Bool
 (def (symdict-has-key? d k)
+  (unless (rbtree? d) (error 'symdict-has-key? "expected a symdict as 1st argument"))
+  (unless (symbol? k) (error 'symdict-has-key? "expected a symbol as 2nd argument"))
   (def notfound (gensym 'notfound))
   (not (eq? notfound (rbtree-ref d k notfound))))
 
