@@ -44,7 +44,9 @@
   (not (eq? notfound (rbtree-ref d k notfound))))
 
 ;; symdict-keys : [Symdictof V] -> [Listof Symbol]
-(def (symdict-keys d) (for/collect (k (in-rbtree-keys d)) k))
+(def (symdict-keys d)
+  (unless (rbtree? d) (error 'symdict-keys "expected a symdict"))
+  (for/collect (k (in-rbtree-keys d)) k))
 
 ;; symdict-put/list : [Symdictof V] [Listof [Cons Symbol V]] -> [Symdictof V]
 (def (symdict-put/list d l)
