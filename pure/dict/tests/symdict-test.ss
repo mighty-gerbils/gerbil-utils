@@ -6,7 +6,7 @@
 
 (def symdict-test
   (test-suite "test suite for clan/pure/dict/symdict"
-    (check-equal? (list->symdict []) empty-symdict)
+    (check symdict=? (list->symdict []) empty-symdict)
     (check-equal? (symdict->list empty-symdict) [])
     (check-equal? (symdict-empty? empty-symdict) #t)
     (check-equal? (symdict-empty? (list->symdict '((red . 5)))) #f)
