@@ -6,7 +6,7 @@
 
 (def dicteq-test
   (test-suite "test suite for clan/pure/dict/dicteq"
-    (check-equal? (list->dicteq []) empty-dicteq)
+    (check dicteq=? (list->dicteq []) empty-dicteq)
     (check-equal? (dicteq->list empty-dicteq) [])
     (check-equal? (dicteq-empty? empty-dicteq) #t)
     (check-equal? (dicteq-empty? (list->dicteq '((red . 5)))) #f)
