@@ -7,4 +7,10 @@
   (prefix-in (only-in <MOP> @method) @)
   :clan/utils/base :clan/poo/poo)
 
-(defrule {args ...} (.o args ...))
+;; {args ...} -> (@method args ...) -> (.o args ...)
+;; except that for macro-scope it's -> (.o/derived #,stx args ...)
+(defsyntax @method
+  (lambda (stx)
+    (syntax-case stx ()
+      ((_ args ...)
+       (with-syntax ((ctx stx)) #'(.o/derived ctx args ...))))))

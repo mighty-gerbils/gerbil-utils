@@ -6,7 +6,8 @@
 
 (export #t);; XXX for debugging macros as used in other modules; remove afterwards
 (export
-  .o .def poo? .mix .ref .instantiate .get .call .def! .set! .put! .putslot! .key? .has? .all-slots
+  .o .o/derived .def .def/derived
+  poo? .mix .ref .instantiate .get .call .def! .set! .put! .putslot! .key? .has? .all-slots
   .all-slots-sorted .alist .sorted-alist
   .@ .+
   poo poo-prototypes poo-instance ;; shouldn't these remain internals?
@@ -88,24 +89,32 @@
 (def (.sorted-alist poo)
   (map (λ (slot) (cons slot (.ref poo slot))) (.all-slots-sorted poo)))
 
-(defrules .o ()
-  ((_ (:: self) slot-spec ...)
-   (poo/slots self [] () slot-spec ...))
-  ((_ (:: self super slots ...) slot-spec ...)
-   (poo/slots self super (slots ...) slot-spec ...))
-  ((_ () slot-spec ...)
-   (poo/slots self [] () slot-spec ...))
-  ((_ slot-spec ...)
-   (poo/slots self [] () slot-spec ...)))
+(defsyntax .o
+  (lambda (stx)
+    (syntax-case stx ()
+      ((_ args ...)
+       (with-syntax ((ctx stx)) #'(.o/derived ctx args ...))))))
+
+;; the ctx argument exists for macro-scope purposes
+(defrules .o/derived ()
+  ((_ ctx (:: self) slot-spec ...)
+   (poo/slots ctx self [] () slot-spec ...))
+  ((_ ctx (:: self super slots ...) slot-spec ...)
+   (poo/slots ctx self super (slots ...) slot-spec ...))
+  ((_ ctx () slot-spec ...)
+   (poo/slots ctx self [] () slot-spec ...))
+  ((_ ctx slot-spec ...)
+   (poo/slots ctx self [] () slot-spec ...)))
 
 (begin-syntax
-  ;; TODO: figure why unkeywordify fails to translate into the correct identifier
+  ;; TODO: is there a better option than (stx-car stx) to introduce correct identifier scope?
+  ;; the stx argument is the original syntax #'(.o args ...) or #'(@method args ...)
   (def (unkeywordify-syntax stx k)
     (!> k
         syntax->datum
         keyword->string
         string->symbol
-        (cut datum->syntax stx <>)))
+        (cut datum->syntax (stx-car stx) <>)))
 
   (def (normalize-named-slot-specs stx name specs)
     (syntax-case specs (=> =>.+)
@@ -135,10 +144,11 @@
           (else
            (error "bad slot spec" #'arg))))))))
 
+;; the ctx argument exists for macro-scope purposes
 (defsyntax (poo/slots stx)
   (syntax-case stx ()
-    ((_ self super (slots ...) . slot-specs)
-     (with-syntax ((((slot spec ...) ...) (normalize-slot-specs #'stx #'slot-specs)))
+    ((_ ctx self super (slots ...) . slot-specs)
+     (with-syntax ((((slot spec ...) ...) (normalize-slot-specs #'ctx #'slot-specs)))
        #'(poo/init self super (slots ... slot ...) (slot spec ...) ...)))))
 
 (defrules poo/init ()
@@ -170,11 +180,18 @@
    (let-syntax ((slot (syntax-rules () (_ (.@ self slot)))))
      (with-slots (self slots ...) body ...))))
 
-(defrules .def ()
-  ((_ (name options ...) slot-defs ...)
-   (def name (.o (:: options ...) slot-defs ...)))
-  ((_ name slot-defs ...)
-   (def name (.o () slot-defs ...))))
+(defsyntax .def
+  (lambda (stx)
+    (syntax-case stx ()
+      ((_ args ...)
+       (with-syntax ((ctx stx)) #'(.def/derived ctx args ...))))))
+
+;; the ctx argument exists for macro-scope purposes
+(defrules .def/derived ()
+  ((_ ctx (name options ...) slot-defs ...)
+   (def name (.o/derived ctx (:: options ...) slot-defs ...)))
+  ((_ ctx name slot-defs ...)
+   (def name (.o/derived ctx () slot-defs ...))))
 
 (defrules .get ()
   ((_ poo) poo)
