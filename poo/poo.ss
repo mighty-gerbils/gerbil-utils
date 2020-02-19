@@ -89,56 +89,54 @@
   (map (λ (slot) (cons slot (.ref poo slot))) (.all-slots-sorted poo)))
 
 (defrules .o ()
-  ((_ (:: self) slot-spec ...)
-   (poo/slots self [] () slot-spec ...))
-  ((_ (:: self super slots ...) slot-spec ...)
-   (poo/slots self super (slots ...) slot-spec ...))
-  ((_ () slot-spec ...)
-   (poo/slots self [] () slot-spec ...))
-  ((_ slot-spec ...)
-   (poo/slots self [] () slot-spec ...)))
+  ((macro (:: self) slot-spec ...)
+   (poo/slots macro self [] () slot-spec ...))
+  ((macro (:: self super slots ...) slot-spec ...)
+   (poo/slots macro self super (slots ...) slot-spec ...))
+  ((macro () slot-spec ...)
+   (poo/slots macro self [] () slot-spec ...))
+  ((macro slot-spec ...)
+   (poo/slots macro self [] () slot-spec ...)))
 
 (begin-syntax
-  ;; TODO: figure why unkeywordify fails to translate into the correct identifier
-  (def (unkeywordify-syntax stx k)
-    (!> k
-        syntax->datum
-        keyword->string
-        string->symbol
-        (cut datum->syntax stx <>)))
+  (def (stx-keyword->symbol stx)
+    (keyword->symbol (stx-e stx)))
 
-  (def (normalize-named-slot-specs stx name specs)
+  (def (unkeywordify-syntax ctx k)
+    (datum->syntax ctx (stx-keyword->symbol k)))
+
+  (def (normalize-named-slot-specs ctx name specs)
     (syntax-case specs (=> =>.+)
       ((=> value-spec . more)
        (with-syntax ((name name))
-         (cons #'(name => value-spec) (normalize-slot-specs stx #'more))))
+         (cons #'(name => value-spec) (normalize-slot-specs ctx #'more))))
       ((=>.+ value-spec . more)
        (with-syntax ((name name))
-         (cons #'(name =>.+ value-spec) (normalize-slot-specs stx #'more))))
+         (cons #'(name =>.+ value-spec) (normalize-slot-specs ctx #'more))))
       ((value-spec . more)
        (with-syntax ((name name))
-         (cons #'(name value-spec) (normalize-slot-specs stx #'more))))
-      (() (error "missing value after slot name" name (syntax->datum name) stx (syntax->datum stx)))))
+         (cons #'(name value-spec) (normalize-slot-specs ctx #'more))))
+      (() (error "missing value after slot name" name (syntax->datum name) ctx (syntax->datum ctx)))))
 
-  (def (normalize-slot-specs stx specs)
+  (def (normalize-slot-specs ctx specs)
     (syntax-case specs ()
       (() '())
       ((arg . more)
        (let ((e (syntax-e #'arg)))
          (cond
           ((pair? e)
-           (cons #'arg (normalize-slot-specs stx #'more)))
+           (cons #'arg (normalize-slot-specs ctx #'more)))
           ((symbol? e)
-           (normalize-named-slot-specs stx #'arg #'more))
+           (normalize-named-slot-specs ctx #'arg #'more))
           ((keyword? e)
-           (normalize-named-slot-specs stx (unkeywordify-syntax stx #'arg) #'more))
+           (normalize-named-slot-specs ctx (unkeywordify-syntax ctx #'arg) #'more))
           (else
            (error "bad slot spec" #'arg))))))))
 
 (defsyntax (poo/slots stx)
   (syntax-case stx ()
-    ((_ self super (slots ...) . slot-specs)
-     (with-syntax ((((slot spec ...) ...) (normalize-slot-specs #'stx #'slot-specs)))
+    ((_ ctx self super (slots ...) . slot-specs)
+     (with-syntax ((((slot spec ...) ...) (normalize-slot-specs #'ctx #'slot-specs)))
        #'(poo/init self super (slots ... slot ...) (slot spec ...) ...)))))
 
 (defrules poo/init ()
