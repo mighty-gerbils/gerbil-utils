@@ -1,9 +1,10 @@
 ;;-*- Gerbil -*-
 ;; Trivial implementation of Prototype Object Orientation in Gerbil Scheme.
 ;;
-;; See poo.md for documentation
+;; See ../doc/poo.md for documentation
 ;; TODO: see Future Features and the Internals TODO sections in document above.
 
+(export #t);; XXX for debugging macros as used in other modules; remove afterwards
 (export
   .o .def poo? .mix .ref .instantiate .get .call .def! .set! .put! .putslot! .key? .has? .all-slots
   .all-slots-sorted .alist .sorted-alist
@@ -12,6 +13,7 @@
   with-slots)
 
 (import
+  (for-syntax :clan/utils/base)
   :clan/utils/base :clan/utils/hash
   :std/lazy :std/misc/list :std/sort :std/srfi/1 :std/srfi/13 :std/sugar)
 
@@ -87,18 +89,57 @@
   (map (λ (slot) (cons slot (.ref poo slot))) (.all-slots-sorted poo)))
 
 (defrules .o ()
-  ((_ (:: self) slot-defs ...)
-   (poo/slots self [] () slot-defs ...))
-  ((_ (:: self super slots ...) slot-defs ...)
-   (poo/slots self super (slots ...) slot-defs ...))
-  ((_ () slot-defs ...)
-   (poo/slots self [] () slot-defs ...))
-  ((_ slot-defs ...)
-   (poo/slots self [] () slot-defs ...)))
+  ((_ (:: self) slot-spec ...)
+   (poo/slots self [] () slot-spec ...))
+  ((_ (:: self super slots ...) slot-spec ...)
+   (poo/slots self super (slots ...) slot-spec ...))
+  ((_ () slot-spec ...)
+   (poo/slots self [] () slot-spec ...))
+  ((_ slot-spec ...)
+   (poo/slots self [] () slot-spec ...)))
 
-(defrules poo/slots ()
-  ((_ self super (slots ...) (slot slotspec ...) ...)
-   (poo/init self super (slots ... slot ...) (slot slotspec ...) ...)))
+(begin-syntax
+  ;; TODO: figure why unkeywordify fails to translate into the correct identifier
+  (def (unkeywordify-syntax stx k)
+    (!> k
+        syntax->datum
+        keyword->string
+        string->symbol
+        (cut datum->syntax stx <>)))
+
+  (def (normalize-named-slot-specs stx name specs)
+    (syntax-case specs (=> =>.+)
+      ((=> value-spec . more)
+       (with-syntax ((name name))
+         (cons #'(name => value-spec) (normalize-slot-specs stx #'more))))
+      ((=>.+ value-spec . more)
+       (with-syntax ((name name))
+         (cons #'(name =>.+ value-spec) (normalize-slot-specs stx #'more))))
+      ((value-spec . more)
+       (with-syntax ((name name))
+         (cons #'(name value-spec) (normalize-slot-specs stx #'more))))
+      (() (error "missing value after slot name" name (syntax->datum name) stx (syntax->datum stx)))))
+
+  (def (normalize-slot-specs stx specs)
+    (syntax-case specs ()
+      (() '())
+      ((arg . more)
+       (let ((e (syntax-e #'arg)))
+         (cond
+          ((pair? e)
+           (cons #'arg (normalize-slot-specs stx #'more)))
+          ((symbol? e)
+           (normalize-named-slot-specs stx #'arg #'more))
+          ((keyword? e)
+           (normalize-named-slot-specs stx (unkeywordify-syntax stx #'arg) #'more))
+          (else
+           (error "bad slot spec" #'arg))))))))
+
+(defsyntax (poo/slots stx)
+  (syntax-case stx ()
+    ((_ self super (slots ...) . slot-specs)
+     (with-syntax ((((slot spec ...) ...) (normalize-slot-specs #'stx #'slot-specs)))
+       #'(poo/init self super (slots ... slot ...) (slot spec ...) ...)))))
 
 (defrules poo/init ()
   ((_ self super slots (slot slotspec ...) ...)

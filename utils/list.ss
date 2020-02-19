@@ -19,6 +19,10 @@
    ((length<=n? list n) [list])
    (else (let-values (((head tail) (split-at list n))) (cons head (group-by n tail))))))
 
+(def (alist<-plist list) (group-by 2 list))
+
+(def (plist<-alist list) (append-map identity list))
+
 
 ;; Given a predicate, a list and a value to return in the special case that the list is empty,
 ;; return the special case if the list is empty, otherwise, the smallest element in the list,

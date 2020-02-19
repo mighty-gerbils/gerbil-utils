@@ -4,7 +4,8 @@
 (export #t)
 
 (import
-  :gerbil/gambit/bits :gerbil/gambit/exact
+  :gerbil/gambit/bits :gerbil/gambit/bytes :gerbil/gambit/exact
+  :scheme/base
   :std/sugar
   :clan/utils/base)
 
@@ -27,6 +28,43 @@
 (def (ceiling-align n alignment)
   (let ((mod (modulo n alignment)))
     (if (zero? mod) n (- (+ n alignment) mod))))
+
+(def (nat? n)
+  (and (exact-integer? n) (not (negative? n))))
+
+(def (fxnat? n)
+  (and (fixnum? n) (not (negative? n))))
+
+(def (nat-under? n) (λ (x) (and (nat? x) (< x n))))
+
+(def (integer-length-in-bytes n) (floor-quotient (+ (integer-length n) 7) 8))
+
+;; Convert bytes into a natural integer, bigendian style
+;; Nat <- Bytes ?offset: Nat ?length: Nat
+(def (nat<-bytes bs offset: (offset 0) length: (length (- (bytes-length bs) offset)))
+  (assert! (fxnat? offset))
+  (assert! (fxnat? length))
+  (assert! (<= (+ offset length) (bytes-length bs)))
+  (let loop ((i 0) (r 0))
+    (if (fx< i length)
+      (let (b (bytes-ref bs (fx+ i offset)))
+        (loop (fx1+ i) (bitwise-ior (arithmetic-shift r 8) b)))
+      r)))
+
+;; Fill some bytes with a bigendian integer. Beware: no bounds check.
+;; Nat <- Bytes Integer ?offset: Nat ?length: Nat
+(def (bytes-fill-bigendian-integer! bs n offset: (offset 0) length: (length (integer-length-in-bytes n)))
+  (let loop ((i (- length 1)) (n n))
+    (when (fx<= 0 i)
+      (begin
+        (bytes-set! bs (fx+ i offset) (bitwise-and n 255))
+        (loop (fx1- i) (arithmetic-shift n -8))))))
+
+;; Nat <- Bytes
+(def (bytes<-nat n (l (integer-length-in-bytes n)))
+  (def bs (make-bytes l))
+  (bytes-fill-bigendian-integer! bs n length: l)
+  bs)
 
 ;; Iterate a function with an integer argument ranging from one value
 ;; increasing by one until it reaches another value (excluded)
@@ -104,7 +142,7 @@
     (display digits out)))
 
 ;; Convert one digit to a roman numeral, given strings for one unit, five units and ten units.
-(def (roman-numeral<-digit digit i v x)
+(def (roman-numeral<-digit digit (i "I") (v "V") (x "X"))
   (case digit
     ((0) "")
     ((1) i)

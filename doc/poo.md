@@ -138,7 +138,8 @@ Beautiful incremental configuration.
 
 You can define a *poo* with the special form `.o`
 (where the dot is a marker for special POO syntax, where the "o" stands for "object",
-and where the syntax is deliberately kept short), with the following template:
+and where the syntax is deliberately kept short),
+or the special brace syntax (see below), with the following template:
 
 ```
 (.o [([:: [self [super [extra-slots ...]]]])] slot-definitions ...)
@@ -196,6 +197,19 @@ Each entry in `slot-definitions` specifies how to compute a given named slot:
      ```
      (slot-name)
      ```
+     or even just
+     ```
+     slot-name
+     ```
+
+  5. As an alternative to a simple `(slot-name spec)`, `(slot-name => spec)` or `(slot-name =>.+ spec)`,
+     you can write as a keyword `slot-name:` followed by the `spec`
+     with the optional `=>` or `=>.+` before it.
+     ```
+     slot-name: spec
+     slot-name: => spec
+     slot-name: =>.+ spec
+     ```
 
 As a short-hand, a new variable may be defined and bound to a prototype object with the form:
 ```
@@ -203,6 +217,13 @@ As a short-hand, a new variable may be defined and bound to a prototype object w
 ```
 That form is equivalent to `(def name (.o (:: name super slots ...) slot-definitions ...))`.
 The `name` can be a simple symbol in which case the options are omitted.
+
+The special brace syntax is available if you `(import :clan/poo/brace)`
+and overrides the `{}` syntax of Gerbil so that `{spec ...}` is the same as `(.o spec ...)`.
+Note that this works by overriding the binding of the special symbol `@method`,
+and that to define or use Gerbil methods, you will have to use `(@@method x ...)`
+where you previously would have used `{x ...}` or `(@method x ...)`.
+
 
 ### POO Usage Syntax
 
