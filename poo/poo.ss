@@ -6,7 +6,7 @@
 
 (export #t);; XXX for debugging macros as used in other modules; remove afterwards
 (export
-  .o .o/derived .def .def/derived
+  .o .o/ctx .def .def/ctx
   poo? .mix .ref .instantiate .get .call .def! .set! .put! .putslot! .key? .has? .all-slots
   .all-slots-sorted .alist .sorted-alist
   .@ .+
@@ -14,6 +14,7 @@
   with-slots)
 
 (import
+  ;;(for-syntax :std/misc/repr) :std/misc/repr ;; XXX debug
   (for-syntax :clan/utils/base)
   :clan/utils/base :clan/utils/hash
   :std/lazy :std/misc/list :std/sort :std/srfi/1 :std/srfi/13 :std/sugar)
@@ -29,19 +30,22 @@
     ((poo _ _) (void)) ;; already instantiated
     (else (error "No poo" poo.))))
 
-(def (.ref poo. slot)
+(def (no-such-slot poo. slot)
+  (λ () (error "No such slot" poo. slot)))
+
+(def (.ref poo. slot (base (no-such-slot poo. slot)))
   (.instantiate poo.)
   (match poo.
     ((poo prototypes instance)
-     (hash-ensure-ref instance slot (cut compute-slot poo. prototypes slot)))))
+     (hash-ensure-ref instance slot (cut compute-slot poo. prototypes slot base)))))
 
-(def (compute-slot poo. prototypes slot)
+(def (compute-slot poo. prototypes slot base)
   (match prototypes
-    ([] (error "No such slot" poo. slot))
+    ([] (base))
     ([prototype . super-prototypes]
      (if-let (fun (hash-get prototype slot))
-        (fun poo. super-prototypes)
-        (compute-slot poo. super-prototypes slot)))))
+        (fun poo. super-prototypes base)
+        (compute-slot poo. super-prototypes slot base)))))
 
 (def (append-prototypes x (prototypes []))
   (match x ;; TODO: use lazy merging of patricia trees to maximize the sharing of structure? hash-consing?
@@ -93,10 +97,10 @@
   (lambda (stx)
     (syntax-case stx ()
       ((_ args ...)
-       (with-syntax ((ctx stx)) #'(.o/derived ctx args ...))))))
+       (with-syntax ((ctx stx)) #'(.o/ctx ctx args ...))))))
 
 ;; the ctx argument exists for macro-scope purposes
-(defrules .o/derived ()
+(defrules .o/ctx ()
   ((_ ctx (:: self) slot-spec ...)
    (poo/slots ctx self [] () slot-spec ...))
   ((_ ctx (:: self super slots ...) slot-spec ...)
@@ -109,38 +113,38 @@
 (begin-syntax
   ;; TODO: is there a better option than (stx-car stx) to introduce correct identifier scope?
   ;; the stx argument is the original syntax #'(.o args ...) or #'(@method args ...)
-  (def (unkeywordify-syntax stx k)
+  (def (unkeywordify-syntax ctx k)
     (!> k
         syntax->datum
         keyword->string
         string->symbol
-        (cut datum->syntax (stx-car stx) <>)))
+        (cut datum->syntax (stx-car ctx) <>)))
 
-  (def (normalize-named-slot-specs stx name specs)
+  (def (normalize-named-slot-specs ctx name specs)
     (syntax-case specs (=> =>.+)
       ((=> value-spec . more)
        (with-syntax ((name name))
-         (cons #'(name => value-spec) (normalize-slot-specs stx #'more))))
+         (cons #'(name => value-spec) (normalize-slot-specs ctx #'more))))
       ((=>.+ value-spec . more)
        (with-syntax ((name name))
-         (cons #'(name =>.+ value-spec) (normalize-slot-specs stx #'more))))
+         (cons #'(name =>.+ value-spec) (normalize-slot-specs ctx #'more))))
       ((value-spec . more)
        (with-syntax ((name name))
-         (cons #'(name value-spec) (normalize-slot-specs stx #'more))))
-      (() (error "missing value after slot name" name (syntax->datum name) stx (syntax->datum stx)))))
+         (cons #'(name value-spec) (normalize-slot-specs ctx #'more))))
+      (() (error "missing value after slot name" name (syntax->datum name) ctx (syntax->datum ctx)))))
 
-  (def (normalize-slot-specs stx specs)
+  (def (normalize-slot-specs ctx specs)
     (syntax-case specs ()
       (() '())
       ((arg . more)
        (let ((e (syntax-e #'arg)))
          (cond
           ((pair? e)
-           (cons #'arg (normalize-slot-specs stx #'more)))
+           (cons #'arg (normalize-slot-specs ctx #'more)))
           ((symbol? e)
-           (normalize-named-slot-specs stx #'arg #'more))
+           (normalize-named-slot-specs ctx #'arg #'more))
           ((keyword? e)
-           (normalize-named-slot-specs stx (unkeywordify-syntax stx #'arg) #'more))
+           (normalize-named-slot-specs ctx (unkeywordify-syntax ctx #'arg) #'more))
           (else
            (error "bad slot spec" #'arg))))))))
 
@@ -158,21 +162,21 @@
 
 (defrules poo/slot-init-form (=> =>.+)
   ((_ self slots slot form)
-   (λ (self super-prototypes)
+   (λ (self super-prototypes base)
      (with-slots (self . slots) form)))
   ((_ self slots slot => form args ...)
-   (λ (self super-prototypes)
-     (let ((inherited-value (compute-slot self super-prototypes 'slot)))
+   (λ (self super-prototypes base)
+     (let ((inherited-value (compute-slot self super-prototypes 'slot base)))
        (with-slots (self . slots) (form inherited-value args ...)))))
   ((_ self slots slot =>.+ args ...)
    (poo/slot-init-form self slots slot => .+ args ...))
   ((_ self slots slot (next-method) form)
-   (λ (self super-prototypes)
-     (let ((inherited-value (lazy (compute-slot self super-prototypes 'slot))))
+   (λ (self super-prototypes base)
+     (let ((inherited-value (lazy (compute-slot self super-prototypes 'slot base))))
        (let-syntax ((next-method (syntax-rules () ((_) (force inherited-value)))))
          (with-slots (self . slots) form)))))
   ((_ self slots slot)
-   (λ (self super-prototypes) slot)))
+   (λ (self super-prototypes base) slot)))
 
 (defrules with-slots ()
   ((_ (self) body ...) (begin body ...))
@@ -180,18 +184,17 @@
    (let-syntax ((slot (syntax-rules () (_ (.@ self slot)))))
      (with-slots (self slots ...) body ...))))
 
-(defsyntax .def
-  (lambda (stx)
-    (syntax-case stx ()
-      ((_ args ...)
-       (with-syntax ((ctx stx)) #'(.def/derived ctx args ...))))))
+(defsyntax (.def stx)
+  (syntax-case stx ()
+    ((_ args ...)
+     (with-syntax ((ctx stx)) #'(.def/ctx ctx args ...)))))
 
 ;; the ctx argument exists for macro-scope purposes
-(defrules .def/derived ()
+(defrules .def/ctx ()
   ((_ ctx (name options ...) slot-defs ...)
-   (def name (.o/derived ctx (:: options ...) slot-defs ...)))
+   (def name (.o/ctx ctx (:: options ...) slot-defs ...)))
   ((_ ctx name slot-defs ...)
-   (def name (.o/derived ctx () slot-defs ...))))
+   (def name (.o/ctx ctx () slot-defs ...))))
 
 (defrules .get ()
   ((_ poo) poo)

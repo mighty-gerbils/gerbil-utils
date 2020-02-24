@@ -4,7 +4,7 @@
 ;; NB: For debugging, use (import :std/interactive)
 
 (import
-  :clan/poo/poo
+  :clan/poo/poo :clan/poo/brace
   :gerbil/gambit/ports
   :std/format :std/sort :std/srfi/13 :std/test
   :clan/utils/assert :clan/utils/base)
@@ -92,5 +92,10 @@
       (assert-equal! (.get foo y) 42)
       (assert-equal! (.get foo x) 6)
       (assert-equal! (.get foo y) 42)
-      (assert-equal! (.get bar x) 1)
+      (assert-equal! (.get bar x) 1))
+    (test-case "keyword and brace syntax"
+      (assert-equal! 2 (.get (.o a: 1 b: (+ a 1)) b))
+      (assert-equal! 2 (.get {a: 1 b: (+ a 1)} b))
+      (assert-equal! 2 (let ((a 0)) (.get (.o a: 1 b: (+ a 1)) b))) ;; proper shadowing
+      (assert-equal! 2 (let ((a 0)) (.@ {a: 1 b: (+ a 1)} b))) ;; proper shadowing
     )))

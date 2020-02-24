@@ -9,6 +9,7 @@
 
 ;; Byte <- In
 (.defgeneric (read-byte in)
+  default:
   (λ (in)
     (if (input-port? in) (port-read-byte in)
         (error "Trying to read-byte from unsupported object" in))))
@@ -18,6 +19,7 @@
 
 ;; Unit <- In Bytes ?offset: Nat ?length: Nat
 (.defgeneric (read-bytes-into in bs offset: (offset 0) length: (length (- (bytes-length bs) offset)))
+   default:
    (λ (in l)
     (for (i (in-range length))
       (let ((b (read-byte in))) ;; TODO: handle EOF, return number of bytes read???
@@ -25,6 +27,7 @@
 
 ;; Bytes <- In Nat
 (.defgeneric (read-bytes in length)
+  default:
   (λ (in length)
     (def bs (make-bytes length))
     (if (input-port? in)
@@ -34,6 +37,7 @@
 
 ;; Unit <- Out Bytes ?offset: Nat ?length: Nat
 (.defgeneric (write-bytes out bs offset: (offset 0) length: (length (- (bytes-length bs) offset)))
+   default:
    (λ (out bs offset: (offset 0) length: (length (- (bytes-length bs) offset)))
      (for (i (in-range length))
        (write-byte out (bytes-ref bs (+ i offset))))))

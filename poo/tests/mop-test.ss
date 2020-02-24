@@ -1,11 +1,11 @@
-(export
-  mop-test)
+(export mop-test)
 
 (import
+  :std/misc/repr
   :clan/poo/poo :clan/poo/mop :clan/poo/type
   :gerbil/gambit/ports
   :std/format :std/sort :std/srfi/13 :std/sugar :std/test
-  :clan/utils/assert :clan/utils/base)
+  :clan/utils/assert :clan/utils/base :clan/poo/brace)
 
 (def mop-test
   (test-suite "test suite for clan/poo/mop"
@@ -19,23 +19,20 @@
             [Integer 3.14159]]))
     (test-case "class tests"
       (.def (Amount @ Class.)
-        (name 'Amount)
-        (slots =>.+
-         (.o
-          (quantity (.o (type Number)))
-          (unit (.o (type Symbol))))))
+        repr: 'Amount
+        slots: =>.+
+        {quantity: {type: Number}
+         unit: {type: Symbol}})
       (.def (LocatedAmount @ Amount)
-        (name 'LocatedAmount)
-        (slots =>.+
-         (.o
-          (location (.o (type Symbol)))
-          (unit =>.+ (.o (default 'BTC)))))
-        (sealed #t))
+        repr: 'LocatedAmount
+        slots: =>.+
+        {location: {type: Symbol}
+         unit =>.+ {default: 'BTC}}
+        sealed: #t)
       (def stolen (new LocatedAmount (location 'MtGox) (quantity 744408)))
       (assert-equal! (.get stolen location) 'MtGox)
       (assert-equal! (.get stolen quantity) 744408)
       (assert-equal! (.get stolen unit) 'BTC)
-
       (map (λ-match ([type element] (typecheck type element)))
            [[Poo stolen]
             [Amount stolen]

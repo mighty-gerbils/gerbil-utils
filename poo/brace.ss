@@ -8,9 +8,8 @@
   :clan/utils/base :clan/poo/poo)
 
 ;; {args ...} -> (@method args ...) -> (.o args ...)
-;; except that for macro-scope it's -> (.o/derived #,stx args ...)
-(defsyntax @method
-  (lambda (stx)
-    (syntax-case stx ()
-      ((_ args ...)
-       (with-syntax ((ctx stx)) #'(.o/derived ctx args ...))))))
+;; except that for macro-scope it's -> (.o/ctx #,stx args ...)
+(defsyntax (@method stx)
+  (syntax-case stx ()
+    ((_ args ...)
+     (with-syntax ((ctx stx)) #'(.o/ctx ctx args ...)))))

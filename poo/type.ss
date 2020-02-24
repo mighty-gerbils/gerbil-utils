@@ -11,8 +11,8 @@
   :clan/poo/poo :clan/poo/mop :clan/poo/brace :clan/poo/io)
 
 (.def (Tuple. @ Type. types)
-  name: (symbolify `(Tuple ,@(map (cut .@ <> name) (vector->list types))))
-  element?:
+  repr: `(Tuple ,@(map (cut .@ <> name) (vector->list types)))
+  .element?:
     (λ (x)
       (def l (vector-length types))
       (and (vector? x) (= (vector-length x) l)
@@ -25,9 +25,9 @@
   {(:: @ Tuple.) (types)})
 
 (.def (IntegerRange. @ Type. minimum maximum)
-  name: (symbolify `(IntegerRange ,@(if minimum `(min: ,minimum) '())
-                                  ,@(if max `(max: ,maximum) '())))
-  element?:
+  repr: `(IntegerRange ,@(if minimum `(min: ,minimum) '())
+                       ,@(if max `(max: ,maximum) '()))
+  .element?:
    (match (vector minimum maximum)
      ((vector #f #f) exact-integer?)
      ((vector _ #f) (λ (x) (and (exact-integer? x) (<= minimum x))))
@@ -39,20 +39,20 @@
   {(:: @ IntegerRange.) (minimum) (maximum)})
 
 (.def (List. @ Type. type)
-  name: (symbolify `(List ,(.@ type name)))
-  element?: (λ (x) (and (list? x) (every (cut element? type <>) x))))
+  repr: `(List ,(.@ type name))
+  .element?: (λ (x) (and (list? x) (every (cut element? type <>) x))))
 (def (List type)
   (typecheck Type type)
   {(:: @ List.) (type)})
 
 (.def (Or. @ Type. types)
-  name: (symbolify `(Or ,@(map (cut .@ <> name) types)))
-  element?: (λ (x) (any (cut element? <> x) types)))
+  repr: `(Or ,@(map (cut .@ <> name) types))
+  .element?: (λ (x) (any (cut element? <> x) types)))
 (def (Or . types) {(:: @ Or.) (types)})
 
 (.def (Exactly. @ Type. value)
-  name: (symbolify `(Exactly ,(repr value)))
-  element?: (λ (x) (equal? x value)))
+  repr: `(Exactly ,(repr value))
+  .element?: (λ (x) (equal? x value)))
 (def (Exactly value) {(:: @ Exactly.) (value)})
 
 (def Null (Exactly '()))
@@ -60,78 +60,78 @@
 (def True (Exactly #t))
 
 (.def (OneOf. @ Type. values)
-  name: (symbolify `(Or ,@(map repr values)))
-  element?: (λ (x) (member x values)))
+  repr: `(Or ,@(map repr values))
+  .element?: (λ (x) (member x values)))
 
 (def (OneOf . values) {(:: @ OneOf.) (values)})
 
 (.def (Pair. @ Type. left right)
-  name: (symbolify `(Pair ,(.@ left name) ,(.@ right name))))
+  repr: `(Pair ,(.@ left name) ,(.@ right name)))
 (def (Pair left right) {(:: @ Pair.) (left) (right)})
 
 (.def (Z. @ Type.)
-  name: 'Z
-  element?: exact-integer?
-  add: +
-  sub: -
-  mul: *
-  div: floor-quotient
-  mod: modulo
-  zero: 0
-  one: 1
-  logand: bitwise-and
-  logor: bitwise-ior
-  logxor: bitwise-xor
-  lognot: bitwise-not
-  shift-left: arithmetic-shift
-  shift-right: (λ (x n) (arithmetic-shift x (- n)))
-  write-to-bytes: write-varint
-  read-from-bytes: read-varint
-  <-string: string->number
-  ->string: number->string
-  succ: 1+
-  pred: 1-
-  ;; function taking two entries a, b.
-  ;; -- If a = b then returns 0;
-  ;; -- If a > b then returns 1
-  ;; -- If a < b then returns -1
-  ;; (-- If the numbers are not comparable, returns #f)
-  comparer: number-comparer
-  max: max
-  min: min)
-
+  repr: 'Z
+  .element?: exact-integer?
+  methods: {
+    add: +
+    sub: -
+    mul: *
+    div: floor-quotient
+    mod: modulo
+    zero: 0
+    one: 1
+    logand: bitwise-and
+    logor: bitwise-ior
+    logxor: bitwise-xor
+    lognot: bitwise-not
+    shift-left: arithmetic-shift
+    shift-right: (λ (x n) (arithmetic-shift x (- n)))
+    write-to-bytes: write-varint
+    read-from-bytes: read-varint
+    <-string: string->number
+    ->string: number->string
+    succ: 1+
+    pred: 1-
+    ;; function taking two entries a, b.
+    ;; -- If a = b then returns 0;
+    ;; -- If a > b then returns 1
+    ;; -- If a < b then returns -1
+    ;; (-- If the numbers are not comparable, returns #f)
+    comparer: number-comparer
+    max: max
+    min: min})
 
 '(def ZZ
-  (.o (:: @ [] n)
+  {(:: @ [] n)
   maxint: (- n 1)
-  length-in-bits: (integer-length maxint)))
+  length-in-bits: (integer-length maxint)})
 
 (.def (Z/. @ Z. n)
-  name (symbolify `(Z/ ,(.@ n)))
-  element? (nat-under? n)
-  normalize (λ (x) (modulo x n)) ;; TODO: figure why using a keyword fails
-  maxint (- n 1)
-  length-in-bits (integer-length maxint)
-  length-in-bytes (integer-length-in-bytes maxint)
-
-  add-carry?: (λ (x y) (<= n (+ x y)))
-  add-negative-overflow?: (λ (x y) #f)
-  sub-carry?: false
-  sub-negative-overflow?: (λ (x y) (< x y))
-  add: (λ (x y) (normalize (+ x y)))
-  sub: (λ (x y) (normalize (- x y)))
-  mul: (λ (x y) (normalize (* x y)))
-  write-to-bytes: (λ (out n) (write-integer-bytes out n length-in-bytes))
-  read-from-bytes: (λ (in) (read-integer-bytes in length-in-bytes))
-  <-string: string->number
-  ->string: number->string
-  succ: 1+
-  pred: 1-
-  ;; function taking two entries a, b.
-  ;; -- If a = b then returns 0;
-  ;; -- If a > b then returns 1
-  ;; -- If a < b then returns -1
-  ;; (-- If the numbers are not comparable, returns #f)
-  comparer: number-comparer
-  max: max
-  min: min)
+  repr: `(Z/ ,(.@ n))
+  .element?: (nat-under? n)
+  methods: =>.+ {
+    normalize: (λ (x) (modulo x n)) ;; TODO: figure why using a keyword fails
+    maxint: (- n 1)
+    length-in-bits: (integer-length maxint)
+    length-in-bytes: (integer-length-in-bytes maxint)
+    add-carry?: (λ (x y) (<= n (+ x y)))
+    add-negative-overflow?: (λ (x y) #f)
+    sub-carry?: false
+    sub-negative-overflow?: (λ (x y) (< x y))
+    add: (λ (x y) (normalize (+ x y)))
+    sub: (λ (x y) (normalize (- x y)))
+    mul: (λ (x y) (normalize (* x y)))
+    write-to-bytes: (λ (out n) (write-integer-bytes out n length-in-bytes))
+    read-from-bytes: (λ (in) (read-integer-bytes in length-in-bytes))
+    <-string: string->number
+    ->string: number->string
+    succ: 1+
+    pred: 1-
+    ;; function taking two entries a, b.
+    ;; -- If a = b then returns 0;
+    ;; -- If a > b then returns 1
+    ;; -- If a < b then returns -1
+    ;; (-- If the numbers are not comparable, returns #f)
+    comparer: number-comparer
+    max: max
+    min: min})
