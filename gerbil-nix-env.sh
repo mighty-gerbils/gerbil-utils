@@ -24,23 +24,25 @@ fi
 
 ###### USER-EDITABLE SETTINGS #####
 
+## You don't need these two paths if you use gxpkg
+
 # This setting assumes that this file is copied to or symlinked from the
 # top directory for your Gerbil source.
 # If that is not the case, adjust this variable accordingly
-export MY_GERBIL_SRC=$(realpath "$(dirname "$this")")
+#export GERBIL_UTILS_SRC=$(realpath "$(dirname "$this")")
 
-# If you want other library directories in your loadpath, adjust this, too:
-export GERBIL_LOADPATH=$MY_GERBIL_SRC
+## If you want other library directories in your loadpath, adjust this, too:
+#export GERBIL_LOADPATH=$GERBIL_UTILS_SRC
 
 # Pick gerbil or gerbil-unstable for the gerbil package to use from nixpkgs
-: ${GERBIL_PACKAGE:=gerbil}
+: ${GERBIL_PACKAGE:=gerbil-unstable}
 
 ###### END OF USER-EDITABLE SETTINGS #####
 
 # Enable more debugging, plus all I/O and source UTF-8 by default
 export GAMBOPT=t8,f8,-8,dRr
 
-export GERBIL_HOME=$(dirname "$(dirname "$(realpath "$(which gxc)")")")
+export GERBIL_HOME=$(dirname "$(dirname "$(realpath "$(which gxi)")")")
 
 # Get the flags for compiling and linking against openssl and other libraries.
 eval "$(nix-shell '<nixpkgs>' --pure --attr ${GERBIL_PACKAGE} --command \
