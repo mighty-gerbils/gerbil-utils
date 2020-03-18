@@ -47,5 +47,32 @@
     (else
      [description 0 #f])))
 
+;; Update the version file from git
+;; name: name of the project, e.g. "GNU Hello" (mandatory)
+;; repo: where is the git repository compared to the current ./build.ss directory?
+;;   use #f or "." if same directory, "..", "../..", "../../.." or such if above.
+;;   (optional, default: #f).
+;; path: which file will contain the version?
+;;   (optional, default: "config/version.ss").
+;; NB: You need to have at least one git tag, as created with e.g. git tag v0.0
+(def (update-version-from-git
+      name: name
+      repo: (repo #f)
+      path: (path "config/version.ss"))
+  (let* ((git-version
+          (and (file-exists? (path-expand ".git" (or repo ".")))
+               (string-trim-eol (run-process '("git" "describe" "--tags")))))
+         (version-text
+          (and git-version
+               (format "(import :clan/utils/version)\n(register-software ~r ~r)\n" name git-version)))
+         (previous-version-text
+          (and version-text ;; no need to compute it if no current version to replace it with
+               (file-exists? path)
+               (read-file-string path))))
+    (if (and version-text (not (equal? version-text previous-version-text)))
+      (call-with-output-file [path: path create: 'maybe append: #f truncate: #t]
+        (cut display version-text <>)))))
+
+
 (defonce (machine-name)
   (string-trim-eol (run-process ["hostname"])))
