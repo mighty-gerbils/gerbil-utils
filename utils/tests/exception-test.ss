@@ -1,8 +1,8 @@
-(export catch-test)
+(export exception-test)
 
 (import :std/test
         :gerbil/gambit
-        :clan/utils/catch)
+        :clan/utils/exception)
 
 (def (inside0 x) (cons 0 (inside1 x)))
 
@@ -12,8 +12,8 @@
 
 (def (inside3 x) (cons 3 (error 'inside4 x)))
 
-(def catch-test
-  (test-suite "test suite for clan/utils/catch"
+(def exception-test
+  (test-suite "test suite for clan/utils/exception"
 
     (test-case "catch and invoke cont"
       (check-equal?
@@ -29,9 +29,9 @@
       (check
         string-prefix?
         (string-append
-         "*** ERROR IN clan/utils/tests/catch-test#inside1 -- inside4 \"arg\"\n"
-         "0  clan/utils/tests/catch-test#inside1 \n"
-         "1  catch-test__0#          \n")
+         "*** ERROR IN clan/utils/tests/exception-test#inside1 -- inside4 \"arg\"\n"
+         "0  clan/utils/tests/exception-test#inside1 \n"
+         "1  exception-test__0#      \n")
         (with-catch/cont
          (lambda (exn cont)
            (display-exception-in-context exn cont port)
