@@ -1,5 +1,6 @@
 (import
   :clan/utils/tests/base-test
+  :clan/utils/tests/catch-test
   :clan/utils/tests/date-test
   :clan/utils/tests/generator-test
   :clan/utils/tests/list-test
@@ -15,6 +16,7 @@
 
 (def unit-tests
   [base-test
+   catch-test
    date-test
    generator-test
    list-test
