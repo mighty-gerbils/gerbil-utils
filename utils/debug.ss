@@ -45,7 +45,7 @@
             (apply fprintf DBG-port fmt args)
             (force-output DBG-port)))
        (v (λ (l)
-            (for-each (λ (x) (f " ~a" (repr x))) l)
+            (for-each (λ (x) (f " ~r" (repr x))) l)
             (f "~%")))
        (x (λ (expr thunk)
             (f "  ~s =>" expr)
@@ -57,6 +57,65 @@
           (if thunk (x expr thunk) (void)))
         (if thunk (thunk) (void)))))
 
+;;; Tracing function -- alternative to the trace and untrace functions from gambit, that
+;;; 1. works on bindings, not on function objects
+;;; 2. prints values with std/misc/repr rather than Gambit's write
+;;; 3. prints the call depth as a number rather than indent ever further right
+
+(def trace-counter (make-parameter 0))
+
+(defrule (trace! f ...) (begin (ignore-errors (trace1 f)) ...))
+(defrule (untrace! f ...) (begin (ignore-errors (untrace1 f)) ...))
+
+(defrule (trace1 f more ...) (trace-function! 'f f (λ (v) (set! f v)) more ...))
+(defrule (untrace1 f) (untrace-function! 'f f (λ (v) (set! f v))))
+
+(def (traced-function f name (port (current-error-port)))
+  (λ args
+    (def counter (trace-counter))
+    (parameterize ((trace-counter (+ 1 counter)))
+      (display-separated
+       args port
+       prefix: (format ">>> ~d (~a" counter name)
+       separate-prefix?: #t
+       suffix: ")\n"
+       display-element: pr)
+      (force-output port)
+      (def vs (values->list (apply f args)))
+      (display-separated
+       args port
+       prefix: (format "<<< ~d (~a" counter name)
+       separate-prefix?: #t
+       suffix: ")\n"
+       display-element: pr)
+      (display-separated
+       vs port
+       prefix: "==="
+       separate-prefix?: #t
+       suffix: "\n"
+       display-element: pr)
+      (force-output port)
+      (apply values vs))))
+
+(def traced-functions (make-hash-table))
+
+(def (trace-function! name f setter port: (port (current-error-port)))
+  (match (hash-get traced-functions name)
+    ([_ t] (when (eq? f t) (error "function already traced" name)))
+    (#f (void)))
+  (def t (traced-function f name port))
+  (hash-put! traced-functions name [f t])
+  (setter t)
+  (void))
+
+(def (untrace-function! name fun setter)
+  (match (hash-get traced-functions name)
+    (#f (error "function not being traced" name))
+    ([f t]
+     (hash-remove! traced-functions name)
+     (unless (eq? fun t) (error "traced function was redefined, unregistering it" name))
+     (setter f)))
+  (void))
 
 ;;; Tracing threads
 
