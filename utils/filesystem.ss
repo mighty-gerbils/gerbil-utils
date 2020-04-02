@@ -23,6 +23,8 @@
 (def (path-is-directory? path (follow-symlinks? #f))
   (eq? 'directory (file-info-type (file-info path follow-symlinks?))))
 
+(def (shorten-path x) (path-normalize x 'shortest))
+
 ;; Given a path, visit the path.
 ;; When the path is a directory and recurse? returns true when called with the path,
 ;; recurse on the files under the directory.
