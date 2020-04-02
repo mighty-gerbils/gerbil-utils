@@ -67,43 +67,48 @@
 (defrule (trace! f ...) (begin (ignore-errors (trace1 f)) ...))
 (defrule (untrace! f ...) (begin (ignore-errors (untrace1 f)) ...))
 
-(defrule (trace1 f more ...) (trace-function! 'f f (λ (v) (set! f v)) more ...))
+(defrule (named-lambda (name . formals) body ...)
+  (let () (def (name . formals) body ...) name))
+
+(defrule (trace1 f more ...)
+  (trace-function! 'f f (let ((t (traced-function f 'f more ...))) (named-lambda (f . a) (apply t a))) (λ (v) (set! f v))))
 (defrule (untrace1 f) (untrace-function! 'f f (λ (v) (set! f v))))
 
 (def (traced-function f name (port (current-error-port)))
-  (λ args
-    (def counter (trace-counter))
-    (parameterize ((trace-counter (+ 1 counter)))
-      (display-separated
-       args port
-       prefix: (format ">>> ~d (~a" counter name)
-       separate-prefix?: #t
-       suffix: ")\n"
-       display-element: pr)
-      (force-output port)
-      (def vs (values->list (apply f args)))
-      (display-separated
-       args port
-       prefix: (format "<<< ~d (~a" counter name)
-       separate-prefix?: #t
-       suffix: ")\n"
-       display-element: pr)
-      (display-separated
-       vs port
-       prefix: "==="
-       separate-prefix?: #t
-       suffix: "\n"
-       display-element: pr)
-      (force-output port)
-      (apply values vs))))
+  (λ args (apply-tracing f name port args)))
+
+(def (apply-tracing f name port args)
+  (def counter (trace-counter))
+  (parameterize ((trace-counter (+ 1 counter)))
+    (display-separated
+     args port
+     prefix: (format ">>> ~d (~a" counter name)
+     separate-prefix?: #t
+     suffix: ")\n"
+     display-element: pr)
+    (force-output port)
+    (def vs (values->list (apply f args)))
+    (display-separated
+     args port
+     prefix: (format "<<< ~d (~a" counter name)
+     separate-prefix?: #t
+     suffix: ")\n"
+     display-element: pr)
+    (display-separated
+     vs port
+     prefix: "==="
+     separate-prefix?: #t
+     suffix: "\n"
+     display-element: pr)
+    (force-output port)
+    (apply values vs)))
 
 (def traced-functions (make-hash-table))
 
-(def (trace-function! name f setter port: (port (current-error-port)))
+(def (trace-function! name f t setter)
   (match (hash-get traced-functions name)
-    ([_ t] (when (eq? f t) (error "function already traced" name)))
+    ([_ tt] (when (eq? f tt) (error "function already traced" name)))
     (#f (void)))
-  (def t (traced-function f name port))
   (hash-put! traced-functions name [f t])
   (setter t)
   (void))
