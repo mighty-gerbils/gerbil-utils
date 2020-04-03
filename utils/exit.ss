@@ -5,7 +5,7 @@
 
 (import
   :gerbil/gambit/ports
-  :std/format :std/misc/repr
+  :std/format :std/misc/list :std/misc/repr
   :clan/utils/base)
 
 (defrule (eval-print-exit body ...) (call-print-exit (λ () body ...)))
@@ -21,7 +21,7 @@
      (λ vs
        ;; (values) prints nothing and counts as true
        ;; (void) prints nothing and counts as false for the purpose of call-print-exit
-       (unless (equal? vs '(#!void))
+       (unless (equal? vs [(void)])
          (for-each prn vs))
        (force-output)
-       (exit (match vs ([#f] 1) ([#!void] 1) (_ 0)))))))
+       (exit (if (and (length=n? vs 1) (member (car vs) [#f (void)])) 1 0))))))
