@@ -45,7 +45,7 @@
             (apply fprintf DBG-port fmt args)
             (force-output DBG-port)))
        (v (λ (l)
-            (for-each (λ (x) (f " ~r" (repr x))) l)
+            (for-each (λ (x) (f " ~r" x)) l)
             (f "~%")))
        (x (λ (expr thunk)
             (f "  ~s =>" expr)
