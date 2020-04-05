@@ -4,7 +4,7 @@
 (export #t)
 
 (import
-  :clan/utils/base :clan/utils/config :clan/utils/filesystem)
+  :clan/utils/base :clan/utils/config :clan/utils/filesystem :clan/utils/path)
 
 ;; These paths should be defined or redefined somewhere in your application,
 ;; typically with e.g.

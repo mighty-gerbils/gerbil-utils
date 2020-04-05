@@ -12,7 +12,7 @@
   :clan/utils/base :clan/utils/basic-parsers :clan/utils/concurrency
   :clan/utils/date :clan/utils/filesystem
   :clan/utils/generator :clan/utils/json :clan/utils/list :clan/utils/memo :clan/utils/number
-  :clan/utils/path-config :clan/utils/version)
+  :clan/utils/path :clan/utils/path-config :clan/utils/version)
 
 ;;; Logging text to a series of log files.
 ;; Start a new logger, with given name (optional) and a hook to call when switching files.
