@@ -15,9 +15,9 @@
 
 (import
   ;;(for-syntax :std/misc/repr) :std/misc/repr ;; XXX debug
+  :std/lazy :std/misc/hash :std/misc/list :std/sort :std/srfi/1 :std/srfi/13 :std/sugar
   (for-syntax :clan/utils/base)
-  :clan/utils/base :clan/utils/hash
-  :std/lazy :std/misc/list :std/sort :std/srfi/1 :std/srfi/13 :std/sugar)
+  :clan/utils/base)
 
 (defstruct poo (prototypes instance) constructor: :init!)
 (defmethod {:init! poo}

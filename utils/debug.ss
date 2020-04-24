@@ -6,7 +6,7 @@
 
 (import
   :gerbil/gambit/ports :gerbil/gambit/threads
-  :std/format :std/misc/repr
+  :std/format :std/misc/repr :std/sugar
   :clan/utils/base :clan/utils/concurrency)
 
 ;; DBG macro for easier print-debugging

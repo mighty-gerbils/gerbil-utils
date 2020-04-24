@@ -2,11 +2,11 @@
 ;;;; Basic utilities
 
 (export #t)
+(import (only-in :std/sugar defrule))
 
 ;;;; Basic syntax for control flow
-(defrules defrule ()
-  ((_ (name args ...) body ...)
-   (defrules name () ((_ args ...) body ...))))
+
+;; NB: as of gerbil v0.16-DEV-536-geac7706d, defrule is in std/sugar.
 
 ;; One-character λ
 (defalias λ lambda)

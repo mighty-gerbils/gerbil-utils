@@ -10,6 +10,6 @@
      (filter-map
       (lambda (filename)
         (and (equal? (path-extension filename) ".ss")
-             (path-expand (path-strip-extension filename) dir)))
+             (path-expand filename dir)))
       (directory-files dir)))
    ["utils" "net" "poo" "pure/dict" "pure"]))
