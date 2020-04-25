@@ -36,14 +36,13 @@
                    'expr thunk)
        (thunk)))))
 
-(def DBG-port (values ##stderr-port))
-
 ;; NB: fprintf uses the current-error-port and calls force-output
 (def (DBG-helper tag dbg-exprs dbg-thunks expr thunk)
   (letrec
       ((f (λ (fmt . args)
-            (apply fprintf DBG-port fmt args)
-            (force-output DBG-port)))
+            (force-output (current-output-port)) ;; avoid out-of-order issues due to stdout buffering
+            (apply fprintf (current-error-port) fmt args)
+            (force-output (current-error-port))))
        (v (λ (l)
             (for-each (λ (x) (f " ~r" x)) l)
             (f "~%")))
