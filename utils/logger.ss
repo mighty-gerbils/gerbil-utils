@@ -66,12 +66,15 @@
                        path top name)
   (def directory (subpath top path))
   (def log (text-logger name: (or name path)))
-  (def date-string<-timestamp (caching-date-string<-timestamp))
+  (def date-string<-unix-time (caching-date-string<-unix-time))
+  (def caching-adjustment<-tai (caching-adjustment<-tai))
   (sequentialize
    ['json-logger (or name path)]
    (λ (json (timestamp (current-timestamp)))
      (let* ((text (log-line<-json timestamp json))
-            (date (date-string<-timestamp timestamp))
+            (tai (tai<-timestamp timestamp))
+            (unix-time (- tai (caching-adjustment<-tai tai)))
+            (date (date-string<-unix-time unix-time))
             (file (string-append directory "/" date ".log")))
        (log file text
             on-new-file:
@@ -136,10 +139,10 @@
   (def (partial-day-fun x)
     (when (good-timestamp? (car x)) (fun x)))
   (def (process-day date fun)
-    (when-let ((file (file<-date-string (date-string<-timestamp date))))
+    (when-let ((file (file<-date-string (date-string<-unix-time (unix-time<-timestamp date)))))
       (for-each-xz-log-entry! file fun)))
 
-  (def date ;; variable: the current date being process
+  (def date ;; variable: the current date being processx
     (period-start one-day start-timestamp)) ;; start at the start
   (def end-date (period-start one-day end-timestamp))
 

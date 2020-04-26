@@ -56,12 +56,12 @@
 (def (call-limiter-loop name . options)
   ;;(DBG "cll" name options)
   (defvalues (update-timestamp get-ticket return-ticket)
-    (apply make-limiter name: name now: (current-monotonic-timestamp) options))
+    (apply make-limiter name: name now: (current-timestamp) options))
   (rpc-register (current-rpc-server) name)
   (let loop ()
     (<- ((!limiter-service.get-ticket param k)
          (try
-          (let ((now (current-monotonic-timestamp)))
+          (let ((now (current-timestamp)))
             (update-timestamp now)
             (!!value (get-ticket now param) k))
           (catch (e)
@@ -69,7 +69,7 @@
             (!!error (error-message e) k)))
          (loop))
         ((!limiter-service.return-ticket ticket)
-         (let ((now (current-monotonic-timestamp)))
+         (let ((now (current-timestamp)))
            (update-timestamp now)
            (return-ticket now ticket))
          (loop))
@@ -119,9 +119,9 @@
 
 (def (serve-limiters)
   (let ((sorted-limiters (sorted-limiters))
-	(now (current-timestamp)))
+        (now (current-timestamp)))
     (printf "~a (~a) Serving the following limiters: ~a~%"
-	    now (string<-timestamp now)
+            now (string<-timestamp now)
             (string-join (map (compose symbol->string car) sorted-limiters) " "))
     (for-each thread-join! (spawn-limiters sorted-limiters))))
 
@@ -139,7 +139,7 @@
 ;; You may use sequentialize to ensure that that's the case.
 (def (make-limiter
       name: name
-      now: (now (current-monotonic-timestamp))
+      now: (now (current-timestamp))
       max-tokens: max-tokens
       tokens-per-period: tokens-per-period
       period: period-in-nanoseconds
