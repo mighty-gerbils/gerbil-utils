@@ -22,10 +22,16 @@
 ;;       only a one-second interval, at which point the nanosecond contents of the SRFI-19
 ;;       datastructure repeat twice(!). This is the time kept by Unix systems (Linux, Darwin, *BSD),
 ;;       as per the POSIX standard. Windows seems to have adopted TAI, which makes more sense.
+;;
 ;;       The formula below should always hold (where the TAI - UTC adjustment may or may vary every
 ;;       6 months, having changed from +10 on 1972-01-01 to +37 on 2017-01-01, and counting):
 ;;
 ;;          timestamp / 1,000,000,000 = unix-time + (TAI - UTC)
+;;
+;;       Instead of the above, Google, Amazon, and many others instead "smear" the leap second all
+;;       over a 24-hour interval (with a 1/86400 rate change) from noon to noon around the leap second,
+;;       with specialized support in their NTP (and presumably kernel?):
+;;           https://developers.google.com/time/smear
 ;;
 ;;    3. SRFI-19 time, which is a struct with fields type, nanoseconds and seconds,
 ;;       where type is one of (time-{utc,tai,monotonic,thread,process,duration}),
@@ -70,7 +76,8 @@
 ;; https://en.wikipedia.org/wiki/Leap_second
 ;; https://en.wikipedia.org/wiki/Leap_year <-- also an issue, but on much larger timescales,
 ;;   that programmers don't care about because their software is so brittle anyway.
-
+;;
+;; https://erlang.org/doc/apps/erts/time_correction.html
 
 ;;; Units of duration. Use these variables to abstract over our choice of base duration.
 (def one-nanosecond 1)
