@@ -1,11 +1,9 @@
 #!/usr/bin/env gxi
 ;; -*- Gerbil -*-
-;;;; Automatically update gerbil/default.nix with the latest commit from origin/master
+;;;; Automatically update gerbil and gambit recipes for nixpkgs from source.
 ;; TODO: also automatically make a new commit to nixpkgs (and let the user use git rebase -i
 ;; to merge the extra ones together), or somehow automatically detect which can be amended,
 ;; and properly edit their messages, based on what was or wasn't already upstreamed.
-;; TODO: do the same for gambit -- maybe in same script?
-;; or factoring common things together in clan/nix/something ?
 
 (import
   :gerbil/gambit/ports
@@ -163,4 +161,4 @@
 
 (def main update-gerbil-nix-recipe)
 
-(import :clan/utils/debug) (trace! update-recipe parse-github-argument call-with-input-process)
+;;(import :clan/utils/debug) (trace! update-recipe parse-github-argument call-with-input-process)
