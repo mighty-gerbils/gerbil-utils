@@ -24,15 +24,15 @@
           ((expect-literal-string space8pre) port)
           ['directory (read-line port)])
          (else
-          (let* ((timestamp
-                  (timestamp<-string s19 "~Y-~m-~d ~k:~M:~S"))
+          (let* ((tai-timestamp
+                  (tai-timestamp<-string s19 "~Y-~m-~d ~k:~M:~S"))
                  (size
                   (begin (expect-and-skip-any-whitespace port)
                          (expect-natural port)))
                  (name
                   (begin ((expect-one-of (looking-for #\space)) port)
                          (read-line port))))
-            ['file name size timestamp])))))))
+            ['file name size tai-timestamp])))))))
 
 (def (aws-s3-ls . paths)
   (run-process ["aws" "s3" "ls" . paths]

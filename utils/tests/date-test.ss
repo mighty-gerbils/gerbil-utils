@@ -11,11 +11,11 @@
       (check-equal? unix-epoch-offset 0))
     (test-case "Check periodically"
       (let* ((counter 0)
-             (target (+ (current-timestamp) one-second))
+             (target (+ (current-tai-timestamp) one-second))
              (count-for-one-second
               (let/cc break
                 (periodically (* 52.5 one-millisecond)
                               (λ () (increment! counter)
-                                 (when (> (current-timestamp) target)
+                                 (when (> (current-tai-timestamp) target)
                                    (break counter)))))))
         (check-equal? (<= 19 count-for-one-second 21) #t)))))

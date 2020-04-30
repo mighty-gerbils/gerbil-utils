@@ -10,64 +10,96 @@
   :std/format :std/srfi/19 :std/sugar
   :clan/utils/base :clan/utils/basic-parsers :clan/utils/number)
 
-;; We deal with several time representations, of which we hereby define timestamp:
+;; We deal with several time representations:
 ;;
-;;    1. timestamp, which is in nanoseconds and *doesn't skip leap seconds*, such that
+;;    1. unix-time, which is in "official" seconds since the Unix Epoch 1970-01-01T00:00Z, wherein
+;;       each legal day is divided in 86400 POSIX seconds, regardless of its actual duration,
+;;       as measured in either atomic seconds or number of seconds in the UTC day
+;;       (which will be 86399 or 86401, for a negative or positive leap second respectively).
+;;       This is time that Unix systems (Linux, Darwin, *BSD) traditionally use throughout,
+;;       also known as POSIX time, after the standardization body that defines it.
+;;       The shell command $(date +%s) returns it.
+;;       The system call clock_gettime(3) with CLOCK_REALTIME provides this time in a timespec
+;;       data structure that also includes a separate nanosecond counter
+;;       (which hails back to the era of 32-bit computing).
+;;       The SRFI-19 time structure that mimic it, with time-utc type, also uses it.
+;;       This is also the time maintained by NTP. However, there is a big issue with unix-time.
+;;       *Depending on your system is configured*, unix-time may either:
+;;         (a) repeat during a UTC positive leap second (which has happened 27 times as of 2020)
+;;           and skip ahead during a UTC negative leap second (which hasn't happened so far),
+;;           which is traditional POSIX-specified behavior https://en.wikipedia.org/wiki/Unix_time
+;;           but ambiguous (and redundant, at nanosecond scale) during a positive leap second, or
+;;         (b) "smear" time around a leap second, commonly with a linear 1/86400 rate change, from
+;;           noon UTC the day before to noon UTC the day after, which is what NTP servers from
+;;           Google, Amazon, and others, do. https://developers.google.com/time/smear
+;;       This second configuration yields much more useful results and is now well-supported, but
+;;       is not guaranteed behavior, so be careful about OS configuration before you depend on it.
+;;       The first configuration is wholly useless to measure small time intervals.
+;;       The second configuration may introduce 1/86400 discrepancy ratio in time intervals
+;;       unless first converted to TAI using a simple formula.
+;;       Conversion between unix-time and tai requires an up-to-date leap second database,
+;;       but that database may change every six months, and that requires system administration
+;;       to keep it up-to-date for on-disk configuration, but also in-process configuration.
+;;
+;;    2. unix-timestamp, which is our variant of unix-time, scaled to a nanosecond precision,
+;;       combining the two fields in a single fixnum, which on modern 64-bit machines is
+;;       simpler and cheaper for all kinds of manipulations, and even with extended range
+;;       (with a Y2043 issue, rather than Y2038 like 31-bit unix-time or Y2036 like NTP).
+;;       There again, in a "leap" configuration, this variant may yield "surprising" results
+;;       during a leap second, with non-monotonicity and repeat values.
+;;       In a "smear" configuration, this is no loss of monotonicity and small loss of precision
+;;       but there are still subtle rules to follow in some cases.
+;;       Be careful about system administration if you use this representation.
+;;
+;;    3. tai-time, which is seconds since an epoch and *has no leap seconds*, such that
 ;;       a given timestamp always represents a duration interval of exactly one second.
-;;       The timestamp representation is defined in this module and so far as I know
-;;       original to this library (more probably indenpendently reinvented).
+;;       Some Linux servers are configured to use TAI, but most use unix-time above.
+;;       The Epoch is such that tai at 1972-01-01T00:00Z is +63072010, or 10s more than
+;;       unix-time (+63072000). Every 6 months, the IERS may or may not schedule a new leap second.
+;;       The TAI - UTC adjustment gets updated accordingly (as of 2020Q2, TAI is unix-time + 37s),
+;;       which is tracked by ICANN's tz database https://en.wikipedia.org/wiki/Tz_database
 ;;
-;;    2. unix-time, which is "official" seconds since 1970-01-01T00:00Z, *skipping leap seconds*,
-;;       such that some unix-time values represent a two-second interval time, while most represent
-;;       only a one-second interval, at which point the nanosecond contents of the SRFI-19
-;;       datastructure repeat twice(!). This is the time kept by Unix systems (Linux, Darwin, *BSD),
-;;       as per the POSIX standard. Windows seems to have adopted TAI, which makes more sense.
+;;    4. tai-timestamp, which is in our variant of tai, scaled to a nanosecond precision.
+;;       The timestamp-tai representation is defined in this module and so far as I know
+;;       original to this library (though probably independently reinvented).
 ;;
-;;       The formula below should always hold (where the TAI - UTC adjustment may or may vary every
-;;       6 months, having changed from +10 on 1972-01-01 to +37 on 2017-01-01, and counting):
-;;
-;;          timestamp / 1,000,000,000 = unix-time + (TAI - UTC)
-;;
-;;       Instead of the above, Google, Amazon, and many others instead "smear" the leap second all
-;;       over a 24-hour interval (with a 1/86400 rate change) from noon to noon around the leap second,
-;;       with specialized support in their NTP (and presumably kernel?):
-;;           https://developers.google.com/time/smear
-;;
-;;    3. SRFI-19 time, which is a struct with fields type, nanoseconds and seconds,
-;;       where type is one of (time-{utc,tai,monotonic,thread,process,duration}),
-;;       seconds are from some epoch (in practice unix epoch), and abs(nanosecond) < 1,000,000,000.
+;;    5. SRFI-19 time, which is a struct with fields type, nanoseconds and seconds,
+;;       where type is one of (time-{utc,tai,monotonic,thread,process,duration}).
+;;       Modulo a slightly different representation, it tracks the same at the above four.
 ;;
 ;;    4. SRFI-19 date, which is a struct with fields
-;;       nanosecond second minute hour day month year zone-offset.
+;;       nanosecond second minute hour day month year zone-offset,
+;;       which is useful for decoding time between internal representation above,
+;;       and human-readable strings.
 ;;
-;; Internally, our "timestamp" datatype represents time as a bignum integer counting nanoseconds
-;; of time since the Unix epoch of 1970-01-01T00:00Z, but without skipping leap seconds.
-;; This is one billion time (the unix time (as returned by e.g. $(shell-command "date +%s")),
-;; *plus leap seconds* (37 of them as of 2020-01-01)).
-;;
-;; Issue 0: The largest fixnum on Gambit 64-bit being 2**61-1, this representation is efficient
-;; to year 2043 only; it will be efficient as well when used for interchange with C and other
-;; languages using 64-bit signed or unsigned integers. As the fated year approaches, and unless
-;; Gambit adds one bit to its fixnums, a change in the epoch might be useful, which makes it all
-;; the more important to persist the perceived difference between timestamps divided by a billion
-;; and unix-time together with timestamped data (see issues 1 and 3 below).
+;; Issue 0: The largest fixnum on Gambit 64-bit being 2**61-1, so our timestamp representation
+;; is efficient to year 2043 only (whereas 31-bit C unix-time expires year 2038).
+;; Our representation will be efficient as well when used for interchange with
+;; C and other languages using 64-bit signed or unsigned integers. As the fated year approaches,
+;; and unless Gambit adds one bit to its fixnums, a change in the epoch might be useful,
+;; which makes it all the more important to persist the perceived difference between timestamps
+;; divided by a billion and unix-time together with timestamped data (see issues 1 and 3 below).
 ;;
 ;; Issue 1: Unix tends to keep its time in UTC, which isn't monotonic, and it's not clear what
-;; happens to (current-timestamp). Or when there are NTP adjustments, when a laptop sleeps, etc.
+;; happens to (current-unix-time). Or when there are NTP adjustments, when a laptop sleeps, etc.
 ;; The representation we chose should be future-proof, to the implementation may be buggy, and
 ;; even the representation is not past-proof to before 1972-01-01, and not future-proof past
 ;; whatever update to the table of leap seconds the software misses between the time it is built
 ;; or started, and the time it's running, when long-running, that gets a future timestamp.
 ;;
-;; Issue 2: A timestamp will NOT fit in a double, and precision will underflow below microseconds
-;; or a fraction thereof. This is can be a slight problem when serializing to plain JSON.
+;; Issue 2: A timestamp will NOT in general fit in a 53-bit mantissa IEEE double
+;; and precision will underflow below microseconds or a fraction thereof.
+;; This is can be a slight problem when serializing to plain JSON, but also when using
+;; Gambit's ##current-time's time data structure, which is notably different from SRFI-19 time.
 ;;
-;; Issue 3: Whenever you persist data in timestamp format, you may also want to save
-;; the TAI-UTC adjustment you used, especially if for long-running programs: new leap seconds
-;; may or may not be decreed every 6 months, and your program may not have been updated,
-;; so may be using the wrong offset, which will make interpretation of old logs and data hard.
-;; NB: Unix systems as well as NTP seem to insist on keeping time in UTC, yet won't tell you what
-;; they believe is the TAI adjustment. You have to do your best, and pray when there's a leap second.
+;; Issue 3: Whenever you persist data in tai-timestamp format, but also in unix-timestamp if
+;; you use leap configuration, you may also want to save the TAI-UTC adjustment you used,
+;; especially if for long-running programs: new leap seconds may be decreed or not every 6 months,
+;; and your program may not have been updated, so may be using the wrong offset,
+;; which will make interpretation of old logs and data hard.
+;; NB: Unix systems as well as NTP seem to insist on keeping time in UTC, yet no time-keeping API
+;; will tell you what they believe is the TAI adjustment or whether they are using smear.
+;; You have to do your best, and pray when there's a leap second.
 ;; To estimate the TAI-UTC adjustment, pray your program was re-compiled and restarted recently,
 ;; or is somehow updated once in a while by querying an online server.
 ;; Your best seems to be to convert a given time between UTC and TAI, remember what the offset was,
@@ -93,88 +125,127 @@
 
 
 ;;; Normalization utilities for SRFI 19 time, used to get current timestamp.
-(def (ensure-time-tai time)
-  (case (time-type time)
-    ((time-tai) time)
-    ((time-utc) (time-utc->time-tai time))
-    ((time-monotonic) (time-monotonic->time-tai time))
-    (else (error "Time cannot be converted to TAI" time))))
+(def (ensure-srfi-19-time-tai srfi-19-time)
+  (case (time-type srfi-19-time)
+    ((time-tai) srfi-19-time)
+    ((time-utc) (time-utc->time-tai srfi-19-time))
+    ((time-monotonic) (time-monotonic->time-tai srfi-19-time))
+    (else (error "Time cannot be converted to TAI" srfi-19-time))))
 
-(def (ensure-time-utc time)
-  (case (time-type time)
-    ((time-utc) time)
-    ((time-tai) (time-tai->time-utc time))
-    ((time-monotonic) (time-monotonic->time-utc time))
-    (else (error "Time cannot be converted to UTC" time))))
+(def (ensure-srfi-19-time-utc srfi-19-time)
+  (case (time-type srfi-19-time)
+    ((time-utc) srfi-19-time)
+    ((time-tai) (time-tai->time-utc srfi-19-time))
+    ((time-monotonic) (time-monotonic->time-utc srfi-19-time))
+    (else (error "Time cannot be converted to UTC" srfi-19-time))))
 
-(def (ensure-time-monotonic time)
-  (case (time-type time)
-    ((time-monotonic) time)
-    ((time-utc) (time-utc->time-monotonic time))
-    ((time-tai) (time-tai->time-monotonic time))
-    (else (error "Time cannot be converted to monotonic" time))))
+(def (ensure-srfi-19-time-monotonic srfi-19-time)
+  (case (time-type srfi-19-time)
+    ((time-monotonic) srfi-19-time)
+    ((time-utc) (time-utc->time-monotonic srfi-19-time))
+    ((time-tai) (time-tai->time-monotonic srfi-19-time))
+    (else (error "Time cannot be converted to monotonic" srfi-19-time))))
 
-(def (ensure-time-type time type)
+(def (ensure-srfi-19-time-type srfi-19-time type)
   (case type
-    ((time-utc) (ensure-time-utc time))
-    ((time-tai) (ensure-time-tai time))
-    ((time-monotonic) (ensure-time-monotonic time))
-    (else (error "Time cannot be converted to type" time type))))
+    ((time-utc) (ensure-srfi-19-time-utc srfi-19-time))
+    ((time-tai) (ensure-srfi-19-time-tai srfi-19-time))
+    ((time-monotonic) (ensure-srfi-19-time-monotonic srfi-19-time))
+    (else (error "Time cannot be converted to type" srfi-19-time type))))
 
 ;;; Now, basic timestamp definitions
 
-;; Given a SRFI 19 time structure, return a timestamp
-(def (timestamp<-time time)
-  (unless (equal? (time-type time) time-duration)
-    (set! time (ensure-time-tai time)))
-  (+ (time-nanosecond time)
-     (* one-second (time-second time))))
+(def (unix-timestamp<-srfi-19-time srfi-19-time)
+  (unless (member (time-type srfi-19-time) '(time-utc time-duration))
+    (set! srfi-19-time (ensure-srfi-19-time-utc srfi-19-time)))
+  (+ (time-nanosecond srfi-19-time)
+     (* one-second (time-second srfi-19-time))))
+
+(def (tai-timestamp<-srfi-19-time srfi-19-time)
+  (unless (member (time-type srfi-19-time) '(time-tai time-duration))
+    (set! srfi-19-time (ensure-srfi-19-time-tai srfi-19-time)))
+  (+ (time-nanosecond srfi-19-time)
+     (* one-second (time-second srfi-19-time))))
 
 ;; Given a timestamp, a SRFI 19 time type (default time-tai), and an adjustment in seconds
 ;; (default #f, denoting the current implementation's belief of what TAI-UTC was at that timestamp),
 ;; return a SRFI 19 time structure with given type corresponding to the time denoted by timestamp,
 ;; which was stored by a UTC-synchronized system believing the adjustment was that of TAI-UTC.
-;; TODO: ensure that this function behaves properly with adjustments leading to a leap second,
-;; which presumably requires having access to the leap second data and/or normalizing through a date.
-(def (time<-timestamp timestamp (type time-tai) (adjustment #f))
-  (if (and adjustment (not (equal? type time-duration)))
-    (ensure-time-type (make-time time-utc
+(def (srfi-19-time<-tai-timestamp timestamp (type time-tai) (adjustment #f))
+  (if (and adjustment (eq? type time-utc))
+    (ensure-srfi-19-time-type (make-time time-utc
                                  (remainder timestamp one-second)
                                  (- (quotient timestamp one-second) adjustment))
                       type)
-    (let ((time (make-time time-tai
+    (let ((srfi-19-time (make-time time-tai
+                                   (remainder timestamp one-second)
+                                   (quotient timestamp one-second))))
+      (case type
+        ((time-tai) srfi-19-time)
+        ((time-duration) (set! (time-type srfi-19-time) time-duration) srfi-19-time)
+        (else (ensure-srfi-19-time-type srfi-19-time type))))))
+
+;; Given a timestamp, a SRFI 19 time type (default time-utc), and an adjustment in seconds
+;; (default #f, denoting the current implementation's belief of what TAI-UTC was at that timestamp),
+;; return a SRFI 19 time structure with given type corresponding to the time denoted by timestamp,
+;; which was stored by a UTC-synchronized system believing the adjustment was that of TAI-UTC.
+(def (srfi-19-time<-unix-timestamp timestamp (type time-utc) (adjustment #f))
+  (if (and adjustment (eq? type time-tai))
+    (ensure-srfi-19-time-type (make-time time-tai
+                                 (remainder timestamp one-second)
+                                 (+ (quotient timestamp one-second) adjustment))
+                      type)
+    (let ((srfi-19-time (make-time time-utc
                            (remainder timestamp one-second)
                            (quotient timestamp one-second))))
       (case type
-        ((time-tai) time)
-        ((time-duration) (set! (time-type time) time-duration) time)
-        (else (ensure-time-type time type))))))
+        ((time-utc) srfi-19-time)
+        ((time-duration) (set! (time-type srfi-19-time) time-duration) srfi-19-time)
+        (else (ensure-srfi-19-time-type srfi-19-time type))))))
 
 ;; Return the current timestamp
-(def (current-timestamp)
-  (timestamp<-time (current-time time-tai)))
+(def (current-tai-timestamp)
+  (tai-timestamp<-srfi-19-time (current-time time-tai)))
+
+(def (current-unix-timestamp)
+  (unix-timestamp<-srfi-19-time (current-time time-utc)))
 
 ;; Convert a timestamp to a SRFI 19 date object
-(def (date<-timestamp timestamp (tz-offset 0))
-  (time-tai->date (time<-timestamp timestamp time-tai) tz-offset))
+(def (date<-tai-timestamp timestamp (tz-offset 0))
+  (time-tai->date (srfi-19-time<-tai-timestamp timestamp time-tai) tz-offset))
+
+(def (date<-unix-timestamp timestamp (tz-offset 0))
+  (time-utc->date (srfi-19-time<-unix-timestamp timestamp time-utc) tz-offset))
 
 ;; Convert a SRFI 19 date object to a timestamp
-(def (timestamp<-date date)
-  (timestamp<-time (date->time-tai date)))
+(def (tai-timestamp<-date date)
+  (tai-timestamp<-srfi-19-time (date->time-tai date)))
+
+(def (unix-timestamp<-date date)
+  (unix-timestamp<-srfi-19-time (date->time-utc date)))
 
 ;; A string for the date represented by this timestamp.
 ;; The format defaults to ISO 8601 format with nanoseconds.
-(def (string<-timestamp timestamp (format-string "~Y-~m-~dT~k:~M:~S.~N~z"))
-  (date->string (date<-timestamp timestamp) format-string))
+(def (string<-tai-timestamp tai-timestamp (format-string "~Y-~m-~dT~k:~M:~S.~N~z"))
+  (date->string (date<-tai-timestamp tai-timestamp) format-string))
+
+(def (string<-unix-timestamp unix-timestamp (format-string "~Y-~m-~dT~k:~M:~S.~N~z"))
+  (date->string (date<-unix-timestamp unix-timestamp) format-string))
 
 ;; Parse a timestamp as per SRFI 19.
 ;; The format defaults to ISO 8601 format with nanoseconds.
-(def (timestamp<-string string (format-string "~Y-~m-~dT~k:~M:~S.~N~z"))
-  (timestamp<-date (string->date string format-string)))
+(def (tai-timestamp<-string string (format-string "~Y-~m-~dT~k:~M:~S.~N~z"))
+  (tai-timestamp<-date (string->date string format-string)))
+
+(def (unix-timestamp<-string string (format-string "~Y-~m-~dT~k:~M:~S.~N~z"))
+  (unix-timestamp<-date (string->date string format-string)))
 
 ;; Get the timestamp from a YYYYMMDD string
-(def (timestamp<-yyyymmdd yyyymmdd)
-  (timestamp<-string yyyymmdd "~Y~m~d"))
+(def (tai-timestamp<-yyyymmdd yyyymmdd)
+  (tai-timestamp<-string yyyymmdd "~Y~m~d"))
+
+(def (unix-timestamp<-yyyymmdd yyyymmdd)
+  (unix-timestamp<-string yyyymmdd "~Y~m~d"))
 
 ;; Display and parse a timestamp
 (def display-timestamp display)
@@ -182,21 +253,21 @@
 
 
 ;; Partial support for tai, which is a TAI timestamp at second resolution only
-(def (current-tai) (time-second (current-time time-tai)))
-(def (tai<-timestamp timestamp) (floor-quotient timestamp one-second))
-(def (timestamp<-tai tai) (* tai one-second))
-(def (time-tai<-tai tai) (make-time time-tai 0 tai))
-(def (time<-tai tai type) (ensure-time-type (time-tai<-tai tai) type))
-(def (tai<-time-tai time) (assert! (equal? (time-type time) time-tai)) (time-second time))
-(def (tai<-time time) (time-second (ensure-time-tai time)))
-(def (unix-time<-tai tai) (unix-time<-time (time-tai<-tai tai)))
-(def (tai<-unix-time unix-time) (tai<-time (time-utc<-unix-time unix-time)))
-(def (tai<-date date) (tai<-time-tai (date->time-tai date)))
-(def (date<-tai tai (tz-offset 0)) (time-tai->date (time-tai<-tai tai) tz-offset))
-(def (tai<-string string (format-string "~Y-~m-~dT~k:~M:~S~z"))
-  (tai<-date (string->date string format-string)))
-(def (string<-tai tai (format-string "~Y-~m-~dT~k:~M:~S~z"))
-  (date->string (date<-tai tai) format-string))
+(def (current-tai-time) (time-second (current-time time-tai)))
+(def (tai-time<-tai-timestamp timestamp) (floor-quotient timestamp one-second))
+(def (tai-timestamp<-tai-time tai) (* tai one-second))
+(def (time-tai<-tai-time tai) (make-time time-tai 0 tai))
+(def (srfi-19-time<-tai-time tai type) (ensure-srfi-19-time-type (time-tai<-tai-time tai) type))
+(def (tai-time<-time-tai srfi-19-time) (assert! (equal? (time-type srfi-19-time) time-tai)) (time-second srfi-19-time))
+(def (tai-time<-srfi-19-time srfi-19-time) (time-second (ensure-srfi-19-time-tai srfi-19-time)))
+(def (unix-time<-tai-time tai) (unix-time<-srfi-19-time (time-tai<-tai-time tai)))
+(def (tai-time<-unix-time unix-time) (tai-time<-srfi-19-time (time-utc<-unix-time unix-time)))
+(def (tai-time<-date date) (tai-time<-time-tai (date->time-tai date)))
+(def (date<-tai-time tai (tz-offset 0)) (time-tai->date (time-tai<-tai-time tai) tz-offset))
+(def (tai-time<-string string (format-string "~Y-~m-~dT~k:~M:~S~z"))
+  (tai-time<-date (string->date string format-string)))
+(def (string<-tai-time tai (format-string "~Y-~m-~dT~k:~M:~S~z"))
+  (date->string (date<-tai-time tai) format-string))
 
 
 ;; What the current system believes was the TAI-UTC adjustment at given timestamp
@@ -204,8 +275,8 @@
 ;; but the system is presumably well-synchronized in UTC time via NTP, which means
 ;; all its timestamps are OFFSET*ONE_SECOND too low.
 ;; TODO: access the innards of SRFI-19 directly for its leap second table.
-(def (adjustment<-tai tai) (- tai (unix-time<-tai tai)))
-(def (adjustment<-timestamp timestamp) (adjustment<-tai (tai<-timestamp timestamp)))
+(def (adjustment<-tai-time tai) (- tai (unix-time<-tai-time tai)))
+(def (adjustment<-tai-timestamp timestamp) (adjustment<-tai-time (tai-time<-tai-timestamp timestamp)))
 
 
 ;;; Additional support for date
@@ -244,8 +315,8 @@
       (make-time time-utc nanosec sec)))
    (else (error "invalid unix-time" unix-time))))
 
-(def (time<-unix-time unix-time (type time-utc))
-  (ensure-time-type (time-utc<-unix-time unix-time) type))
+(def (srfi-19-time<-unix-time unix-time (type time-utc))
+  (ensure-srfi-19-time-type (time-utc<-unix-time unix-time) type))
 
 ;; Get Unix time from a SRFI 19 time-utc structure
 (def (unix-time<-time-utc utc)
@@ -256,17 +327,17 @@
       sec
       (+ sec (* nanosec 1e-9)))))
 
-(def (unix-time<-time time)
-  (unix-time<-time-utc (ensure-time-type time time-utc)))
+(def (unix-time<-srfi-19-time srfi-19-time)
+  (unix-time<-time-utc (ensure-srfi-19-time-type srfi-19-time time-utc)))
 
 ;; TODO: optimize by directly calling leap second deltas from underlying SRFI 19 implementation
-(def (timestamp<-unix-time unix-time)
-  (timestamp<-time (time<-unix-time unix-time time-tai)))
+(def (tai-timestamp<-unix-time unix-time)
+  (tai-timestamp<-srfi-19-time (srfi-19-time<-unix-time unix-time time-tai)))
 
 ;; TODO: optimize by directly calling leap second deltas from underlying SRFI 19 implementation
 ;; and/or pass an explicit adjustment.
-(def (unix-time<-timestamp timestamp)
-  (unix-time<-time (time<-timestamp timestamp)))
+(def (unix-time<-tai-timestamp timestamp)
+  (unix-time<-srfi-19-time (srfi-19-time<-tai-timestamp timestamp)))
 
 ;; Get Unix time from a SRFI 19 date structure
 (def (unix-time<-date date)
@@ -316,9 +387,12 @@
 (def (unix-time-start-of-day unix-time)
   (unix-time<-time-utc (time-utc-start-of-day (time-utc<-unix-time unix-time))))
 
+(def (unix-timestamp-start-of-day unix-time)
+  (unix-timestamp<-srfi-19-time (time-utc-start-of-day (time-utc<-unix-time unix-time))))
+
 ;;; Get start of day for a given timestamp
-(def (timestamp-start-of-day timestamp)
-  (timestamp<-time (time-utc-start-of-day (time<-timestamp timestamp time-utc))))
+(def (tai-timestamp-start-of-day timestamp)
+  (tai-timestamp<-srfi-19-time (time-utc-start-of-day (srfi-19-time<-tai-timestamp timestamp time-utc))))
 
 (def (date-string<-unix-time unix-time)
   (string<-unix-time unix-time "~Y-~m-~d"))
@@ -363,20 +437,23 @@
   (make-date (date-nanosecond date) (date-second date) (date-minute date) (date-hour date)
              (date-day date) new-month new-year (date-zone-offset date)))
 
-(def (time-utc-start-of-n-month-period time n (tz-offset 0))
-  (date->time-utc (date-start-of-n-month-period (time-utc->date time-utc tz-offset) n)))
+(def (time-utc-start-of-n-month-period srfi-19-time n (tz-offset 0))
+  (date->time-utc (date-start-of-n-month-period (time-utc->date srfi-19-time tz-offset) n)))
 
 (def (unix-time-start-of-n-month-period unix-time n (tz-offset 0))
   (unix-time<-time-utc (time-utc-start-of-n-month-period (time-utc<-unix-time unix-time) n tz-offset)))
 
-(def (timestamp-start-of-n-month-period timestamp n (tz-offset 0))
-  (timestamp<-time (time-utc-start-of-n-month-period (time<-timestamp timestamp time-utc) n tz-offset)))
+(def (unix-timestamp-start-of-n-month-period timestamp n (tz-offset 0))
+  (unix-timestamp<-srfi-19-time (time-utc-start-of-n-month-period (srfi-19-time<-unix-timestamp timestamp time-utc) n tz-offset)))
+
+(def (tai-timestamp-start-of-n-month-period timestamp n (tz-offset 0))
+  (tai-timestamp<-srfi-19-time (time-utc-start-of-n-month-period (srfi-19-time<-tai-timestamp timestamp time-utc) n tz-offset)))
 
 
 ;; Like date-string<-timestamp but caching the previous answer.
 ;; This assumes TAI-UTC only changes just the second before January 1st UTC or July 1st UTC.
 ;; NB: closures created by this function are not thread-safe.
-(def (caching-adjustment<-tai)
+(def (caching-adjustment<-tai-time)
   (let ((period-start 0)
         (period-end -1) ;; we use <= and assume integers.
         (adjustment 0)
@@ -388,9 +465,9 @@
                (next-semester-start (roll-date semester-start months: 6)))
           (set! period-start (date->time-tai semester-start))
           (set! period-end (- (date->time-tai next-semester-start) 1))
-          (set! adjustment (adjustment<-tai period-start))
+          (set! adjustment (adjustment<-tai-time period-start))
           (when (= tai period-end)
-            (let ((next-adjustment (adjustment<-tai (+ 1 period-end))))
+            (let ((next-adjustment (adjustment<-tai-time (+ 1 period-end))))
               (when (> next-adjustment adjustment) ;; it will be n+1
                 (set! period-start period-end)
                 (set! period-end (- (date->time-tai (roll-date semester-start years: 1))
@@ -411,60 +488,65 @@
 ;;
 ;; TODO: adjust between TAI and whatever timezone we care about?
 ;;
-;; Timestamp <- Periodicity Timestamp Integer
-(def (period-start periodicity timestamp (additional-periods 0))
+;; UnixTimestamp <- Periodicity UnixTimestamp Integer
+(def (period-start periodicity unix-timestamp (additional-periods 0))
   (match periodicity
-    ((? exact-integer?) (* (+ (floor-quotient timestamp periodicity) additional-periods) periodicity))
+    ((? exact-integer?) (* (+ (floor-quotient unix-timestamp periodicity) additional-periods) periodicity))
     ;; Our weeks start on Monday. The Epoch was a Thursday.
-    ('week (- (* (+ (floor-quotient (+ timestamp three-days) one-week) additional-periods) one-week) three-days))
-    ('month (let* ((date (date<-timestamp timestamp))
+    ('week (- (* (+ (floor-quotient (+ unix-timestamp three-days) one-week) additional-periods) one-week) three-days))
+    ('month (let* ((date (date<-unix-timestamp unix-timestamp))
                    (months (+ (date-month date) (* 12 (date-year date)) additional-periods -1))
                    (month (+ (modulo months 12) 1))
                    (year (floor-quotient months 12)))
-              (timestamp<-date (make-date 0 0 0 0 1 month year 0))))
-    ('year (let ((date (date<-timestamp timestamp)))
-             (timestamp<-date (make-date 0 0 0 0 1 1 (+ (date-year date) additional-periods) 0))))
-    ((? object?) (period-start {periodicity periodicity} timestamp additional-periods))))
+              (unix-timestamp<-date (make-date 0 0 0 0 1 month year 0))))
+    ('year (let ((date (date<-unix-timestamp unix-timestamp)))
+             (unix-timestamp<-date (make-date 0 0 0 0 1 1 (+ (date-year date) additional-periods) 0))))
+    ((? object?) (period-start {periodicity periodicity} unix-timestamp additional-periods))))
 
 ;; The next period, which is also the end of the current period.
-(def (period-next periodicity timestamp)
-  (period-start periodicity timestamp +1))
+(def (period-next periodicity unix-timestamp)
+  (period-start periodicity unix-timestamp +1))
 
 ;; Count the number of periods of given periodicity from one period to the other,
-;; each designated by the timestamp at the start of the period (NB: may be off if not the case)
-;; i.e. for integer periodicity, (timestamp2-timestamp1)/periodicity
-(def (period-difference periodicity timestamp1 timestamp2)
+;; each designated by the unix-timestamp at the start of the period (NB: may be off if not the case)
+;; i.e. for integer periodicity, (unix-timestamp2 - unix-timestamp1)/periodicity
+(def (period-difference periodicity unix-timestamp1 unix-timestamp2)
   (match periodicity
-    ((? exact-integer?) (floor-quotient (- timestamp2 timestamp1) periodicity))
-    ('week (floor-quotient (- timestamp2 timestamp1) one-week))
-    ('month (let* ((date1 (date<-timestamp timestamp1))
+    ((? exact-integer?) (floor-quotient (- unix-timestamp2 unix-timestamp1) periodicity))
+    ('week (floor-quotient (- unix-timestamp2 unix-timestamp1) one-week))
+    ('month (let* ((date1 (date<-unix-timestamp unix-timestamp1))
                    (months1 (+ (date-month date1) (* 12 (date-year date1))))
-                   (date2 (date<-timestamp timestamp2))
+                   (date2 (date<-unix-timestamp unix-timestamp2))
                    (months2 (+ (date-month date2) (* 12 (date-year date2)))))
               (- months2 months1)))
-    ('year (- (date-year (date<-timestamp timestamp2)) (date-year (date<-timestamp timestamp1))))
-    ((? object?) (period-difference {periodicity periodicity} timestamp1 timestamp2))))
+    ('year (- (date-year (date<-unix-timestamp unix-timestamp2)) (date-year (date<-unix-timestamp unix-timestamp1))))
+    ((? object?) (period-difference {periodicity periodicity} unix-timestamp1 unix-timestamp2))))
 
 ;; Similar to period-start, but with ceiling instead of floor
-(def (period-after periodicity timestamp)
-  (let ((start (period-start periodicity timestamp)))
-    (if (= start timestamp) start (period-next periodicity start))))
+(def (period-after periodicity unix-timestamp)
+  (let ((start (period-start periodicity unix-timestamp)))
+    (if (= start unix-timestamp) start (period-next periodicity start))))
 
 (def (periodicity? x)
   (or (and (exact-integer? x) (< 0 x))
       (member x '(week month year))))
 
-(def (sleep-until target-timestamp)
+(def (sleep-until target-timestamp
+                  sleep: (sleep_ sleep)
+                  current-timestamp: (current-timestamp current-tai-timestamp))
   (let* ((now (current-timestamp))
          (duration (- target-timestamp now)))
     (when (positive? duration)
-      (sleep duration))))
+      (sleep_ duration))))
 
 ;; This function keeps indefinitely calling a thunk on a periodic basis.
 ;; The function will be called at every "beat" defined by the timestamp being divisible by the period.
 ;; If running the thunk takes more time than the period, then on-beat-skip is called
 ;; and the next call is scheduled for the next beat after on-beat-skip returns.
-(def (periodically period-in-nanoseconds thunk on-beat-skip: (on-beat-skip void))
+(def (periodically period-in-nanoseconds thunk
+                   sleep: (sleep_ sleep)
+                   current-timestamp: (current-timestamp current-tai-timestamp)
+                   on-beat-skip: (on-beat-skip void))
   (let ((target-timestamp (ceiling-align (current-timestamp) period-in-nanoseconds)))
     (while #t
       (thunk)
@@ -472,4 +554,4 @@
       (when (> (current-timestamp) target-timestamp)
         (on-beat-skip)
         (set! target-timestamp (ceiling-align (current-timestamp) period-in-nanoseconds)))
-      (sleep-until target-timestamp))))
+      (sleep-until target-timestamp sleep: sleep_ current-timestamp: current-timestamp))))

@@ -53,7 +53,7 @@
 ;; Start a new JSON logger, given a path of a subdirectory relative to an optional top: directory,
 ;; the latter which defaults to (data-directory), and a name that defaults to that path.
 ;; The logger itself is a function that takes an object that can be converted to JSON,
-;; and an optional timestamp that defaults to (current-timestamp),
+;; and an optional timestamp that defaults to (current-tai-timestamp),
 ;; and logs a line containing the timestamp (as a 64-bit integer)
 ;; followed by the JSON text in a single line.
 ;; the first string is a file name, the second string is text to log,
@@ -70,16 +70,16 @@
   (def caching-adjustment<-tai (caching-adjustment<-tai))
   (sequentialize
    ['json-logger (or name path)]
-   (λ (json (timestamp (current-timestamp)))
-     (let* ((text (log-line<-json timestamp json))
-            (tai (tai<-timestamp timestamp))
-            (unix-time (- tai (caching-adjustment<-tai tai)))
+   (λ (json (tai-timestamp (current-tai-timestamp)))
+     (let* ((text (log-line<-json tai-timestamp json))
+            (tai-time (tai-time<-tai-timestamp tai-timestamp))
+            (unix-time (- tai-time (caching-adjustment<-tai tai-time)))
             (date (date-string<-unix-time unix-time))
             (file (string-append directory "/" date ".log")))
        (log file text
             on-new-file:
             (λ (previous-file: _ previous-port: _ current-file: _ current-port: port)
-              (display (log-line<-json timestamp (metadata name: (or name path))) port)))))))
+              (display (log-line<-json tai-timestamp (metadata name: (or name path))) port)))))))
 
 ;;; Logging JSON into a directory named after the arguments under the data-directory
 ;; (<- Any (Optional Timestamp)) <- String *
@@ -139,7 +139,7 @@
   (def (partial-day-fun x)
     (when (good-timestamp? (car x)) (fun x)))
   (def (process-day date fun)
-    (when-let ((file (file<-date-string (date-string<-unix-time (unix-time<-timestamp date)))))
+    (when-let ((file (file<-date-string (date-string<-unix-time (unix-time<-tai-timestamp date)))))
       (for-each-xz-log-entry! file fun)))
 
   (def date ;; variable: the current date being processx
