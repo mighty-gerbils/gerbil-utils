@@ -61,7 +61,8 @@
       path: (path "config/version.ss"))
   (let* ((git-version
           (and (file-exists? (path-expand ".git" (or repo ".")))
-               (string-trim-eol (run-process '("git" "describe" "--tags" "--always")))))
+               (string-trim-eol
+                (with-catch false (cut run-process '("git" "describe" "--tags" "--always"))))))
          (version-text
           (and git-version
                (format "(import :clan/utils/version)\n(register-software ~r ~r)\n" name git-version)))
@@ -72,7 +73,6 @@
     (if (and version-text (not (equal? version-text previous-version-text)))
       (call-with-output-file [path: path create: 'maybe append: #f truncate: #t]
         (cut display version-text <>)))))
-
 
 (defonce (machine-name)
   (string-trim-eol (run-process ["hostname"])))
