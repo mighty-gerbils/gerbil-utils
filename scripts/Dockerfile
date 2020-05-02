@@ -5,12 +5,17 @@
 # Pull with:
 # docker pull fahree/gerbil-utils:latest
 
-FROM gerbil/scheme:latest
+FROM fahree/gerbil-nix:latest
 MAINTAINER fahree@gmail.com
 
-#RUN git clone https://github.com/fare/gerbil-utils.git && \
-#    cd gerbil-utils && \
-#    ./build.ss
+#RUN cd /gerbil ; git clone https://github.com/fare/gerbil-utils.git
+COPY . /gerbil/gerbil-utils
 
-COPY . /root/gerbil-utils
-RUN cd /root/gerbil-utils && ./build.ss
+RUN \
+  chown -R gerbil.gerbil /gerbil && \
+  chmod -R u+w /gerbil
+USER gerbil
+RUN \
+  echo "#" > /gerbil/.zshrc && \
+  cd /gerbil/gerbil-utils && \
+  ./build.ss
