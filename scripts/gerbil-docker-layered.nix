@@ -138,7 +138,7 @@ in buildLayeredImageWithNixDb {
     # For a basic Nix environment:
     nix bashInteractive cacert coreutils gnutar gzip
     # Basic survivable interaction environment:
-    zsh su screen less git openssh
+    zsh su screen less git openssh xz
     # Basic development environment for gerbil:
     gerbil-unstable gambit-unstable gcc binutils gnused gnugrep
   ] ++ pkgs.gerbil-unstable.buildInputs ++ [
@@ -153,8 +153,8 @@ in buildLayeredImageWithNixDb {
   '';
 
   config = {
-    Cmd = [ "gxi" ];
-    Entrypoint = [ entrypoint ];
+    #Entrypoint = [ entrypoint ];
+    #Cmd = [ "gxi" ];
     Env = [
       "SSL_CERT_FILE=${pkgs.cacert.out}/etc/ssl/certs/ca-bundle.crt"
       "USER=root"

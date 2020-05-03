@@ -8,14 +8,17 @@
 FROM fahree/gerbil-nix:latest
 MAINTAINER fahree@gmail.com
 
-#RUN cd /gerbil ; git clone https://github.com/fare/gerbil-utils.git
-COPY . /gerbil/gerbil-utils
-
+USER root
 RUN \
   chown -R gerbil.gerbil /gerbil && \
   chmod -R u+w /gerbil
+
+#RUN cd /gerbil ; git clone --branch $TREE https://github.com/fare/gerbil-utils.git
+COPY \
+  --chown=gerbil:gerbil \
+  . /gerbil/gerbil-utils
+
 USER gerbil
 RUN \
-  echo "#" > /gerbil/.zshrc && \
   cd /gerbil/gerbil-utils && \
   ./build.ss
