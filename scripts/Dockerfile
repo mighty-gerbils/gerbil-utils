@@ -5,20 +5,17 @@
 # Pull with:
 # docker pull fahree/gerbil-utils:latest
 
-FROM fahree/gerbil-nix:latest
+FROM fahree/gerbil-nix
 MAINTAINER fahree@gmail.com
 
 USER root
 RUN \
-  chown -R gerbil.gerbil /gerbil && \
-  chmod -R u+w /gerbil
+  chown -R user.user /home && \
+  chmod -R u+w /home
+USER user
+WORKDIR /home
 
-#RUN cd /gerbil ; git clone --branch $TREE https://github.com/fare/gerbil-utils.git
-COPY \
-  --chown=gerbil:gerbil \
-  . /gerbil/gerbil-utils
-
-USER gerbil
-RUN \
-  cd /gerbil/gerbil-utils && \
-  ./build.ss
+# gerbil-utils is now included in the nix-built image already!
+##RUN cd /gerbil ; git clone --branch $TREE https://github.com/fare/gerbil-utils.git
+#COPY --chown=gerbil:gerbil . /gerbil/gerbil-utils
+#RUN cd /gerbil/gerbil-utils && ./build.ss

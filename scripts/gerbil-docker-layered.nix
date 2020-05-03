@@ -1,4 +1,4 @@
-{ pkgs ? import <nixpkgs> {} }: let usageComment = ''
+let usageComment = ''
 # Build a docker image with:
     nix-build gerbil-docker-layered.nix && \
     docker load < ./result |& tee docker.log && \
@@ -12,9 +12,14 @@
     TAG=gerbil/gerbil-nix # or TAG=fahree/gerbil-nix
     docker tag $IMG $TAG && \
     docker push $TAG
-'';
+''; in
 
-  inherit (pkgs) lib;
+{ pkgs ? import <nixpkgs> {},
+
+  # Gerbil libraries included in the image
+  gerbils ? builtins.filter pkgs.lib.attrsets.isDerivation (builtins.attrValues pkgs.gerbilPackages) }:
+
+let inherit (pkgs) lib;
 
   # From http://ix.io/2knJ/nix
   buildLayeredImageWithNixDb = (
@@ -54,10 +59,10 @@
       gid = 0;
     };
 
-    gerbil = {
+    user = {
       uid = 1000;
       shell = "/bin/bash";
-      home = "/gerbil";
+      home = "/home";
       gid = 1000;
     };
 
@@ -71,7 +76,7 @@
 
   groups = {
     root.gid = 0;
-    gerbil.gid = 1000;
+    user.gid = 1000;
     nixbld.gid = 30000;
   };
 
@@ -123,11 +128,13 @@
     #set -e
     # allow the container to be started with `--user`
     if [ "$1" = "fahree/gerbil-nix" -a "$(${pkgs.coreutils}/bin/id -u)" = "0" ]; then
-      chown -R gerbil /gerbil
-      exec ${pkgs.su}/bin/su gerbil "$BASH_SOURCE" "$@"
+      chown -R user /home
+      exec ${pkgs.su}/bin/su user "$BASH_SOURCE" "$@"
     fi
     exec "$@"
   '';
+
+  loadpath = pkgs.gerbil-support.gerbilLoadPath gerbils;
 
 in buildLayeredImageWithNixDb {
 
@@ -141,15 +148,15 @@ in buildLayeredImageWithNixDb {
     zsh su screen less git openssh xz
     # Basic development environment for gerbil:
     gerbil-unstable gambit-unstable gcc binutils gnused gnugrep
-  ] ++ pkgs.gerbil-unstable.buildInputs ++ [
+  ] ++ pkgs.gerbil-unstable.buildInputs ++ gerbils ++ [
     passwd
   ];
 
   extraCommands = ''
     # The user may have to chown / chmod these in a future Dockerfile pass
     # and/or in the entrypoint
-    mkdir gerbil
-    echo "#" > gerbil/.zshrc
+    mkdir -p home && \
+    echo "#" > home/.zshrc
   '';
 
   config = {
@@ -162,7 +169,8 @@ in buildLayeredImageWithNixDb {
       "GIT_SSL_CAINFO=${pkgs.cacert.out}/etc/ssl/certs/ca-bundle.crt"
       "NIX_SSL_CERT_FILE==${pkgs.cacert.out}/etc/ssl/certs/ca-bundle.crt"
       "NIX_PATH=nixpkgs=${pkgs.path}"
-    ];
+      "GERBIL_LOADPATH=${loadpath}"
+      ];
 #    ExposedPorts = {
 #      "7777/tcp" = {};
 #    };

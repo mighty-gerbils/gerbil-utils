@@ -12,7 +12,6 @@ on the joint code base;
 and even those who do not have the time and dedication to be maintainers
 can contribute code, documentation, and suggestions.
 
-
 ## Using
 
 You can install using the Gerbil package manager:
@@ -39,8 +38,12 @@ consistent with the existing body of code, or at least with themselves
 (which weaker requirement only applies for code that doesn't interact strongly
 with the rest of the codebase).
 
+## Compatibility
+
 The APIs of functions in this collection should not be considered stable unless otherwise noted;
 still, efforts should be made to not *gratuitously* introduce backward incompatibility.
 When the APIs are stable, the functions and macros will be moved to the standard library,
 under the prefix `std/` instead of `clan/` --- though slightly different style standards may
 apply there, as vyzo is the curator and may have different tastes.
+
+That said, current version of `gerbil-utils` requires Gerbil v0.16 or later to work.
