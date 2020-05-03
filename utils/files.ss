@@ -7,17 +7,7 @@
 (import
   :gerbil/gambit/ports
   :std/format :std/misc/ports :std/sugar :std/pregexp
-  :clan/utils/base :clan/utils/temporary-files)
-
-;; Output some contents to a port.
-;; The contents can be a string (display'ed), a u8vector (written),
-;; or a procedure (called with the port as argument)
-(def (output-contents contents port)
-  (cond
-   ((string? contents) (display contents port))
-   ((u8vector? contents) (write-u8vector contents port)) ;; TODO: does this retry on incomplete write?
-   ((procedure? contents) (contents port))
-   (else (error "invalid contents" contents))))
+  :clan/utils/base :clan/utils/ports :clan/utils/temporary-files)
 
 ;; Atomically replace a file by one produced from the contents using output-contents
 (def (clobber-file file contents settings: (settings '()))
