@@ -47,6 +47,7 @@
 (def (update-recipe
       name: name
       github: github
+      recipe-path: recipe-path
       checkouts-dir: (checkouts-dir #f)
       source-dir: (source-dir_ #f)
       nixpkgs-dir: (nixpkgs-dir_ #f)
@@ -56,10 +57,9 @@
     (path-expand (or dir reponame) (or checkouts-dir (default-checkouts-dir))))
   (def source-dir (defaultize source-dir_ name))
   (def nixpkgs-dir (defaultize nixpkgs-dir_ "nixpkgs"))
-  (def package-path (format "pkgs/development/compilers/~a" name))
   (defvalues (gh-owner gh-repo git-tree) (parse-github-argument github))
   (def repo-url (format "https://github.com/~a/~a" gh-owner gh-repo))
-  (def recipe-file (format "~a/~a/~a.nix" nixpkgs-dir package-path (if stable "default" "unstable")))
+  (def recipe-file (path-expand recipe-path nixpkgs-dir))
 
   ;; Update source directory via git fetch
   (call-with-input-process
@@ -113,6 +113,9 @@
       (pregexp-string-replacer "    rev = \"" "[0-9a-f]+" "\";" latest-commit-hash))
     (pregexp-string-replacer "    sha256 = \"" "[0-9a-z]+" "\";" nix-source-hash))))
 
+(def (recipe-path lang file)
+  (format "pkgs/development/compilers/~a/~a.nix" lang file))
+
 (define-entry-point (update-gerbil-nix-recipe . arguments)
   "Update Gerbil (and Gambit) Nix recipies"
   (def gopt
@@ -121,18 +124,20 @@
              help: "parent directory to git checkouts")
      (option 'repos "-S" "--stable" default: #f
              help: "update stable recipes instead of unstable")
+     (flag 'gambit-off "-o" "--gambit-off"
+             help: "skip gambit update")
+     (option 'gambit-github "-g" "--gambit-gh" default: #f
+             help: "github owner/repo[@tree] for gambit")
+     (option 'gambit-dir "-d" "--gambit-dir" default: #f
+             help: "git checkout directory for gambit")
      (flag 'gerbil-off "-O" "--gerbil-off"
              help: "skip gerbil update")
      (option 'gerbil-github "-G" "--gerbil-gh" default: #f
              help: "github owner/repo[@tree] for gerbil")
      (option 'gerbil-dir "-D" "--gerbil-dir" default: #f
              help: "git checkout directory for gerbil")
-     (flag 'gambit-off "-o" "--gambit-off"
-             help: "skip gambit update")
-     (option 'gambit-github "-g" "--gambit-gh" default: #f
-             help: "github owner/repo[@tree] for gambit")
-     (option 'gambit-dir "-d" "--gambit-dir" default: #f
-             help: "git checkout directory for gambit")))
+     (option 'gerbil-dir "-U" "--gerbil-utils-dir" default: #f
+             help: "git checkout directory for gerbil-utils")))
   (try
    (let ((opt (getopt-parse gopt arguments)))
      (defrule {symbol} (hash-get opt 'symbol))
@@ -140,6 +145,7 @@
        (update-recipe
         name: "gambit"
         github: (or {gambit-github} "feeley/gambit")
+        recipe-path: (recipe-path "gambit" (if {stable} "default" "unstable"))
         checkouts-dir: {checkouts-dir}
         source-dir: {gambit-dir}
         nixpkgs-dir: {nixpkgs-dir}
@@ -148,8 +154,18 @@
        (update-recipe
         name: "gerbil"
         github: (or {gerbil-github} "vyzo/gerbil")
+        recipe-path: (recipe-path "gerbil" (if {stable} "default" "unstable"))
         checkouts-dir: {checkouts-dir}
         source-dir: {gerbil-dir}
+        nixpkgs-dir: {nixpkgs-dir}
+        stable: {stable}))
+     (unless (or {gerbil-off} {stable})
+       (update-recipe
+        name: "gerbil-utils"
+        github: "fare/gerbil-utils"
+        recipe-path: (recipe-path "gerbil" "gerbil-utils")
+        checkouts-dir: {checkouts-dir}
+        source-dir: {gerbil-utils-dir}
         nixpkgs-dir: {nixpkgs-dir}
         stable: {stable})))
    (catch (getopt-error? exn)
