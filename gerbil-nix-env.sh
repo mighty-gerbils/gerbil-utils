@@ -40,7 +40,9 @@ fi
 ###### END OF USER-EDITABLE SETTINGS #####
 
 # Enable more debugging, plus all I/O and source UTF-8 by default
-export GAMBOPT=t8,f8,-8,dRr
+#export GAMBOPT=t8,f8,-8,dRr # Before 4.9.3-1081
+#export GAMBOPT=t8,i8,dRr    # After 4.9.3-1081
+export GAMBOPT=dRr
 
 export GERBIL_HOME=$(dirname "$(dirname "$(realpath "$(which gxi)")")")
 export NIX_GERBIL_LOADPATH=$HOME/.nix-profile/gerbil:/nix/var/nix/profiles/default/gerbil:/run/current-system/sw/gerbil
