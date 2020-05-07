@@ -1,5 +1,5 @@
 pkgs: super: rec {
-  inherit (super) lib gerbil-unstable fetchFromGitHub gerbil-support;
+  inherit (super) lib gerbil-unstable fetchFromGitHub gerbil-support gambit-support;
 
   gerbilPackages = super.gerbilPackages // {
     gerbil-local-time-unstable = gerbil-support.gerbilPackage {
@@ -8,6 +8,7 @@ pkgs: super: rec {
       git-version = "576cb97";
       package = "local-time";
       gerbil = gerbil-unstable;
+      gambit-params = gambit-support.unstable-params;
       gerbilInputs = [ super.gerbilPackages.gerbil-utils ];
       version-path = "";
       src = fetchFromGitHub {
