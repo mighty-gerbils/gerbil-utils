@@ -122,7 +122,7 @@
     (getopt
      (option 'checkouts-dir "-C" "--checkouts" default: #f
              help: "parent directory to git checkouts")
-     (option 'repos "-S" "--stable" default: #f
+     (option 'stable "-S" "--stable" default: #f
              help: "update stable recipes instead of unstable")
      (flag 'gambit-off "-o" "--gambit-off"
              help: "skip gambit update")
@@ -170,10 +170,10 @@
         stable: {stable})))
    (catch (getopt-error? exn)
      (getopt-display-help exn "update-gerbil-nix-recipe" (current-error-port))
-     (exit 1))
+     (exit 2))
    (catch (uncaught-exception? exn)
      (display-exception (uncaught-exception-reason exn) (current-error-port))
-     (exit 1))))
+     (exit 2))))
 
 (def main update-gerbil-nix-recipe)
 
