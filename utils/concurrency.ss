@@ -4,7 +4,7 @@
 (export #t)
 
 (import
-  :gerbil/gambit/continuations :gerbil/gambit/threads
+  :gerbil/gambit/continuations :gerbil/gambit/random :gerbil/gambit/threads
   :std/actor :std/error :std/logger :std/misc/list :std/misc/repr :std/sugar
   :clan/utils/base :clan/utils/error)
 
@@ -99,7 +99,6 @@
 
 ;; Choose which you use by default in your code
 (def sequentialize (values sequentialize/mutex))
-
 
 ;;;; Race
 
@@ -203,3 +202,35 @@
 ;; Join a list of threads. TODO: do it without blocking sequentially on each thread?
 (def (join-threads! threads)
   (for-each thread-join! threads))
+
+;; Retry a thunk until it either succeeds or fails,
+;; with an exponential back off that is capped to constant back off.
+;; max-retries: real number, in seconds, (+inf.0 for unlimited),
+;;   maximum number of times to retry the action.
+;; max-window: real number, in seconds, (+inf.0 for unlimited),
+;;  maximum window within which to retry the action
+;; retry-window: real number, in seconds,
+;;  initial retry window, to be doubled at each retry, up to the max-window.
+;; description: an object to print with repr, or #f
+;;  a description to include in a log message. Nothing will be logged if it's #f.
+(def (retry retry-window: retry-window
+            max-window: max-window
+            max-retries: max-retries
+            description: (description #f)
+            logging: (logging #f)
+            thunk)
+  (with-catch
+   (lambda (e)
+     (if (< 0 max-retries)
+       (let* ((retry-window (min retry-window max-window))
+              (sleep-duration (* (random-real) retry-window)))
+         (when logging
+           (logging "Sleeping %f seconds before to retry %r" sleep-duration description))
+         (thread-sleep! sleep-duration)
+         (retry retry-window: (* 2 retry-window)
+                max-window: max-window
+                max-retries: (1- max-retries)
+                description: description
+                thunk))
+       (raise e)))
+   thunk))

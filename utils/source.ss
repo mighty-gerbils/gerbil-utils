@@ -8,3 +8,6 @@
   (syntax-case stx ()
     ((_ ctx) (datum->syntax #'ctx ['quote (stx-source #'ctx)]))
     ((foo) #'(this-source-location foo))))
+
+(defsyntax (this-source-file stx)
+  #'(car (this-source-location stx)))

@@ -10,17 +10,24 @@
 
 (defrule (eval-print-exit body ...) (call-print-exit (λ () body ...)))
 
+;; Return a magic value that will be not be printed but will return an error code.
 (def (silent-exit (bool #t))
   (if bool (values) (void)))
 
+;; Execute a function, print the result (if application), and exit with an according value.
+;;
+;; (void) prints nothing and counts as false. #f is printed and counts as false.
+;; (values) prints nothing and counts as true. All other values are printed and count as true.
+;; If you want to print #f and return true, then print it then return (values).
+;;
+;; True is returned as exit code 0, false as exit code 1.
+;; Any uncaught exception will be printed then trigger an exit with code 2.
 (def (call-print-exit fun)
   (with-catch
-   (λ (x) (ignore-errors (fprintf (current-error-port) "~s~%" x)) (exit 2))
+   (λ (x) (ignore-errors (eprintf "~s~%" x)) (exit 2))
    (call/values
      fun
      (λ vs
-       ;; (values) prints nothing and counts as true
-       ;; (void) prints nothing and counts as false for the purpose of call-print-exit
        (unless (equal? vs [(void)])
          (for-each prn vs))
        (force-output)

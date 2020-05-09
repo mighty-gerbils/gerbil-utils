@@ -40,10 +40,11 @@
       (string-join l "/"))))
 
 ;; If `maybe-subpath` is a pathname that is under `base-path`, return a pathname object that
-;; when used with `path-expand` with defaults `base-path`, returns `maybe-subpath`.
+;; when used with `path-expand` with defaults `base-path`, yields `maybe-subpath`.
+;; Otherwise, return #f.
 (def (subpath? maybe-subpath base-path)
   (and (string? maybe-subpath) (string? base-path)
-       (path-absolute? maybe-subpath) (path-absolute? base-path)
+       (eq? (path-absolute? maybe-subpath) (path-absolute? base-path))
        (let ((ls (string-length maybe-subpath))
              (lb (string-length base-path))
              (sep? (λ (s pos) (eqv? (string-ref s pos) #\/))))
