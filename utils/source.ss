@@ -10,4 +10,11 @@
     ((foo) #'(this-source-location foo))))
 
 (defsyntax (this-source-file stx)
-  #'(car (this-source-location stx)))
+  (syntax-case stx ()
+    ((_ ctx) (datum->syntax #'ctx ['quote (alet (loc (stx-source #'ctx)) (vector-ref loc 0))]))
+    ((foo) #'(this-source-file foo))))
+
+(defsyntax (this-source-position stx)
+  (syntax-case stx ()
+    ((_ ctx) (datum->syntax #'ctx ['quote (alet (loc (stx-source #'ctx)) (vector-ref loc 1))]))
+    ((foo) #'(this-source-position foo))))

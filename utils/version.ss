@@ -61,8 +61,8 @@
       path: (path "config/version.ss"))
   (let* ((git-version
           (and (file-exists? (path-expand ".git" (or repo ".")))
-               (string-trim-eol
-                (with-catch false (cut run-process '("git" "describe" "--tags" "--always"))))))
+               (with-catch false
+                 (cut string-trim-eol (run-process '("git" "describe" "--tags" "--always"))))))
          (version-text
           (and git-version
                (format "(import :clan/utils/version)\n(register-software ~r ~r)\n" name git-version)))
@@ -74,5 +74,6 @@
       (call-with-output-file [path: path create: 'maybe append: #f truncate: #t]
         (cut display version-text <>)))))
 
+;; TODO: use FFI for that -- except it differs on Linux, BSD (mac?), Windows.
 (defonce (machine-name)
   (string-trim-eol (run-process ["hostname"])))

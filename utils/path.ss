@@ -62,3 +62,8 @@
 (def (path-enough sub base)
   (or (and base (subpath? sub base)) sub))
 
+(def (path-normalized-directory path)
+  (path-normalize (path-directory path)))
+
+(def (path-parent path)
+  (path-simplify (path-expand ".." path)))
