@@ -3,11 +3,9 @@
 ;;;; Make docker images for Gerbil, etc.
 
 (import
-  :gerbil/gambit/ports
-  :std/format :std/getopt :std/misc/list :std/misc/ports :std/misc/process
-  :std/srfi/13 :std/sugar :std/pregexp
-  :clan/utils/base :clan/utils/basic-parsers :clan/utils/multicall
-  :clan/utils/timestamp :clan/utils/files)
+  :gerbil/gambit/exceptions :gerbil/gambit/ports
+  :std/getopt :std/misc/ports :std/misc/process :std/sugar
+  :clan/utils/files :clan/utils/multicall)
 
 ;; Initialize paths from the environment
 (def here (path-directory (path-normalize (this-source-file))))
@@ -15,37 +13,27 @@
 (def gerbil-utils (parent here))
 (def checkouts-dir (parent gerbil-utils))
 
-(import :clan/utils/debug)
-
 ;; We assume nixpkgs is likely be a git checkout.
 ;; But a full nixpkgs checkout will take 2GB of disk space for no reason.
 ;; So we recommend you point nixpkgs at a worktree...
+
+(def (docker-push tag)
+  (run-process ["docker" "push" tag]
+               stdin-redirection: #f stdout-redirection: #f))
 
 (def (build-image nixpkgs_)
   (def nixpkgs (or nixpkgs_ (path-expand "nixpkgs" checkouts-dir)))
   (def version
     (with-catch false (cut run-process '("git" "describe" "--tags" "--always") directory: nixpkgs)))
-  (def version-file (path-expand ".git-worktree" nixpkgs))
-   (DBG foo: here gerbil-utils checkouts-dir version version-file)
+  (def version-file (path-expand "git-description" nixpkgs))
   (clobber-file version-file version)
   (run-process ["nix-build" "gerbil-docker-layered.nix"]
-               stdin-redirection: #f
-               stdout-redirection: #f
-               directory: here)
+               directory: here stdin-redirection: #f stdout-redirection: #f)
+  (delete-file version-file)
   (run-process ["docker" "load" "-i" "./result"]
-               stdin-redirection: #f
-               stdout-redirection: #f
-               directory: here)
-  (run-process ["docker" "build" "-t" "fahree/gerbil-utils" "-f" "scripts/Dockerfile" "."]
-               stdin-redirection: #f
-               stdout-redirection: #f
-               directory: gerbil-utils)
-  (run-process ["docker" "push" "fahree/gerbil-utils"]
-               stdin-redirection: #f
-               stdout-redirection: #f)
-  (run-process ["docker" "push" "fahree/gerbil-nix"]
-               stdin-redirection: #f
-               stdout-redirection: #f))
+               directory: here stdin-redirection: #f stdout-redirection: #f)
+  (docker-push "fahree/gerbil-utils")
+  (docker-push "fahree/gerbil-nix"))
 
 (define-entry-point (make-gerbil-docker-image . arguments)
   "Create a Docker image for Gerbil"

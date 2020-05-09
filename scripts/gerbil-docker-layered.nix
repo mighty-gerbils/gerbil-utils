@@ -12,12 +12,13 @@ let usageComment = ''
     TAG=gerbil/gerbil-nix # or TAG=fahree/gerbil-nix
     docker tag $IMG $TAG && \
     docker push $TAG
-''; in
+'';
+all-gerbils = pkgs:
+  builtins.filter pkgs.lib.attrsets.isDerivation
+    (builtins.attrValues pkgs.gerbilPackages-unstable); in
 
-{ pkgs ? import <nixpkgs> {},
-
-  # Gerbil libraries included in the image
-  gerbils ? builtins.filter pkgs.lib.attrsets.isDerivation (builtins.attrValues pkgs.gerbilPackages) }:
+# gerbils: Gerbil libraries included in the image
+{ pkgs ? import <nixpkgs> {}, gerbils ? all-gerbils pkgs }:
 
 let inherit (pkgs) lib;
 
