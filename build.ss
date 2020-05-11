@@ -9,18 +9,19 @@
 (def srcdir (path-normalize (path-directory (this-source-file))))
 (current-directory srcdir)
 
-(def (build-spec)
-  (append-map
-   (lambda (dir)
-     (filter-map
-      (lambda (filename)
-        (and (equal? (path-extension filename) ".ss")
-             (path-expand filename dir)))
-      (directory-files dir)))
-   ["utils" "net" "poo" "pure/dict" "pure"]))
+(def (files)
+  ["t/test-support.ss"
+   (append-map
+    (lambda (dir)
+      (filter-map
+       (lambda (filename)
+         (and (equal? (path-extension filename) ".ss")
+              (path-expand filename dir)))
+       (directory-files dir)))
+    ["utils" "net" "poo" "pure/dict" "pure"])...])
 
 (def (build)
-  (make (build-spec) srcdir: srcdir verbose: verbose))
+  (make (files) srcdir: srcdir verbose: verbose))
 
 (def (build-docker (tag #f))
   (def line #f)
