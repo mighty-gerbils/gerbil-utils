@@ -9,10 +9,12 @@
 (def (map/option f m) (match m ((some x) (some (f x))) (else m)))
 (def (list<-option x) (match x ((some v) [v]) (else [])))
 (def (list-map/option f l)
-  (match l
-    ([] (some l))
-    ([x . t] (match (f x)
-               ((some y) (map (cut cons y <>) (list-map/option f t)))
-               (e e)))))
+  (let loop ((a []) (l l))
+    (match l
+      ([] (some (reverse a)))
+      ([x . t] (let (fx (f x))
+                 (match fx
+                   ((some y) (loop (cons y a) t))
+                   (e e)))))))
 (def (bind/option x f) (match x ((some v) (f v)) (else x)))
 (def (iter/option f x) (match x ((some v) (some (f v))) (else (void))))
