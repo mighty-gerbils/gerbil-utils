@@ -24,19 +24,8 @@
   (make (files) srcdir: srcdir verbose: verbose))
 
 (def (build-docker (tag #f))
-  (def line #f)
-  (run-process
-   ["docker" "build" (when/list tag ["-t" tag]) ... "-f" "scripts/Dockerfile" "."]
-   coprocess: (lambda (port)
-                (let loop ()
-                  (def l (read-line port))
-                  (when (string? l)
-                    (set! line l)
-                    (displayln l)
-                    (loop)))))
-  (match (pregexp-match "^Successfully (built|tagged) ([-/._:0-9a-z]+)$" line)
-    ([_ _ image] image)
-    (_ "")))
+  (run-process ["./scripts/make-docker-image.ss"]
+               stdin-redirection: #f stdout-redirection: #f))
 
 (def (main . args)
   (match args
