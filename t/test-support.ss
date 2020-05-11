@@ -49,13 +49,6 @@
 (def (make-test-name name)
   (if (string? name) name (repr name)))
 
-;; Create test cases with dynamically-computed names
-(def (make-test-case name thunk)
-  (eval `(test-case ,(make-test-name name) (',thunk))))
-
-;; Like test-case, but with the ability to dynamically generate a name
-(defrule (test-case* name body ...) (make-test-case name (lambda () body ...)))
-
 ;; Given a list of test files under package directory, run each of their tests.
 (def (run-tests pkgdir (test-files (find-test-files pkgdir)))
   (def package-prefix (read-package-prefix pkgdir))
