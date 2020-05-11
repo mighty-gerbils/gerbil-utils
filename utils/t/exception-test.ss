@@ -1,6 +1,8 @@
 (export exception-test)
 
+(import :std/format)
 (import :std/test
+        :std/srfi/13
         :gerbil/gambit
         :clan/utils/exception)
 
@@ -25,18 +27,18 @@
         [0 1 2 3 4]))
 
     (test-case "catch and display in context"
-      (def port (open-output-string))
-      (check
-        string-prefix?
-        (string-append
-         "*** ERROR IN clan/utils/tests/exception-test#inside1 -- inside4 \"arg\"\n"
-         "0  clan/utils/tests/exception-test#inside1 \n"
-         "1  exception-test__0#      \n")
-        (with-catch/cont
-         (lambda (exn cont)
-           (display-exception-in-context exn cont port)
-           (display-continuation-backtrace cont port)
-           (get-output-string port))
-         (lambda ()
-           (inside0 "arg")))))))
+      (defvalues (exn cont)
+        (with-catch/cont values (lambda () (inside0 "arg"))))
+      (def exn-in-ctx (call-with-output-string (lambda (port) (display-exception-in-context exn cont port))))
+      (def backtrace (call-with-output-string (lambda (port) (display-continuation-backtrace cont port))))
 
+      (eprintf "~%~%FOO FOO FOO FOO~%~s~%BAR BAR BAR BAR~%~s~%BAZ BAZ BAZ BAZ~%"
+               exn-in-ctx backtrace)
+      (check
+       exn-in-ctx ?
+       (lambda (x) (and (string-prefix? "*** ERROR IN clan/utils/t/exception-test#" x)
+                   (string-suffix? "inside4 \"arg\"\n" x))))
+      (check
+       backtrace ?
+       (lambda (x) (string-prefix? "0  clan/utils/t/exception-test#" x))))
+    ))
