@@ -14,8 +14,8 @@
      (list->hash-table
       `(#|(__class . ,(symbol->string (type-name type)))|# ,@(alist<-plist plist))))))
 (def (trivial-object<-json klass json)
-  (def (find-key s) (or (##find-interned-symbol s) (error "invalid json key for class" s klass)))
-  (apply make-class-instance klass (plist<-alist (map/car find-key (hash->list json)))))
+  (def (find-key s) (or (##find-interned-keyword s) (error "invalid json key for class" s klass)))
+  (apply make-class-instance klass (plist<-alist (map (cut map/car find-key <>) (hash->list json)))))
 
 
 ;; Mixin for a trivial method that just lists all slots

@@ -19,9 +19,17 @@
    ((length<=n? list n) [list])
    (else (let-values (((head tail) (split-at list n))) (cons head (group-by n tail))))))
 
-(def (alist<-plist list) (group-by 2 list))
+(def (alist<-plist list)
+  (match list
+    ([] [])
+    ([k v . r] [[k . v] (alist<-plist r)...])
+    (_ (error "invalid plist" list))))
 
-(def (plist<-alist list) (append-map identity list))
+(def (plist<-alist list)
+  (match list
+    ([] [])
+    ([[k . v] . r] [k  v (plist<-alist r)...])
+    (_ (error "invalid alist" list))))
 
 (def (map/car f x) (match x ([a . b] [(f a) . b])))
 
