@@ -30,16 +30,6 @@
                (loop more "&"))
              (loop more separator))))))))
 
-;; This function is extracted from parts of std/net/request#request-text
-;; Move that to the gerbil std lib, have request-text use it.
-(def (bytes->string bytes (encoding #f))
-  (let* ((in   (open-input-u8vector [init: bytes char-encoding: (or encoding 'UTF-8)]))
-         (len  (u8vector-length bytes))
-         (out  (make-string len))
-         (len  (read-substring out 0 len in)))
-    (string-shrink! out len)
-    out))
-
 (def (content->json content)
   (and content
        (parameterize ((json-symbolic-keys #f)) ;; Don't intern JSON keys

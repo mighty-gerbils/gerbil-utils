@@ -5,14 +5,18 @@
 
 (import
   :gerbil/gambit/ports
-  :std/misc/ports :std/misc/rtd :std/text/json
-  :clan/utils/base :clan/utils/files :clan/utils/subprocess)
+  :std/misc/ports :std/misc/rtd :std/sort :std/sugar :std/text/json
+  :clan/utils/base :clan/utils/list :clan/utils/files :clan/utils/subprocess)
 
 (def (trivial-json<-object object)
   (match (class->list object)
     ([type . plist]
      (list->hash-table
-      `((__class . ,(symbol->string (type-name type))) ,@plist)))))
+      `(#|(__class . ,(symbol->string (type-name type)))|# ,@(alist<-plist plist))))))
+(def (trivial-object<-json klass json)
+  (def (find-key s) (or (##find-interned-symbol s) (error "invalid json key for class" s klass)))
+  (apply make-class-instance klass (plist<-alist (map/car find-key (hash->list json)))))
+
 
 ;; Mixin for a trivial method that just lists all slots
 (defclass jsonable ())
@@ -28,23 +32,23 @@
   (display (pretty-json object) port)
   (newline port))
 
-(def (<-json string)
+(def (json<-string string)
   (parameterize ((json-symbolic-keys #f))
     (string->json-object string)))
 
-(def (json<- object)
+(def (string<-json object)
   (parameterize ((json-symbolic-keys #f))
     (json-object->string object)))
 
 ;; For better performance when skipping, parse json lazily.
-(def (lazy<-json string (decode identity))
+(def (lazy-json<-string string (decode identity))
   (delay
     (decode
-     (begin0 (<-json string)
+     (begin0 (json<-string string)
        (set! string #f))))) ;; reclaim storage (or will gambit do it based on lifespan analysis?)
 
 (def (expect-lazy-json-line port (decode identity))
-  (lazy<-json (read-line port)))
+  (lazy-json<-string (read-line port)))
 
 (def (read-file-json file . settings)
   (call-with-input-file (cons* path: file settings) read-json))

@@ -196,14 +196,6 @@
 
 ;;;; Basic types
 
-;; Trivial constructor to wrap some value. The conventional option type for our code will be
-;; in pseudo-code: (deftype (option value-type) (sum-type (some value-type) '#f))
-;; i.e. (some foo) represents the present of value foo, and #f represents the absence of value.
-;; In Haskell you'd have option bool := Just True | Just False | None
-;; In Gerbil, we'll have (option bool) := (some #t) | (some #f) | #f
-(defstruct some (value))
-
-
 ;;;; Functions to manipulate 2D arrays represented as a single vectorx
 ;;(def (make-2d-array N-columns N-rows (initial-element #f))
 ;;  (make-vector (* N-columns N-rows) initial-element))

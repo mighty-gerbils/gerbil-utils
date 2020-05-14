@@ -7,5 +7,5 @@
 (def logger-test
   (test-suite "test suite for clan/utils/logger"
     (test-case "test metadata recognition"
-      (check-eqv? (metadata-line? (json<- (metadata))) #t)
-      (check-eqv? (metadata-line? (json<- (hash ("hello" "world")))) #f))))
+      (check-eqv? (metadata-line? (string<-json (metadata))) #t)
+      (check-eqv? (metadata-line? (string<-json (hash ("hello" "world")))) #f))))

@@ -188,8 +188,8 @@
                                             (warning "Bad log entry ~a ~a" timestamp line)
                                             (void))))))))
       (if (metadata-line? line)
-        (metadata-hook timestamp (delay-warn (<-json line)))
-        (entry-processor (cons timestamp (delay-warn (object-decoder (<-json line))))))))))
+        (metadata-hook timestamp (delay-warn (json<-string line)))
+        (entry-processor (cons timestamp (delay-warn (object-decoder (json<-string line))))))))))
 
 ;; Generate log entries for compressed logs between two timestamps.
 ;; Given a function file<-datestring that turns the timestamp for beginning of day (UTC)
