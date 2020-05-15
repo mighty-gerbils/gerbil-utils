@@ -60,7 +60,7 @@
 (def True (Exactly #t))
 
 (.def (OneOf. @ Type. values)
-  repr: `(Or ,@(map repr values))
+  repr: `(OneOf ,@(map repr values))
   .element?: (λ (x) (member x values)))
 
 (def (OneOf . values) {(:: @ OneOf.) (values)})
@@ -107,7 +107,7 @@
   length-in-bits: (integer-length maxint)})
 
 (.def (Z/. @ Z. n)
-  repr: `(Z/ ,(.@ n))
+  repr: `(Z/ ,n)
   .element?: (nat-under? n)
   methods: =>.+ {
     normalize: (λ (x) (modulo x n)) ;; TODO: figure why using a keyword fails
@@ -125,8 +125,8 @@
     read-from-bytes: (λ (in) (read-integer-bytes in length-in-bytes))
     <-string: string->number
     ->string: number->string
-    succ: 1+
-    pred: 1-
+    succ: (λ (x) (if (= x maxint) 0 (1+ x)))
+    pred: (λ (x) (if (zero? x) maxint (1- x)))
     ;; function taking two entries a, b.
     ;; -- If a = b then returns 0;
     ;; -- If a > b then returns 1
@@ -135,3 +135,15 @@
     comparer: number-comparer
     max: max
     min: min})
+
+(def (Z/ n) {(:: @ Z/.) (n)})
+
+(.def (UInt. @ Z/. bits)
+  n: (arithmetic-shift 1 bits)
+  repr: `(UInt ,n)
+  .element?: (lambda (x) (and (nat? x) (<= (integer-length x) n)))
+  methods: =>.+ {(:: @ [] maxint)
+    normalize: (λ (x) (bitwise-and x maxint))
+  })
+
+(def (UInt bits) {(:: @ UInt.) (bits)})
