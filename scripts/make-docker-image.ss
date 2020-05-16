@@ -5,7 +5,7 @@
 (import
   :gerbil/gambit/exceptions :gerbil/gambit/ports
   :std/getopt :std/misc/ports :std/misc/process :std/sugar
-  :clan/utils/files :clan/utils/multicall)
+  :clan/utils/path :clan/utils/files :clan/utils/multicall)
 
 ;; Initialize paths from the environment
 (def here (path-directory (path-normalize (this-source-file))))
@@ -32,8 +32,10 @@
   (delete-file version-file)
   (run-process ["docker" "load" "-i" "./result"]
                directory: here stdin-redirection: #f stdout-redirection: #f)
-  (docker-push "fahree/gerbil-utils")
-  (docker-push "fahree/gerbil-nix"))
+  (run-process ["docker" "build" "-t" "fahree/gerbil-utils" "-f" "scripts/Dockerfile" "."]
+               directory: (path-parent here) stdin-redirection: #f stdout-redirection: #f)
+  (docker-push "fahree/gerbil-utils:latest")
+  (docker-push "fahree/gerbil-nix:latest"))
 
 (define-entry-point (make-gerbil-docker-image . arguments)
   "Create a Docker image for Gerbil"
