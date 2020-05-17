@@ -104,14 +104,15 @@
   ;; Insert new commit ID in the recipe file
   (maybe-replace-file
    recipe-file
-   (compose
-    (pregexp-string-replacer "  version = \"" "[-.0-9A-Za-z]+" "\";" package-version)
-    (pregexp-string-replacer " git-version = \"" "[-.0-9A-Za-z]+" "\";" git-version)
-    (pregexp-string-replacer "    owner = \"" "[-.0-9A-Za-z]+" "\";" gh-owner)
-    (pregexp-string-replacer "    repo = \"" "[-.0-9A-Za-z]+" "\";" gh-repo)
-    (unless stable
-      (pregexp-string-replacer "    rev = \"" "[0-9a-f]+" "\";" latest-commit-hash))
-    (pregexp-string-replacer "    sha256 = \"" "[0-9a-z]+" "\";" nix-source-hash))))
+   (apply compose
+     [(if stable
+        [(pregexp-string-replacer "  version = \"" "[-.0-9A-Za-z]+" "\";" git-version)]
+        [(pregexp-string-replacer "  version = \"" "[-.0-9A-Za-z]+" "\";" package-version)
+         (pregexp-string-replacer " git-version = \"" "[-.0-9A-Za-z]+" "\";" git-version)
+         (pregexp-string-replacer "    rev = \"" "[0-9a-f]+" "\";" latest-commit-hash)])...
+      (pregexp-string-replacer "    owner = \"" "[-.0-9A-Za-z]+" "\";" gh-owner)
+      (pregexp-string-replacer "    repo = \"" "[-.0-9A-Za-z]+" "\";" gh-repo)
+      (pregexp-string-replacer "    sha256 = \"" "[0-9a-z]+" "\";" nix-source-hash)])))
 
 (def (recipe-path lang file)
   (format "pkgs/development/compilers/~a/~a.nix" lang file))
@@ -122,7 +123,7 @@
     (getopt
      (option 'checkouts-dir "-C" "--checkouts" default: #f
              help: "parent directory to git checkouts")
-     (option 'stable "-S" "--stable" default: #f
+     (flag 'stable "-S" "--stable"
              help: "update stable recipes instead of unstable")
      (flag 'gambit-off "-o" "--gambit-off"
              help: "skip gambit update")
