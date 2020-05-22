@@ -8,7 +8,7 @@
 (export
   .o .o/ctx .def .def/ctx
   poo? .mix .ref .instantiate .get .call .def! .set! .put! .putslot! .key? .has? .all-slots
-  .all-slots-sorted .alist .sorted-alist
+  .all-slots-sorted .alist .sorted-alist o<-alist
   .@ .+
   poo poo-prototypes poo-instance ;; shouldn't these remain internals?
   with-slots)
@@ -217,3 +217,8 @@
   (hash-put! (poo-instance poo.) slot value))
 
 (defrules .set! () ((_ poo. slot value) (.put! poo. 'slot value)))
+
+(def (o<-alist alist)
+  (def o (.o))
+  (for-each (match <> ([k . v] (.putslot! o k (λ (self super-prototypes base) v)))) alist)
+  o)

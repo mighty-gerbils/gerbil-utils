@@ -83,12 +83,14 @@
                       (base (if default #'(λ () default*) #'(no-such-slot self 'slot-name)))
                       (methods (case from
                                  ((instance) #'self)
-                                 ((methods) #'(.get self methods) #'self)
-                                 ((type) #'(.get self .type methods) #'self)))
+                                 ((methods) #'(.get self methods))
+                                 ((type) #'(.get self .type methods))
+                                 (else (error "invalid from" (syntax->datum stx)))))
                       (getter #'(.ref methods 'slot-name base))
                       ((evars ...) (case from
                                      ((type) #'(self vars ...))
-                                     ((instance methods) #'(vars ...)))))
+                                     ((instance methods) #'(vars ...))
+                                     (else (error "invalid from" (syntax->datum stx))))))
          (if (or funargs (case from ((type) #t) ((instance methods) #f)))
            #'(def (gf self args ...) (getter evars ...))
            #'(def (gf self) getter)))))))
