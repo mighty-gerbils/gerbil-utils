@@ -32,13 +32,14 @@
   (display (pretty-json object) port)
   (newline port))
 
-(def (json<-string string)
-  (parameterize ((json-symbolic-keys #f))
-    (string->json-object string)))
+(def (json<-string x)
+  (parameterize ((json-symbolic-keys #f)) ;; Don't intern JSON keys
+    (string->json-object x)))
 
 (def (string<-json object)
   (parameterize ((json-symbolic-keys #f))
     (json-object->string object)))
+
 
 ;; For better performance when skipping, parse json lazily.
 (def (lazy-json<-string string (decode identity))

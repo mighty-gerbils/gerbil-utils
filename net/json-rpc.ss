@@ -7,12 +7,6 @@
   :std/error :std/format :std/net/request :std/text/json :std/sugar
   :clan/utils/base :clan/utils/json :clan/utils/maybe :clan/net/simple-http-client)
 
-(def (json<-string x)
-  (parameterize ((json-symbolic-keys #f)) ;; Don't intern JSON keys
-    (string->json-object x)))
-
-(def string<-json json-object->string)
-
 (defclass (json-rpc-error jsonable)
   (code    ;; SInt16
    message ;; String

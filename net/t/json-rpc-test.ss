@@ -2,7 +2,7 @@
 
 (import
   :std/misc/repr :std/sugar :std/test :std/text/json
-  :clan/utils/maybe
+  :clan/utils/json :clan/utils/maybe
   :clan/net/json-rpc)
 
 (def json-rpc-test

@@ -101,7 +101,7 @@
     max: max
     min: min})
 
-'(def ZZ
+#;(def ZZ
   {(:: @ [] n)
   maxint: (- n 1)
   length-in-bits: (integer-length maxint)})
@@ -118,8 +118,8 @@
     add-negative-overflow?: (λ (x y) #f)
     sub-carry?: false
     sub-negative-overflow?: (λ (x y) (< x y))
-    add: (λ (x y) (normalize (+ x y)))
-    sub: (λ (x y) (normalize (- x y)))
+    add: (λ (x y) (def z (+ x y)) (if (<= z maxint) z (- z n)))
+    sub: (λ (x y) (def z (- x y)) (if (<= 0 z) z (+ z n)))
     mul: (λ (x y) (normalize (* x y)))
     write-to-bytes: (λ (out n) (write-integer-bytes out n length-in-bytes))
     read-from-bytes: (λ (in) (read-integer-bytes in length-in-bytes))
@@ -138,12 +138,12 @@
 
 (def (Z/ n) {(:: @ Z/.) (n)})
 
-(.def (UInt. @ Z/. bits)
-  n: (arithmetic-shift 1 bits)
-  repr: `(UInt ,n)
-  .element?: (lambda (x) (and (nat? x) (<= (integer-length x) n)))
+(.def (UInt. @ Z/. n-bits)
+  n: (arithmetic-shift 1 n-bits)
+  repr: `(UInt ,n-bits)
+  .element?: (lambda (x) (and (nat? x) (<= (integer-length x) n-bits)))
   methods: =>.+ {(:: @ [] maxint)
     normalize: (λ (x) (bitwise-and x maxint))
   })
 
-(def (UInt bits) {(:: @ UInt.) (bits)})
+(def (UInt n-bits) {(:: @ UInt.) (n-bits)})
