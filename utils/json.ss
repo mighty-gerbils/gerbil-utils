@@ -40,6 +40,9 @@
   (parameterize ((json-symbolic-keys #f))
     (json-object->string object)))
 
+(def (json<-port port)
+  (parameterize ((json-symbolic-keys #f)) ;; Don't intern JSON keys
+    (read-json port)))
 
 ;; For better performance when skipping, parse json lazily.
 (def (lazy-json<-string string (decode identity))

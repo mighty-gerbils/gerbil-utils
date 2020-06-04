@@ -103,8 +103,9 @@
    slot: .element?)
 
 (.def (Type. @)
-  repr: (error "missing type name" @)
-  .element?: (error "missing element?" @))
+  repr: (error "missing type repr" @)
+  .element?: (error "missing element?" @)
+  methods: {})
 
 (def (typecheck type x (msg #f))
   (assert! (element? type x)

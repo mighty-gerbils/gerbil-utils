@@ -8,7 +8,7 @@
 (export
   .o .o/ctx .def .def/ctx
   poo? .mix .ref .instantiate .get .call .def! .set! .put! .putslot! .key? .has? .all-slots
-  .all-slots-sorted .alist .sorted-alist o<-alist
+  .all-slots-sorted .alist .sorted-alist .<-alist
   .@ .+
   poo poo-prototypes poo-instance ;; shouldn't these remain internals?
   with-slots)
@@ -178,11 +178,14 @@
   ((_ self slots slot)
    (λ (self super-prototypes base) slot)))
 
+;;TODO: why doesn't this work?
+#;(defrule (with-slots (self slot ...) body ...)
+  (let-syntax-id ((slot (.@ self slot)) ...) body ...))
+
 (defrules with-slots ()
   ((_ (self) body ...) (begin body ...))
   ((_ (self slot slots ...) body ...)
-   (let-syntax ((slot (syntax-rules () (_ (.@ self slot)))))
-     (with-slots (self slots ...) body ...))))
+   (let-syntax-id (slot (.@ self slot)) (with-slots (self slots ...) body ...))))
 
 (defsyntax (.def stx)
   (syntax-case stx ()
@@ -218,7 +221,7 @@
 
 (defrules .set! () ((_ poo. slot value) (.put! poo. 'slot value)))
 
-(def (o<-alist alist)
+(def (.<-alist alist)
   (def o (.o))
   (for-each (match <> ([k . v] (.putslot! o k (λ (self super-prototypes base) v)))) alist)
   o)

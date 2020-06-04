@@ -102,4 +102,7 @@
       (assert-equal! 2 (.get {a: 1 b: (+ a 1)} b))
       (assert-equal! 2 (let ((a 0)) (.get (.o a: 1 b: (+ a 1)) b))) ;; proper shadowing
       (assert-equal! 2 (let ((a 0)) (.@ {a: 1 b: (+ a 1)} b))) ;; proper shadowing
+    (test-case "referring to another method"
+      (def m (.o a: 1+ b: a c: ((lambda (aa) (lambda (x) (aa x))) a) d: (lambda (x) (a x))))
+      (assert-equal! (map (lambda (x) ((.ref m x) 2)) '(a b c d)) [3 3 3 3]))
     )))

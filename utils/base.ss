@@ -227,6 +227,12 @@
 
 ;;;; Basic defining forms
 
+(defrules let-syntax-id ()
+  ((_ ((id val) ...) body ...)
+   (let-syntax ((id (syntax-rules () ((_ . a) (val . a)) (_ val))) ...) body ...))
+  ((_ (id val) body ...)
+   (let-syntax-id ((id val)) body ...)))
+
 ;; Define a nullary function that caches its resulting value
 (defrule (defonce (id) body) (def id (let ((id (delay body))) (λ () (force id)))))
 

@@ -143,6 +143,8 @@
   repr: `(UInt ,n-bits)
   .element?: (lambda (x) (and (nat? x) (<= (integer-length x) n-bits)))
   methods: =>.+ {(:: @ [] maxint)
+    length-in-bits: n-bits
+    length-in-bytes: (arithmetic-shift (+ n-bits 7) -3)
     normalize: (λ (x) (bitwise-and x maxint))
   })
 
