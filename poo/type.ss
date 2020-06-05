@@ -11,7 +11,7 @@
   :clan/poo/poo :clan/poo/mop :clan/poo/brace :clan/poo/io)
 
 (.def (Tuple. @ Type. types)
-  repr: `(Tuple ,@(map (cut .@ <> name) (vector->list types)))
+  repr: `(Tuple ,@(map (cut .@ <> repr) (vector->list types)))
   .element?:
     (λ (x)
       (def l (vector-length types))
@@ -72,7 +72,7 @@
 (.def (Z. @ Type.)
   repr: 'Z
   .element?: exact-integer?
-  methods: {
+  methods: =>.+ {
     add: +
     sub: -
     mul: *

@@ -93,11 +93,11 @@
 (def (.sorted-alist poo)
   (map (λ (slot) (cons slot (.ref poo slot))) (.all-slots-sorted poo)))
 
-(defsyntax .o
-  (lambda (stx)
-    (syntax-case stx ()
-      ((_ args ...)
-       (with-syntax ((ctx stx)) #'(.o/ctx ctx args ...))))))
+;; TODO: use defsyntax-for-match, and in the pattern use (? test :: proc => pattern) to do the job
+(defsyntax (.o stx)
+  (syntax-case stx ()
+    ((_ args ...)
+     (with-syntax ((ctx stx)) #'(.o/ctx ctx args ...)))))
 
 ;; the ctx argument exists for macro-scope purposes
 (defrules .o/ctx ()
@@ -178,14 +178,13 @@
   ((_ self slots slot)
    (λ (self super-prototypes base) slot)))
 
-;;TODO: why doesn't this work?
-#;(defrule (with-slots (self slot ...) body ...)
-  (let-syntax-id ((slot (.@ self slot)) ...) body ...))
+;;NB: This doesn't work, because of slots that appear more than once.
+#;(defrule (with-slots (self slot ...) body ...) (let-id-rule ((slot (.@ self slot)) ...) body ...))
 
 (defrules with-slots ()
   ((_ (self) body ...) (begin body ...))
   ((_ (self slot slots ...) body ...)
-   (let-syntax-id (slot (.@ self slot)) (with-slots (self slots ...) body ...))))
+   (let-id-rule (slot (.@ self slot)) (with-slots (self slots ...) body ...))))
 
 (defsyntax (.def stx)
   (syntax-case stx ()
