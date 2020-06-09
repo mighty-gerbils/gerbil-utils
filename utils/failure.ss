@@ -1,6 +1,6 @@
 ;;; Reified failures
 (export #t)
-(import ./option)
+(import :std/sugar ./option)
 
 (defstruct failure (error) transparent: #t)
 
@@ -11,3 +11,5 @@
 
 ;; : (Result A Err) <- (A <- Unit)
 (def (call/result thunk) (with-catch make-failure (some (thunk))))
+
+(defrule (with-result body ...) (call/result (lambda () body ...)))

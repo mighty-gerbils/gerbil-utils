@@ -171,3 +171,11 @@
      (roman-numeral<-digit hundreds "C" "D" "M")
      (roman-numeral<-digit tens "X" "L" "C")
      (roman-numeral<-digit units "I" "V" "X"))))
+
+(defrules inc! ()
+  ((_ x n) (set! x (+ x n)))
+  ((_ x) (inc! x 1)))
+
+(defrules dec! ()
+  ((_ x n) (set! x (- x n)))
+  ((_ x) (dec! x 1)))

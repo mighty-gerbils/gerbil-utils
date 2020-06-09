@@ -83,7 +83,7 @@
     logand: bitwise-and
     logor: bitwise-ior
     logxor: bitwise-xor
-    lognot: bitwise-not
+    lognot: bitwise-not ;; more bitwise operations, see Gambit
     shift-left: arithmetic-shift
     shift-right: (λ (x n) (arithmetic-shift x (- n)))
     write-to-bytes: write-varint
@@ -98,6 +98,10 @@
     ;; -- If a < b then returns -1
     ;; (-- If the numbers are not comparable, returns #f)
     comparer: number-comparer
+    non-negative?: (cut <= 0 <>)
+    =?: (cut = <> <>)
+    sign: (cut number-comparer <> 0)
+    ;; extract-bit-field test-bit-field? integer-length integer-length<? ...
     max: max
     min: min})
 
@@ -105,6 +109,28 @@
   {(:: @ [] n)
   maxint: (- n 1)
   length-in-bits: (integer-length maxint)})
+
+(def (unary-pre-op-check op check info x)
+  (if (check x) (op x)
+      (error "attempted operation but the arguments are out of range"
+        (car info) (cdr info) x)))
+
+(def (binary-pre-op-check op check info x y)
+  (if (check x y) (op x y)
+      (error "attempted operation but the arguments are out of range"
+        (car info) (cdr info) x y)))
+
+(def (unary-post-op-check op check info x)
+  (def y (op x))
+  (if (check y) y
+      (error "attempted operation but the arguments are out of range"
+        (car info) (cdr info) x)))
+
+(def (binary-post-op-check op check info x y)
+  (def z (op x y))
+  (if (check z) z
+      (error "attempted operation but the arguments are out of range"
+        (car info) (cdr info) x y)))
 
 (.def (Z/. @ Z. n)
   repr: `(Z/ ,n)
@@ -115,7 +141,7 @@
     length-in-bits: (integer-length maxint)
     length-in-bytes: (integer-length-in-bytes maxint)
     add-carry?: (λ (x y) (<= n (+ x y)))
-    add-negative-overflow?: (λ (x y) #f)
+    add-negative-overflow?: false
     sub-carry?: false
     sub-negative-overflow?: (λ (x y) (< x y))
     add: (λ (x y) (def z (+ x y)) (if (<= z maxint) z (- z n)))
@@ -133,6 +159,8 @@
     ;; -- If a < b then returns -1
     ;; (-- If the numbers are not comparable, returns #f)
     comparer: number-comparer
+    ;; TODO: range-checked arithmetics
+    ;; add-valid? sum? mul-valid? product?
     max: max
     min: min})
 

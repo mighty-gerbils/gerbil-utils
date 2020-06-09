@@ -67,3 +67,7 @@
 (define-aset! assq-set! eq?)
 (define-aset! assv-set! eqv?)
 (define-aset! assoc-set! equal?)
+
+(def (first-and-only x)
+  (assert! (and (pair? x) (null? (cdr x))))
+  (car x))

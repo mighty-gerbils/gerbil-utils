@@ -97,6 +97,14 @@
 
 ;;(def (and-combination new-value old-value) (and (new-value dont-call-next-method) (old-value)))
 
+(defrules .method ()
+  ((_ poo slot) (.get poo methods slot))
+  ((_ poo slot args ...) ((.method poo slot) args ...)))
+
+(defrules .type.method ()
+  ((_ poo slot) (.get poo .type methods slot))
+  ((_ poo slot args ...) ((.type.method poo slot) args ...)))
+
 (.defgeneric (element? type x)
    ;;default: false
    ;;combination: and-combination
