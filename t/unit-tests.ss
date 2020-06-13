@@ -11,5 +11,5 @@
     (match args
       ([] (run-tests "."))
       (["meta"] (println "meta all test process pass"))
-      (["all"] (run-tests "." (find-test-files ".")))
-      (["test" . files] (run-tests "." files))))))
+      (["all"] (run-tests "." test-files: (find-test-files ".")))
+      (["test" . files] (run-tests "." test-files: files))))))

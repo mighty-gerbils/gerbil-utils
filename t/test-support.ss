@@ -22,8 +22,8 @@
 
 ;; Given a package directory, find all test files (with name ending in "-test.ss")
 ;; in all test directories (named "t") under it.
-(def (find-test-files pkgdir)
-  (sort (find-regexp-files "-test.ss$" (find-test-directories pkgdir)) string<?))
+(def (find-test-files pkgdir (regex "-test.ss$"))
+  (sort (find-regexp-files regex (find-test-directories pkgdir)) string<?))
 
 ;; Given a test file, return the name
 (def (test-symbol module-name)
@@ -50,7 +50,9 @@
   (if (string? name) name (repr name)))
 
 ;; Given a list of test files under package directory, run each of their tests.
-(def (run-tests pkgdir (test-files (find-test-files pkgdir)))
+(def (run-tests pkgdir
+                regex: (regex "-test.ss$")
+                test-files: (test-files (find-test-files pkgdir regex)))
   (def package-prefix (read-package-prefix pkgdir))
   (apply run-tests! (map (cut find-file-test <> pkgdir package-prefix) test-files))
   (test-report-summary!)
