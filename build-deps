@@ -123,12 +123,15 @@
   (clan/utils/base
    clan/utils/error
    gerbil/core
+   gerbil/gambit/bytes
    gerbil/gambit/continuations
    gerbil/gambit/random
    gerbil/gambit/threads
    std/actor
    std/error
    std/logger
+   std/misc/bytes
+   std/misc/completion
    std/misc/list
    std/misc/repr
    std/sugar))
@@ -528,5 +531,27 @@
    clan/pure/dict/dicteq
    clan/pure/dict/intdict
    clan/pure/dict/symdict
+   gerbil/core))
+ (clan/runtime/context
+  "runtime/context.ss"
+  (clan/poo/mop gerbil/core std/sugar))
+ (clan/runtime/db
+  "runtime/db.ss"
+  (clan/utils/debug
+   clan/utils/number
+   clan/utils/path
+   gerbil/core
+   gerbil/gambit/threads
+   std/db/leveldb
+   std/misc/completion
+   std/misc/list
+   std/sugar))
+ (clan/runtime/persist
+  "runtime/persist.ss"
+  (clan/poo/brace
+   clan/poo/io
+   clan/poo/mop
+   clan/poo/poo
+   clan/runtime/db
    gerbil/core)))
 

@@ -18,7 +18,7 @@
          (and (equal? (path-extension filename) ".ss")
               (path-expand filename dir)))
        (directory-files dir)))
-    ["utils" "net" "poo" "pure/dict" "pure"])...])
+    ["utils" "net" "poo" "pure/dict" "pure" "runtime"])...])
 
 (def (build)
   (make (files) srcdir: srcdir verbose: verbose))
