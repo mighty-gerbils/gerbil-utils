@@ -6,7 +6,7 @@
 (import
   :gerbil/gambit/bits :gerbil/gambit/bytes :gerbil/gambit/exact
   :scheme/base
-  :std/sugar
+  :std/misc/bytes :std/sugar
   :clan/utils/base)
 
 ;;;; Numbers
@@ -37,34 +37,17 @@
 
 (def (nat-under? n) (λ (x) (and (nat? x) (< x n))))
 
-(def (integer-length-in-bytes n) (floor-quotient (+ (integer-length n) 7) 8))
+(def (n-bytes<-n-bits n-bits) (arithmetic-shift (+ n-bits 7) -3))
 
-;; Convert bytes into a natural integer, bigendian style
-;; Nat <- Bytes ?offset: Nat ?length: Nat
-(def (nat<-bytes bs offset: (offset 0) length: (length (- (bytes-length bs) offset)))
-  (assert! (fxnat? offset))
-  (assert! (fxnat? length))
-  (assert! (<= (+ offset length) (bytes-length bs)))
-  (let loop ((i 0) (r 0))
-    (if (fx< i length)
-      (let (b (bytes-ref bs (fx+ i offset)))
-        (loop (fx1+ i) (bitwise-ior (arithmetic-shift r 8) b)))
-      r)))
+(def (integer-length-in-bytes n) (n-bytes<-n-bits (integer-length n)))
 
-;; Fill some bytes with a bigendian integer. Beware: no bounds check.
-;; Nat <- Bytes Integer ?offset: Nat ?length: Nat
-(def (bytes-fill-bigendian-integer! bs n offset: (offset 0) length: (length (integer-length-in-bytes n)))
-  (let loop ((i (- length 1)) (n n))
-    (when (fx<= 0 i)
-      (begin
-        (bytes-set! bs (fx+ i offset) (bitwise-and n 255))
-        (loop (fx1- i) (arithmetic-shift n -8))))))
+(def (bytes<-nat n (n-bytes (integer-length-in-bytes n)))
+  (def bytes (make-bytes n-bytes))
+  (u8vector-uint-set! bytes 0 n big n-bytes)
+  bytes)
 
-;; Nat <- Bytes
-(def (bytes<-nat n (l (integer-length-in-bytes n)))
-  (def bs (make-bytes l))
-  (bytes-fill-bigendian-integer! bs n length: l)
-  bs)
+(def (nat<-bytes bytes)
+  (u8vector-uint-ref bytes 0 big (bytes-length bytes)))
 
 ;; Iterate a function with an integer argument ranging from one value
 ;; increasing by one until it reaches another value (excluded)
@@ -175,7 +158,11 @@
 (defrules inc! ()
   ((_ x n) (set! x (+ x n)))
   ((_ x) (inc! x 1)))
+(defrule (pre-inc! x n ...) (begin (inc! x n ...) x))
+(defrule (post-inc! x n ...) (begin0 x (inc! x n ...)))
 
 (defrules dec! ()
   ((_ x n) (set! x (- x n)))
   ((_ x) (dec! x 1)))
+(defrule (pre-dec! x n ...) (begin (dec! x n ...) x))
+(defrule (post-dec! x n ...) (begin0 x (dec! x n ...)))

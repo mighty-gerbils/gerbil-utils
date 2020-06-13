@@ -24,6 +24,17 @@
    gerbil/gambit/bytes
    gerbil/gambit/exact
    scheme/base
+   std/misc/bytes
+   std/sugar))
+ (clan/utils/io
+  "utils/io.ss"
+  (clan/utils/base
+   clan/utils/number
+   gerbil/core
+   gerbil/gambit/bits
+   gerbil/gambit/bytes
+   gerbil/gambit/ports
+   std/misc/bytes
    std/sugar))
  (clan/utils/ffi
   "utils/ffi.ss"
@@ -357,7 +368,9 @@
   (clan/utils/number gerbil/core std/iter std/srfi/13))
  (clan/utils/option "utils/option.ss" (gerbil/core))
  (clan/utils/maybe "utils/maybe.ss" (clan/utils/option gerbil/core))
- (clan/utils/failure "utils/failure.ss" (clan/utils/option gerbil/core))
+ (clan/utils/failure
+  "utils/failure.ss"
+  (clan/utils/option gerbil/core std/sugar))
  (clan/net/whois
   "net/whois.ss"
   (clan/utils/assert
@@ -456,10 +469,10 @@
    clan/poo/mop
    clan/poo/poo
    clan/utils/base
-   clan/utils/number
+   clan/utils/io
    gerbil/core
-   gerbil/gambit/bits
    gerbil/gambit/bytes
+   gerbil/gambit/ports
    std/iter
    std/sugar))
  (clan/poo/type
@@ -471,6 +484,7 @@
    clan/utils/base
    clan/utils/debug
    clan/utils/hash
+   clan/utils/io
    clan/utils/number
    gerbil/core
    gerbil/gambit/bits

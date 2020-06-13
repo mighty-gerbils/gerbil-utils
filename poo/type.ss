@@ -7,7 +7,7 @@
 (import
   :gerbil/gambit/bits :gerbil/gambit/exact :gerbil/gambit/ports :scheme/base
   :std/format :std/iter :std/lazy :std/misc/list :std/misc/repr :std/srfi/1 :std/sugar
-  :clan/utils/base :clan/utils/hash :clan/utils/number
+  :clan/utils/base :clan/utils/hash :clan/utils/io :clan/utils/number
   :clan/poo/poo :clan/poo/mop :clan/poo/brace :clan/poo/io)
 
 (.def (Tuple. @ Type. types)
@@ -69,7 +69,7 @@
   repr: `(Pair ,(.@ left name) ,(.@ right name)))
 (def (Pair left right) {(:: @ Pair.) (left) (right)})
 
-(.def (Z. @ Type.)
+(.def (Integer @ Type.)
   repr: 'Z
   .element?: exact-integer?
   methods: =>.+ {
@@ -86,8 +86,8 @@
     lognot: bitwise-not ;; more bitwise operations, see Gambit
     shift-left: arithmetic-shift
     shift-right: (λ (x n) (arithmetic-shift x (- n)))
-    write-to-bytes: write-varint
-    read-from-bytes: read-varint
+    marshal: write-varint
+    unmarshal: read-varint
     <-string: string->number
     ->string: number->string
     succ: 1+
@@ -132,7 +132,7 @@
       (error "attempted operation but the arguments are out of range"
         (car info) (cdr info) x y)))
 
-(.def (Z/. @ Z. n)
+(.def (Z/. @ Integer n)
   repr: `(Z/ ,n)
   .element?: (nat-under? n)
   methods: =>.+ {
@@ -177,3 +177,7 @@
   })
 
 (def (UInt n-bits) {(:: @ UInt.) (n-bits)})
+
+(.def (Symbol @ Type.) repr: 'Symbol .element?: symbol?)
+(.def (String @ Type.) repr: 'String .element?: string?)
+(.def (Number @ Type.) repr: 'Number .element?: number?)

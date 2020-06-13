@@ -61,7 +61,7 @@
       (try
        (apply fun (append args more-args))
        (catch (e)
-	 (log-error "unhandled exception" e))))))
+         (log-error "unhandled exception" e))))))
 
 
 ;;;; Sequentialize access to a (stateful) function

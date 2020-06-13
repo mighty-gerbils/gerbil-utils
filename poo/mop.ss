@@ -126,12 +126,8 @@
 (def (symbolify x) (!> x object->string string->symbol))
 
 (.def (Any @ Type.) repr: 'Any .element?: true)
-(.def (Bool @ Type.) repr: 'Bool .element?: boolean?)
-(.def (Symbol @ Type.) repr: 'Symbol .element?: symbol?)
 (.def (Poo @ Type.) repr: 'Poo .element?: poo?)
-(.def (String @ Type.) repr: 'String .element?: string?)
-(.def (Integer @ Type.) repr: 'Integer .element?: exact-integer?)
-(.def (Number @ Type.) repr: 'Number .element?: number?)
+(.def (Bool @ Type.) repr: 'Bool .element?: boolean?)
 
 (def (monomorphic-poo? type x)
   (and (poo? x) (every (cut element? type <>) (poo-values x))))
