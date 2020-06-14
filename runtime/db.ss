@@ -48,16 +48,33 @@
 (export #t)
 (import
   :gerbil/gambit/threads
-  :std/db/leveldb :std/misc/completion :std/misc/list :std/sugar
+  ;;:std/db/leveldb
+  :std/misc/completion :std/misc/list :std/sugar
   :clan/utils/number :clan/utils/path)
+
 (import :clan/utils/debug)
+
+(def (leveldb-writebatch) ['WB])
+(def (leveldb-default-options) #f)
+(def (leveldb-write-options . _) #f)
+(def (leveldb-open name . _) (make-hash-table))
+(def (leveldb-close db) (void))
+(def (leveldb-write db batch . _)
+  (for-each (match <> ([k . v] (hash-put! db k v))) (cdr batch)))
+(def (leveldb-default-read-options) #f)
+(def (leveldb-get db k . _) (hash-get db k))
+(def (leveldb-key? db k . _) (hash-key? db k))
+(def (leveldb-writebatch-put b k v . _) (set-cdr! b (cons (cons k v) (cdr b))))
+(def (leveldb-writebatch-delete b k . _) (set-cdr! b (prem k (cdr b))))
+
+
 
 (defstruct DbConnection
   (name leveldb mx txcounter
    blocked-transactions open-transactions pending-transactions hooks
    batch-id batch manager timer
    ready? triggered?)
-  transparent: #t constructor: :init!)
+  constructor: :init!)
 (defmethod {:init! DbConnection}
   (lambda (self name leveldb)
     (def mx (make-mutex name)) ;; Mutex
@@ -133,7 +150,7 @@
   (with-db-lock (conn) (fun conn)))
 
 ;; status: blocked open pending complete
-(defstruct DbTransaction (connection txid status completion))
+(defstruct DbTransaction (connection txid status completion) transparent: #t)
 (def current-db-transaction (make-parameter #f))
 
 ;; Open Transaction
