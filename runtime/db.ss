@@ -48,26 +48,11 @@
 (export #t)
 (import
   :gerbil/gambit/threads
-  ;;:std/db/leveldb
+  :std/db/leveldb
   :std/misc/completion :std/misc/list :std/sugar
   :clan/utils/number :clan/utils/path)
 
 (import :clan/utils/debug)
-
-(def (leveldb-writebatch) ['WB])
-(def (leveldb-default-options) #f)
-(def (leveldb-write-options . _) #f)
-(def (leveldb-open name . _) (make-hash-table))
-(def (leveldb-close db) (void))
-(def (leveldb-write db batch . _)
-  (for-each (match <> ([k . v] (hash-put! db k v))) (cdr batch)))
-(def (leveldb-default-read-options) #f)
-(def (leveldb-get db k . _) (hash-get db k))
-(def (leveldb-key? db k . _) (hash-key? db k))
-(def (leveldb-writebatch-put b k v . _) (set-cdr! b (cons (cons k v) (cdr b))))
-(def (leveldb-writebatch-delete b k . _) (set-cdr! b (prem k (cdr b))))
-
-
 
 (defstruct DbConnection
   (name leveldb mx txcounter
@@ -208,9 +193,7 @@
 
 ;; Close a transaction, then wait for it to be committed.
 (def (commit-transaction (transaction (current-db-transaction)))
-  (def txid (DbTransaction-txid transaction))
-  (def batch-id (completion-wait! (close-transaction transaction)))
-  (DBG TRANSACTION-COMMITTED: txid batch-id))
+  (completion-wait! (close-transaction transaction)))
 
 ;; Register post-commit finalizer actions to be run after this batch commits,
 ;; with the batch id as a parameter.
@@ -294,9 +277,10 @@
   (with-db-lock (c)
     (leveldb-writebatch-delete (DbConnection-batch c) k)))
 
-(trace! current-db-connection open-db-connection open-db-connection!
+#;(trace! current-db-connection current-db-transaction
+        open-db-connection open-db-connection!
         close-db-connection! close-db-connection call-with-db-connection
-        db-trigger! call-with-db-lock current-db-transaction
+        db-trigger! call-with-db-lock
         open-transaction call-with-new-tx call-with-tx close-transaction
         commit-transaction register-commit-hook! db-manager finalize-batch!
         get-batch-id db-get db-key? db-put! db-put-many! db-delete!)

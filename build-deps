@@ -537,8 +537,7 @@
   (clan/poo/mop gerbil/core std/sugar))
  (clan/runtime/db
   "runtime/db.ss"
-  (clan/utils/debug
-   clan/utils/number
+  (clan/utils/number
    clan/utils/path
    gerbil/core
    gerbil/gambit/threads
