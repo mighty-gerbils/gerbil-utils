@@ -532,12 +532,10 @@
    clan/pure/dict/intdict
    clan/pure/dict/symdict
    gerbil/core))
- (clan/runtime/context
-  "runtime/context.ss"
-  (clan/poo/mop gerbil/core std/sugar))
  (clan/runtime/db
   "runtime/db.ss"
-  (clan/utils/number
+  (clan/utils/debug
+   clan/utils/number
    clan/utils/path
    gerbil/core
    gerbil/gambit/threads
