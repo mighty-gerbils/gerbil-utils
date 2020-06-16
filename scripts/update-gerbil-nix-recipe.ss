@@ -138,7 +138,9 @@
      (option 'gerbil-dir "-D" "--gerbil-dir" default: #f
              help: "git checkout directory for gerbil")
      (option 'gerbil-dir "-U" "--gerbil-utils-dir" default: #f
-             help: "git checkout directory for gerbil-utils")))
+             help: "git checkout directory for gerbil-utils")
+     (option 'gerbil-dir "-Y" "--gerbil-crypto-dir" default: #f
+             help: "git checkout directory for gerbil-crypto")))
   (try
    (let ((opt (getopt-parse gopt arguments)))
      (defrule {symbol} (hash-get opt 'symbol))
@@ -167,6 +169,15 @@
         recipe-path: (recipe-path "gerbil" "gerbil-utils")
         checkouts-dir: {checkouts-dir}
         source-dir: {gerbil-utils-dir}
+        nixpkgs-dir: {nixpkgs-dir}
+        stable: {stable}))
+     (unless (or {gerbil-off} {stable})
+       (update-recipe
+        name: "gerbil-crypto"
+        github: "fare/gerbil-crypto"
+        recipe-path: (recipe-path "gerbil" "gerbil-crypto")
+        checkouts-dir: {checkouts-dir}
+        source-dir: {gerbil-crypto-dir}
         nixpkgs-dir: {nixpkgs-dir}
         stable: {stable})))
    (catch (getopt-error? exn)

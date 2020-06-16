@@ -102,6 +102,11 @@
    (finally (close-db-connection c))))
 (defrule (with-db-connection (c name ...) body ...)
   (call-with-db-connection (lambda (c) body ...) name ...))
+(def (ensure-db-connection name)
+  (def c (current-db-connection))
+  (if c
+    (assert! (equal? (DbConnection-name c) name))
+    (open-db-connection! name)))
 
 ;; Mark the current batch as triggered, because either some transaction must be committed,
 ;; or a timer has hit since content was added, or we're closing the database.
