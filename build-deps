@@ -154,6 +154,7 @@
    std/misc/process
    std/sugar))
  (clan/utils/syntax "utils/syntax.ss" (gerbil/core gerbil/expander std/sugar))
+ (clan/utils/bytes "utils/bytes.ss" (gerbil/core gerbil/gambit/bytes std/iter))
  (clan/utils/temporary-files
   "utils/temporary-files.ss"
   (clan/utils/base

@@ -49,11 +49,11 @@
 
 ;; : Bytes <- 'a:Type 'a
 (.defgeneric (bytes<- type x)
-   slot: .marshal from: methods)
+   slot: .bytes<- from: methods)
 
 ;; : 'a <- 'a:Type Bytes
 (.defgeneric (<-bytes type b)
-   slot: .unmarshal from: methods)
+   slot: .<-bytes from: methods)
 
 (.def (bytes<-un/marshal @ [] .marshal .unmarshal)
    .bytes<-: (bytes<-<-marshal .marshal)
