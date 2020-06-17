@@ -50,7 +50,7 @@
             (hash-put! loaded key activity)
             activity)
   make-default-state: (lambda (key) ;; override this method to provide a default state
-                        (error "Failed to load key %s" repr key))
+                        (error "Failed to load key" repr key))
   make: (lambda (key init)
           (def db-key (db-key key))
           (when (db-key? db-key)

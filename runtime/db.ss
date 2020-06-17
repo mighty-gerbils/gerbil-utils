@@ -200,6 +200,10 @@
 (def (commit-transaction (transaction (current-db-transaction)))
   (completion-wait! (close-transaction transaction)))
 
+;; Sync to a transaction being committed.
+(def (sync-transaction (transaction (current-db-transaction)))
+  (completion-wait! (DbTransaction-completion transaction)))
+
 ;; Register post-commit finalizer actions to be run after this batch commits,
 ;; with the batch id as a parameter.
 ;; The hook is called synchronously, but it if you use asynchronous message passing,
