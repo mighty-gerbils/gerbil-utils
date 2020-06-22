@@ -311,3 +311,8 @@
 
 (def (symbol<? x y)
   (string<? (symbol->string x) (symbol->string y)))
+
+(defrules modify! ()
+  ((_ x f) (set! x (f x)))
+  ((_ x f1 fs ...) (set! x ((rcompose f1 fs ...) x)))
+  ((_ x) (void)))

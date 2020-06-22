@@ -45,7 +45,7 @@
     (test-case "test bind/option"
       (check-equal? (bind/option #f 1+) #f)
       (check-equal? (bind/option (some 3) 1+) 4))
-    (test-case "test iter/option"
-      (check-equal? (with-output-to-string (cut iter/option display #f)) "")
-      (check-equal? (with-output-to-string (cut iter/option display (some (* 6 7)))) "42"))
+    (test-case "test for-each/option"
+      (check-equal? (with-output-to-string (cut for-each/option display #f)) "")
+      (check-equal? (with-output-to-string (cut for-each/option display (some (* 6 7)))) "42"))
     ))

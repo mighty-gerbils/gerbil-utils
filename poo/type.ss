@@ -6,12 +6,12 @@
 
 (import
   :gerbil/gambit/bits :gerbil/gambit/exact :gerbil/gambit/ports :scheme/base
-  :std/format :std/iter :std/lazy :std/misc/list :std/misc/repr :std/srfi/1 :std/sugar
+  :std/format :std/generic :std/iter :std/lazy :std/misc/list :std/misc/repr :std/srfi/1 :std/sugar
   :clan/utils/base :clan/utils/hash :clan/utils/io :clan/utils/number
   :clan/poo/poo :clan/poo/mop :clan/poo/brace :clan/poo/io)
 
 (.def (Tuple. @ Type. types)
-  repr: `(Tuple ,@(map (cut .@ <> repr) (vector->list types)))
+  sexp: `(Tuple ,@(map (cut .@ <> sexp) (vector->list types)))
   .element?:
     (λ (x)
       (def l (vector-length types))
@@ -25,7 +25,7 @@
   {(:: @ Tuple.) (types)})
 
 (.def (IntegerRange. @ Type. minimum maximum)
-  repr: `(IntegerRange ,@(if minimum `(min: ,minimum) '())
+  sexp: `(IntegerRange ,@(if minimum `(min: ,minimum) '())
                        ,@(if max `(max: ,maximum) '()))
   .element?:
    (match (vector minimum maximum)
@@ -39,19 +39,19 @@
   {(:: @ IntegerRange.) (minimum) (maximum)})
 
 (.def (List. @ Type. type)
-  repr: `(List ,(.@ type name))
+  sexp: `(List ,(.@ type name))
   .element?: (λ (x) (and (list? x) (every (cut element? type <>) x))))
 (def (List type)
   (typecheck Type type)
   {(:: @ List.) (type)})
 
 (.def (Or. @ Type. types)
-  repr: `(Or ,@(map (cut .@ <> name) types))
+  sexp: `(Or ,@(map (cut .@ <> name) types))
   .element?: (λ (x) (any (cut element? <> x) types)))
 (def (Or . types) {(:: @ Or.) (types)})
 
 (.def (Exactly. @ Type. value)
-  repr: `(Exactly ,(repr value))
+  sexp: `(Exactly ,(:sexp value)) ;; TODO: have a better generic sexp function?
   .element?: (λ (x) (equal? x value)))
 (def (Exactly value) {(:: @ Exactly.) (value)})
 
@@ -60,17 +60,17 @@
 (def True (Exactly #t))
 
 (.def (OneOf. @ Type. values)
-  repr: `(OneOf ,@(map repr values))
+  sexp: `(OneOf ,@(map :sexp values))
   .element?: (λ (x) (member x values)))
 
 (def (OneOf . values) {(:: @ OneOf.) (values)})
 
 (.def (Pair. @ Type. left right)
-  repr: `(Pair ,(.@ left name) ,(.@ right name)))
+  sexp: `(Pair ,(.@ left sexp) ,(.@ right sexp)))
 (def (Pair left right) {(:: @ Pair.) (left) (right)})
 
 (.def (Integer @ Type.)
-  repr: 'Z
+  sexp: 'Z
   .element?: exact-integer?
   methods: =>.+ {
     add: +
@@ -133,7 +133,7 @@
         (car info) (cdr info) x y)))
 
 (.def (Z/. @ Integer n)
-  repr: `(Z/ ,n)
+  sexp: `(Z/ ,n)
   .element?: (nat-under? n)
   methods: =>.+ {
     normalize: (λ (x) (modulo x n)) ;; TODO: figure why using a keyword fails
@@ -168,7 +168,7 @@
 
 (.def (UInt. @ Z/. n-bits)
   n: (arithmetic-shift 1 n-bits)
-  repr: `(UInt ,n-bits)
+  sexp: `(UInt ,n-bits)
   .element?: (lambda (x) (and (nat? x) (<= (integer-length x) n-bits)))
   methods: =>.+ {(:: @ [] maxint)
     length-in-bits: n-bits
@@ -178,6 +178,6 @@
 
 (def (UInt n-bits) {(:: @ UInt.) (n-bits)})
 
-(.def (Symbol @ Type.) repr: 'Symbol .element?: symbol?)
-(.def (String @ Type.) repr: 'String .element?: string?)
-(.def (Number @ Type.) repr: 'Number .element?: number?)
+(.def (Symbol @ Type.) sexp: 'Symbol .element?: symbol?)
+(.def (String @ Type.) sexp: 'String .element?: string?)
+(.def (Number @ Type.) sexp: 'Number .element?: number?)

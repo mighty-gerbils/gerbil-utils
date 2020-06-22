@@ -6,8 +6,10 @@
 (export #t)
 
 (import
+  (for-syntax :std/srfi/1)
   :gerbil/gambit/exact :gerbil/gambit/hash :gerbil/gambit/ports
-  :std/format :std/iter :std/lazy :std/misc/list :std/misc/repr :std/srfi/1 :std/sugar
+  :std/format :std/generic :std/iter :std/lazy
+  :std/misc/list :std/misc/repr :std/srfi/1 :std/sugar
   :clan/utils/base :clan/utils/hash :clan/poo/poo :clan/poo/brace)
 
 ;;TODO: Parse Gerbil Scheme formals, extract call arguments
@@ -111,29 +113,31 @@
    slot: .element?)
 
 (.def (Type. @)
-  repr: (error "missing type repr" @)
+  sexp: (error "missing type sexp" @)
   .element?: (error "missing element?" @)
-  methods: {})
+  methods: {
+    .sexp<-: (lambda (x) (.@ x sexp))
+  })
 
 (def (typecheck type x (msg #f))
   (assert! (element? type x)
            (format "~a type ~a: ~a"
-                   (or msg "not an element of") (.@ type name) (repr x))))
+                   (or msg "not an element of") (.@ type sexp) (repr x))))
 
 (def (validate type x (msg #f)) (typecheck type x msg) x)
 
 (def (poo-values x) (map (cut .ref x <>) (.all-slots x)))
 (def (symbolify x) (!> x object->string string->symbol))
 
-(.def (Any @ Type.) repr: 'Any .element?: true)
-(.def (Poo @ Type.) repr: 'Poo .element?: poo?)
-(.def (Bool @ Type.) repr: 'Bool .element?: boolean?)
+(.def (Any @ Type.) sexp: 'Any .element?: true)
+(.def (Poo @ Type.) sexp: 'Poo .element?: poo?)
+(.def (Bool @ Type.) sexp: 'Bool .element?: boolean?)
 
 (def (monomorphic-poo? type x)
   (and (poo? x) (every (cut element? type <>) (poo-values x))))
 
 (.def (MonomorphicPoo. @ Type. type) ;; all the values are of given type
-  repr: `(MonomorphicPoo ,(.@ type repr))
+  sexp: `(MonomorphicPoo ,(.@ type sexp))
   .element?: (cut monomorphic-poo? type <>))
 
 (def (MonomorphicPoo type) {(:: @ MonomorphicPoo.) (type)})
@@ -145,20 +149,49 @@
   m)
 
 ;; TODO: support optional and keyword arguments in the input types
-(.def (Function. @ Type. output inputs)
-  repr: `(Function ,(.@ output name) ,@(map (cut .@ <> name) inputs))
+(.def (Function. @ Type. outputs inputs)
+  sexp: `(Function (@list ,@(map (cut .@ <> sexp) outputs)) (@list ,@(map (cut .@ <> sexp) inputs)))
   .element?: procedure? ;; we can't dynamically test that a function has the correct signature :-(
   arity: (length inputs))
 
-(def (Function output inputs)
-  (typecheck Type output)
+(def (Function outputs inputs)
+  (for-each (cut typecheck Type <>) outputs)
   (for-each (cut typecheck Type <>) inputs)
-  { (:: @ Function.) (output) (inputs) })
+  { (:: @ Function.) (outputs) (inputs) })
+
+;; The expander complains "Syntax Error: Ambiguous pattern".
+;; TODO: Use syntax-case, detect when there are opposite arrows, curry when there are multiple ones?
+(defsyntax (Fun stx)
+  (syntax-case stx (<- ->)
+    ((_ . io)
+     (let (iol (syntax->list #'io))
+       (cond
+        ((list-index (lambda (x) (eq? (stx-e x) '<-)) iol)
+         => (lambda (k)
+              (defvalues (outputs inputs) (split-at iol k))
+              (let loop ((o outputs) (i (cdr inputs)))
+                (cond
+                 ((list-index (lambda (x) (eq? (stx-e x) '<-)) i)
+                  => (lambda (k)
+                       (defvalues (inputs moreinputs) (split-at i k))
+                       (loop [[#'Function [#'@list . o] [#'@list . inputs]]] (cdr moreinputs))))
+                 (else [#'Function [#'@list . o] [#'@list i]])))))
+        ((list-index (lambda (x) (eq? (stx-e x) '->)) iol)
+         => (lambda (k)
+              (defvalues (inputs ios) (split-at iol k))
+              (let loop ((i inputs) (iol (cdr ios)))
+                (cond
+                 ((list-index (lambda (x) (eq? (stx-e x) '->)) i)
+                  => (lambda (k)
+                       (defvalues (inputs moreios) (split-at i k))
+                       [#'Function [#'@list (loop inputs (cdr moreios))] [#'@list . i]]))
+                 (else [#'Function [#'@list . iol] [#'@list . i]])))))
+        (else (error "illegal Fun type" stx))))))) ;; or (Values . io) ?
 
 (.defgeneric (slot-checker slot-descriptor slot-name base x) slot: .slot-checker from: type)
 (.defgeneric (slot-definer slot-descriptor slot-name x) slot: .slot-definer from: type)
 
-(.def (Class. class Type. slots name sealed) ;; this is the class descriptor for class descriptor objects.
+(.def (Class. class Type. slots sexp sealed) ;; this is the class descriptor for class descriptor objects.
   .type: Class
   effective-slots:
    (let (slot-base (.@ .type slot-descriptor-class proto))
@@ -188,11 +221,11 @@
 (def (constant-slot x) (λ (_ _ _) x))
 
 (.def (Slot @ Class.)
-  repr: 'Slot
+  sexp: 'Slot
   slots:
    {type: {type: Type optional: #t}
     constant: {type: Any optional: #t}
-    compute: {type: (Function Any [Poo Any (Function Any [])]) optional: #t} ;; second Any should be (List Poo)
+    compute: {type: (Fun Any <- Poo Any (Fun Any <-)) optional: #t} ;; second Any should be (List Poo)
     base: {type: Any optional: #t default: no-such-slot}
     default: {type: Any optional: #t}
     optional: {type: Bool default: #f}
@@ -220,15 +253,31 @@
          ;;TODO: (put-assertion! x (λ (self) (assert! (slot-checker slot-name base self))))
          ))})
 
+;; TODO: functional lenses in (methods .lens foo) as well as imperative accessors
+(.def (Lens @ Class.)
+  sexp: 'Lens. ;; Lens 's 'a
+  slots: =>.+ { ;; or should we have just a ((f a) <- (f : Functor) ((f b) <- b) a) ?
+    .get: { } ;; 's -> 'a
+    .set: { }} ;; 'a -> 's -> 's
+  methods: =>.+ {
+    .get: (lambda (l s) (.call l .get s))
+    .set: (lambda (l a s) (.call l .set a s))
+    .modify: (lambda (l f s) (.call l .set (f (.call l .get s)) s)) ;; over in haskell
+
+    ;; Same order as in Haskell, opposite to OCaml. (compose x y) will access x then y
+    ;; (Lens 'a 'c)  <- (Lens 'a 'b) (Lens 'b 'c)
+    .compose: (lambda (l1 l2) {.get: (lambda (s) (.call l2 .get (.call l1 s)))
+                          .set: (lambda (a s) (.modify l1 (cut .call l2 .set a <>) s))})})
+
 (.def (Type @ Class.)
-  repr: 'Type
-  slots: {repr: {type: Any}
-          .element?: {type: (Function Bool Any)}}
-  .element?: (λ (x) (and (poo? x) (.has? x repr) (.has? x .element?)))
+  sexp: 'Type
+  slots: {sexp: {type: Any}
+          .element?: {type: (Fun Bool <- Any)}}
+  .element?: (λ (x) (and (poo? x) (.has? x sexp) (.has? x .element?)))
   proto: Type.)
 
 (.def (Class @ Type)
-   repr: 'Class
+   sexp: 'Class
    slot-descriptor-class: Slot ;; MOP magic!
    (slots =>.+
     {slots: {type: PooPoo} ;; would be (MonomorphicPoo Slot) if we didn't automatically append Slot
@@ -249,16 +298,35 @@
 
 (defrules .defclass ()
   ((_ (class class-options ...) (slotdefs ...) options ...)
-   (.def (class class-options ...) repr: 'class (slots =>.+ {slotdefs ...}) options ...))
+   (.def (class class-options ...) sexp: 'class (slots =>.+ {slotdefs ...}) options ...))
   ((_ class (slotdefs ...) options ...)
    (.defclass (class) (slotdefs ...) options ...)))
 
 (defmethod (@@method :pr poo)
   (λ (self (port (current-output-port)) (options (current-representation-options)))
     (cond
+     ((.has? self .type print-object) (.call (.@ self .type) print-object self port options))
+     ((.has? self .type methods .sexp<-) (write (sexp<- (.@ self type) self) port))
+     ((.has? self .type) (print-class-object self port options))
      ((.has? self :pr) (.call self :pr port options))
-     ((.has? self .type print-object) (.call (.@ self .type) print-object port options))
-     ((.has? self .type) (print-class-object self port options)))))
+     ((.has? self sexp) (write (.@ self sexp) port))
+     (else (print-unrepresentable-object self port options)))))
+
+(.defgeneric (sexp<- type x) slot: .sexp<- from: methods)
+
+(defgeneric :sexp
+  (lambda (x)
+    (cond
+     ((or (number? x) (boolean? x) (string? x) (char? x) (void? x) (keyword? x) (eof-object? x))
+      x)
+     (else `',x)))) ;; TODO: do better than that.
+
+
+(defmethod (@@method :sexp poo)
+  (λ (self)
+    (cond
+     ((.has? self .type .method .sexp<-) (.call (.@ self .type .method) .sexp<- self))
+     ((.has? self sexp) (object->string (.@ self sexp))))))
 
 (def (print-class-object
       x (port (current-output-port)) (options (current-representation-options)))
@@ -269,3 +337,8 @@
    (for-each (λ-match ([k . v] (d " (") (w k) (d " ") (prn v) (d ")"))) (.alist x))
    (catch (e) (void)))
   (d "})"))
+
+(def (slot-lens slot-name)
+  {(:: @ (proto Lens))
+   .get: (lambda (s) (.ref s slot-name))
+   .set: (lambda (x s) (.cc s slot-name x))})

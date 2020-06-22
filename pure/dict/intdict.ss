@@ -1,4 +1,5 @@
-(export empty-intdict
+(export intdict?
+        empty-intdict
         intdict-empty?
         intdict-ref
         intdict-put
@@ -10,7 +11,9 @@
         list->intdict
         intdict->list
         intdict=?
-        (rename: *intdict intdict))
+        (rename: *intdict intdict)
+        intdict-min-key
+        intdict-max-key)
 
 (import :std/iter
         :std/misc/repr
@@ -76,3 +79,11 @@
         (pr (bare-intdict-ref bare k) port options)
         (display ")" port))
       (display ")" port))))
+
+;; intdict-min-key : [Intdictof V] ?X -> [Or Int X]
+(def (intdict-min-key a (default #f))
+  (bare-intdict-min-key (intdict-unwrapped a) default))
+
+;; intdict-max-key : [Intdictof V] ?X -> [Or Int X]
+(def (intdict-max-key a (default #f))
+  (bare-intdict-max-key (intdict-unwrapped a) default))

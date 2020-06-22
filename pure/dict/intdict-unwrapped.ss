@@ -9,7 +9,9 @@
         intdict-put/list
         list->intdict
         intdict->list
-        intdict=?)
+        intdict=?
+        intdict-min-key
+        intdict-max-key)
 
 (import :std/iter
         :std/misc/rbtree)
@@ -64,3 +66,15 @@
                  (and (intdict-has-key? b k)
                       (v=? (intdict-ref a k) (intdict-ref b k))))
                aks)))
+
+;; intdict-min-key : [Intdictof V] ?X -> [Or Int X]
+(def (intdict-min-key a (default #f))
+  (let/cc return
+    (rbtree-for-each return a)
+    default))
+
+;; intdict-max-key : [Intdictof V] ?X -> [Or Int X]
+(def (intdict-max-key a (default #f))
+  (let/cc return
+    (rbtree-for-eachr return a)
+    default))

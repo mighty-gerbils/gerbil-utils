@@ -4,6 +4,9 @@
   :std/misc/bytes :std/sugar
   :clan/utils/base :clan/utils/number)
 
+;;(def (write-u8vector v p) (write-subu8vector v 0 (u8vector-length v) p))
+;;(def (read-u8vector v p) (def l (u8vector-length v)) (read-subu8vector v 0 l p l))
+
 (def (read-uint16 port) ;; big endian
   (def hi (read-u8 port))
   (def lo (read-u8 port))
@@ -44,7 +47,7 @@
 
 ;; Unit <- Out Int Nat
 (def (write-integer-bytes out n l)
-  (write-bytes out (bytes<-nat n l)))
+  (write-bytes (bytes<-nat n l) out))
 
 ;; Int <- In
 (def (read-varint in)

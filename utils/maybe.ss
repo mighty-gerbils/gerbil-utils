@@ -30,4 +30,4 @@
       ([] (reverse a))
       ([x . t] (let (fx (f x)) (if (eq? fx null) null (loop (cons fx a) t)))))))
 (def (bind/maybe x f) (if (eq? x null) null (f x)))
-(def (iter/maybe f x) (bind/maybe x f))
+(def (for-each/maybe f x) (bind/maybe x f))

@@ -461,6 +461,7 @@
    gerbil/gambit/hash
    gerbil/gambit/ports
    std/format
+   std/generic
    std/iter
    std/lazy
    std/misc/list
@@ -496,6 +497,7 @@
    gerbil/gambit/ports
    scheme/base
    std/format
+   std/generic
    std/iter
    std/lazy
    std/misc/list
@@ -546,10 +548,14 @@
    std/sugar))
  (clan/runtime/persist
   "runtime/persist.ss"
-  (clan/poo/brace
-   clan/poo/io
+  (clan/poo/io
    clan/poo/mop
    clan/poo/poo
    clan/runtime/db
-   gerbil/core)))
+   clan/utils/concurrency
+   gerbil/core
+   gerbil/gambit/threads
+   std/misc/completion
+   std/misc/queue
+   std/sugar)))
 

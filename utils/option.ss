@@ -26,4 +26,4 @@
                    ((some y) (loop (cons y a) t))
                    (e e)))))))
 (def (bind/option x f) (match x ((some v) (f v)) (else x)))
-(def (iter/option f x) (match x ((some v) (some (f v))) (else (void))))
+(def (for-each/option f x) (match x ((some v) (some (f v))) (else (void))))

@@ -47,7 +47,7 @@
     (test-case "test bind/maybe"
       (check-equal? (bind/maybe null 1+) null)
       (check-equal? (bind/maybe 3 1+) 4))
-    (test-case "test iter/maybe"
-      (check-equal? (with-output-to-string (cut iter/maybe display null)) "")
-      (check-equal? (with-output-to-string (cut iter/maybe display (* 6 7))) "42"))
+    (test-case "test for-each/maybe"
+      (check-equal? (with-output-to-string (cut for-each/maybe display null)) "")
+      (check-equal? (with-output-to-string (cut for-each/maybe display (* 6 7))) "42"))
     ))
