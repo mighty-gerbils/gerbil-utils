@@ -1,4 +1,5 @@
 (export assq-ref
+        assq-get
         assq-put
         assq-update
         assq-remove
@@ -16,6 +17,11 @@
 (def (assq-ref a k)
   (def e (assq k a))
   (if e (cdr e) (error 'assq-ref)))
+
+;; assq-get : [Assqof K V] K F -> (U V F)
+(def (assq-get a k (default #f))
+  (def e (assq k a))
+  (if e (cdr e) default))
 
 ;; assq-put : [Assqof K V] K V -> [Assqof K V]
 ;; do not introduce duplicate keys, if key exists remove old entry

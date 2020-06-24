@@ -1,4 +1,5 @@
-(export empty-symdict
+(export symdict?
+        empty-symdict
         symdict-empty?
         symdict-ref
         symdict-put
@@ -28,12 +29,11 @@
 ;; symdict-ref : [Symdictof V] Symbol -> V
 (def (symdict-ref d k) (bare-symdict-ref (symdict-unwrapped d) k))
 
+;; symdict-get : [Intdictof V] Int F -> (U V F)
+(def (symdict-get d k (default #f)) (bare-symdict-get (symdict-unwrapped d) k default))
+
 ;; symdict-put : [Symdictof V] Symbol V -> [Symdictof V]
 (def (symdict-put d k v) (symdict (bare-symdict-put (symdict-unwrapped d) k v)))
-
-;; symdict-get : [Symdictof V] Symbol [Optional V] -> V
-(def (symdict-get d k (default #f))
-  (if (symdict-has-key? d k) (symdict-ref d k) default))
 
 ;; symdict-update : [Symdictof V] Symbol [V -> V] V -> [Symdictof V]
 (def (symdict-update d k f v0) (symdict (bare-symdict-update (symdict-unwrapped d) k f v0)))

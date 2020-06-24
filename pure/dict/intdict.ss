@@ -1,6 +1,8 @@
-(export empty-intdict
+(export intdict?
+        empty-intdict
         intdict-empty?
         intdict-ref
+        intdict-get
         intdict-put
         intdict-update
         intdict-remove
@@ -26,6 +28,9 @@
 
 ;; intdict-ref : [Intdictof V] Int -> V
 (def (intdict-ref d k) (bare-intdict-ref (intdict-unwrapped d) k))
+
+;; intdict-get : [Intdictof V] Int F -> (U V F)
+(def (intdict-get d k (default #f)) (bare-intdict-get (intdict-unwrapped d) k default))
 
 ;; intdict-put : [Intdictof V] Int V -> [Intdictof V]
 (def (intdict-put d k v) (intdict (bare-intdict-put (intdict-unwrapped d) k v)))

@@ -1,6 +1,7 @@
 (export empty-dicteq
         dicteq-empty?
         dicteq-ref
+        dicteq-get
         dicteq-put
         dicteq-update
         dicteq-remove
@@ -39,6 +40,11 @@
   (def e (assq k a))
   (cond (e (cdr e))
         (else (error 'dicteq-ref))))
+
+;; dicteq-get : [DictEqof K V] K F -> (U V F)
+(def (dicteq-get d k (default #f))
+  (def a (intdict-get d (eq?-hash k) '()))
+  (assq-get k a default))
 
 ;; dicteq-put : [DictEqof K V] K V -> [DictEqof K V]
 (def (dicteq-put d k v)

@@ -1,4 +1,5 @@
-(export empty-dicteq
+(export dicteq?
+        empty-dicteq
         dicteq-empty?
         dicteq-ref
         dicteq-put
@@ -26,6 +27,9 @@
 
 ;; dicteq-ref : [DictEqof K V] K -> V
 (def (dicteq-ref d k) (bare-dicteq-ref (dicteq-unwrapped d) k))
+
+;; dicteq-get : [DictEqof K V] K F -> (U V F)
+(def (dicteq-get d k (default #f)) (bare-dicteq-get (dicteq-unwrapped d) k default))
 
 ;; dicteq-put : [DictEqof K V] K V -> [DictEqof K V]
 (def (dicteq-put d k v) (dicteq (bare-dicteq-put (dicteq-unwrapped d) k v)))

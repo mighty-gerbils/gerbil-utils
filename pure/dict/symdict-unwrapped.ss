@@ -1,6 +1,7 @@
 (export empty-symdict
         symdict-empty?
         symdict-ref
+        symdict-get
         symdict-put
         symdict-update
         symdict-remove
@@ -26,6 +27,9 @@
 
 ;; symdict-ref : [Symdictof V] Sym -> V
 (def symdict-ref rbtree-ref)
+
+;; symdict-get : [Symdictof V] Sym F -> (U V F)
+(def (symdict-get d k (default #f)) (rbtree-ref d k default))
 
 ;; symdict-put : [Symdictof V] Symbol V -> [Symdictof V]
 (def symdict-put rbtree-put)
