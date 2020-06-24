@@ -7,6 +7,8 @@
         intdict-remove
         intdict-has-key?
         intdict-keys
+        intdict-min-key
+        intdict-max-key
         intdict-put/list
         list->intdict
         intdict->list
@@ -47,6 +49,14 @@
 
 ;; intdict-keys : [Intdictof V] -> [Listof Int]
 (def (intdict-keys d) (for/collect (k (in-rbtree-keys d)) k))
+
+;; intdict-min-key : [Intdictof Any] -> Int
+;; intdict-max-key : [Intdictof Any] -> Int
+(def (intdict-min-key d) (iter-first-only (in-rbtree-keys d)))
+(def (intdict-max-key d) (caar (rbtree->listr d)))
+
+;; iter-first-only : [Iterof E] -> E
+(def (iter-first-only iter) (begin0 (iter-next! iter) (iter-fini! iter)))
 
 ;; intdict-put/list : [Intdictof V] [Listof [Cons Int V]] -> [Intdictof V]
 (def (intdict-put/list d l)

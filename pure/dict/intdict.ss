@@ -8,6 +8,8 @@
         intdict-remove
         intdict-has-key?
         intdict-keys
+        intdict-min-key
+        intdict-max-key
         intdict-put/list
         list->intdict
         intdict->list
@@ -46,6 +48,11 @@
 
 ;; intdict-keys : [Intdictof V] -> [Listof Int]
 (def (intdict-keys d) (bare-intdict-keys (intdict-unwrapped d)))
+
+;; intdict-min-key : [Intdictof V] -> Int
+;; intdict-max-key : [Intdictof V] -> Int
+(def (intdict-min-key d) (bare-intdict-min-key (intdict-unwrapped d)))
+(def (intdict-max-key d) (bare-intdict-max-key (intdict-unwrapped d)))
 
 ;; intdict-put/list : [Intdictof V] [Listof [Cons Int V]] -> [Intdictof V]
 (def (intdict-put/list d l) (intdict (bare-intdict-put/list (intdict-unwrapped d) l)))
