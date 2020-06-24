@@ -161,10 +161,15 @@
    (poo (cons (hash (slot (poo/slot-init-form self slots slot slotspec ...)) ...)
               (append-prototypes super)) #f)))
 
+(defrules poo/form-named (lambda λ)
+  ((_ slot (lambda formals body ...)) (fun (slot . formals) body ...))
+  ((_ slot (λ formals body ...)) (fun (slot . formals) body ...))
+  ((_ slot form) form))
+
 (defrules poo/slot-init-form (=> =>.+)
   ((_ self slots slot form)
    (λ (self super-prototypes base)
-     (with-slots (self . slots) form)))
+     (with-slots (self . slots) (poo/form-named slot form))))
   ((_ self slots slot => form args ...)
    (λ (self super-prototypes base)
      (let ((inherited-value (compute-slot self super-prototypes 'slot base)))
@@ -175,7 +180,7 @@
    (λ (self super-prototypes base)
      (let ((inherited-value (lazy (compute-slot self super-prototypes 'slot base))))
        (let-syntax ((next-method (syntax-rules () ((_) (force inherited-value)))))
-         (with-slots (self . slots) form)))))
+         (with-slots (self . slots) (poo/form-named slot form))))))
   ((_ self slots slot)
    (λ (self super-prototypes base) slot)))
 

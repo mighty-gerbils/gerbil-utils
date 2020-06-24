@@ -3,7 +3,7 @@
 (import
   :gerbil/gambit/threads
   :std/misc/completion :std/misc/queue :std/sugar
-  :clan/utils/concurrency
+  :clan/utils/base :clan/utils/concurrency
   :clan/poo/poo :clan/poo/mop :clan/poo/io
   ./db)
 
@@ -137,7 +137,7 @@
     (def name [sexp (sexp<- Key key)])
     (spawn/name
      [sexp key]
-     (lambda ()
+     (fun (make-persistent-actor)
        (def owner #f)
        (def (check-owner tx)
          (unless (eq? owner tx) (error "bad transaction" [sexp key] owner tx)))

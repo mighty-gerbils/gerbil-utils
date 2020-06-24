@@ -552,6 +552,7 @@
    clan/poo/mop
    clan/poo/poo
    clan/runtime/db
+   clan/utils/base
    clan/utils/concurrency
    gerbil/core
    gerbil/gambit/threads

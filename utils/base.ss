@@ -316,3 +316,14 @@
   ((_ x f) (set! x (f x)))
   ((_ x f1 fs ...) (set! x ((rcompose f1 fs ...) x)))
   ((_ x) (void)))
+
+;; In rec, the name is bound in the body of the lambda
+(defrule (rec (name . formals) body ...)
+  (let () (def (name . formals) body ...) name))
+
+;; In fun, the name is NOT bound in the body of the lambda
+(defsyntax (fun stx)
+  (syntax-case stx ()
+    ((_ (name . formals) body ...)
+     (with-syntax ((n (datum->syntax #'stx (string->uninterned-symbol (symbol->string (syntax-e #'name))))))
+       #'(let () (def (n . formals) body ...) n)))))
