@@ -7,49 +7,56 @@
 ;;(def (write-u8vector v p) (write-subu8vector v 0 (u8vector-length v) p))
 ;;(def (read-u8vector v p) (def l (u8vector-length v)) (read-subu8vector v 0 l p l))
 
+;; : UInt16 <- In
 (def (read-uint16 port) ;; big endian
   (def hi (read-u8 port))
   (def lo (read-u8 port))
   (fx+ lo (fxarithmetic-shift hi 8)))
 
+;; : Bytes <- In
 (def (read-sized16-bytes port)
   (def size (read-uint16 port))
   (read-bytes size port))
 
+;; : <- UInt16 Out
 (def (write-uint16 n port)
   (assert! (<= 0 n 65535))
   (def bytes (make-bytes 2))
   (bytevector-u16-set! bytes 0 n big)
   (write-bytes bytes port))
 
+;; : <- Bytes Out
 (def (write-sized16-bytes bytes port)
   (write-uint16 (bytes-length bytes) port)
   (write-bytes bytes port))
 
+;; : (Bytes <- 'a) <- (<- 'a Out)
 (def (bytes<-<-marshal marshal)
-  (nest (lambda (bytes)) (call-with-output-u8vector) (lambda (port))
-        (marshal bytes port)))
+  (lambda (x) (call-with-output-u8vector (lambda (port) (marshal x port)))))
 
+;; : ('a <- Bytes) <- ('a <- In)
 (def (<-bytes<-unmarshal unmarshal)
   (nest (lambda (bytes)) (call-with-input-u8vector bytes) (lambda (port))
         (begin0 (unmarshal port))
         (assert! (eq? #!eof (read-u8 port)))))
 
+;; : (<- 'a Out) <- (Bytes <- 'a)
 (def (marshal<-bytes<- bytes<-)
   (lambda (x port) (write-u8vector (bytes<- x) port)))
 
+;; : ('a <- In) <- ('a <- Bytes) Nat
 (def (unmarshal<-<-bytes <-bytes n)
   (lambda (port) (<-bytes (read-bytes n port))))
 
-;; Nat <- In Nat
+;; : Nat <- In Nat
 (def (read-integer-bytes in l)
   (nat<-bytes (read-bytes in l)))
 
-;; Unit <- Out Int Nat
-(def (write-integer-bytes out n l)
+;; : <- Int Nat Out
+(def (write-integer-bytes n l out)
   (write-bytes (bytes<-nat n l) out))
 
-;; Int <- In
+;; : Int <- In
 (def (read-varint in)
   (let ((x (read-byte in)))
     (if (< x 128)
@@ -80,26 +87,26 @@
           (assert! (= l (integer-length-in-bytes n)))
           n))))))
 
-;; Unit <- Out Int
-(def (write-varint out n)
+;; : <- Int Out
+(def (write-varint n out)
   (if (negative? n)
-    (if (>= n -64) (write-byte out (bitwise-and 255))
+    (if (>= n -64) (write-byte (bitwise-and 255) out)
         (let ((l (integer-length-in-bytes n)))
           (if (<= 62)
             (begin
-              (write-byte out (- 192 l))
-              (write-integer-bytes out n l))
+              (write-byte (- 192 l) out)
+              (write-integer-bytes n l out))
             (begin
-              (write-byte out 128)
-              (write-varint out l)
-              (write-integer-bytes out n l)))))
-    (if (<= n 63) (write-byte out n)
+              (write-byte 128 out)
+              (write-varint l out)
+              (write-integer-bytes n l out)))))
+    (if (<= n 63) (write-byte n out)
         (let ((l (integer-length-in-bytes n)))
           (if (<= l 62)
             (begin
-              (write-byte out (+ l 64))
-              (write-integer-bytes out n l))
+              (write-byte (+ l 64) out)
+              (write-integer-bytes n l out))
             (begin
-              (write-byte out 127)
-              (write-varint out l)
-              (write-integer-bytes out n l)))))))
+              (write-byte 127 out)
+              (write-varint l out)
+              (write-integer-bytes n l out)))))))

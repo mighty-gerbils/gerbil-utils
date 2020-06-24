@@ -59,7 +59,7 @@
 
   ;; Internal function that associates a key in the key-value store to a user-level key object of type Key.
   ;; : Bytes <- Key
-  db-key: (lambda (key) (u8vector-append key-prefix (bytes<- Key key)))
+  db-key<-: (lambda (key) (u8vector-append key-prefix (bytes<- Key key)))
 
   ;; Internal function that given (1) a db-key (as returned by the function above),
   ;; (2) a current state of type State, and a (3) current transaction context,
@@ -86,7 +86,7 @@
   resume: (lambda (key state tx) ;; @ <- Key State
             (when (hash-key? loaded key)
               (error "persistent activity already resumed" sexp key))
-            (def activity (make-activity key (cut saving (db-key key) <> <>) state tx))
+            (def activity (make-activity key (cut saving (db-key<- key) <> <>) state tx))
             (hash-put! loaded key activity)
             activity)
 
@@ -110,7 +110,7 @@
   ;; may attempt create to create an activity with the given key at any point in time.
   ;; : @ <- Key (State <- (<- State TX) TX) TX
   make: (lambda (key init tx)
-          (def db-key (db-key key))
+          (def db-key (db-key<- key))
           (when (db-key? db-key)
             (error "persistent activity already created" sexp key))
           (def state (init (cut saving db-key <> <>) tx))
@@ -125,7 +125,7 @@
          (or (hash-get loaded key)
              (let (state
                    (cond
-                    ((db-get (db-key key) tx) => (cut <-bytes State <>))
+                    ((db-get (db-key<- key) tx) => (cut <-bytes State <>))
                     (else (make-default-state key))))
                (resume key state tx)))))
 
@@ -135,8 +135,8 @@
   make-activity: ;; Provide the interface function declared above.
   (lambda (key save! state tx)
     (def name [sexp (sexp<- Key key)])
-    (spawn/name
-     [sexp key]
+    (spawn/name/logged
+     [sexp (sexp<- Key key)]
      (fun (make-persistent-actor)
        (def owner #f)
        (def (check-owner tx)

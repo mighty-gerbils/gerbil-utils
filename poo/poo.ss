@@ -233,16 +233,17 @@
   (for-each (match <> ([k . v] (.putslot! o k (λ (self super-prototypes base) v)))) alist)
   o)
 
-;; carbon copy
+;; carbon copy / clone c...
 (def (.cc poo. . overrides)
-  (def i (awhen (j (poo-instance poo.)) (hash-copy j) (hash)))
+  (def i (cond ((poo-instance poo.) => hash-copy) (else (hash))))
   (def o (poo (poo-prototypes poo.) i))
   (let loop ((l overrides))
     (match l
       ([] (void))
       ([(? symbol? s) v] (hash-put! i s v))
       ([(? keyword? k) v] (hash-put! i (string->symbol (keyword->string k)) v))
-      (else (error "invalid poo overrides" overrides)))))
+      (else (error "invalid poo overrides" overrides))))
+  o)
 ;; TODO: a syntax that allows for => / =>.+ overrides as well as setting values.
 ;; TODO: find an efficient way to repeatedly override one field in a pure way without leaking memory,
 ;; in O(log n) rather than O(n)?

@@ -10,6 +10,6 @@
 (def (result? x) (or (some? x) (failure? x)))
 
 ;; : (Result A Err) <- (A <- Unit)
-(def (call/result thunk) (with-catch make-failure (some (thunk))))
+(def (call/result thunk) (with-catch make-failure (lambda () (some (thunk)))))
 
 (defrule (with-result body ...) (call/result (lambda () body ...)))

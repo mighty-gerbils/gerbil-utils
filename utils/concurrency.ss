@@ -7,7 +7,7 @@
   :gerbil/gambit/bytes :gerbil/gambit/continuations :gerbil/gambit/random :gerbil/gambit/threads
   :std/actor :std/error :std/logger
   :std/misc/bytes :std/misc/completion :std/misc/list :std/misc/repr :std/sugar
-  :clan/utils/base :clan/utils/error)
+  :clan/utils/base :clan/utils/error :clan/utils/exception)
 
 ;;; Protocol for process shutdown: periodically check for the (shutdown?) flag,
 ;; so you can shutdown gracefully after having received a signal,
@@ -27,6 +27,9 @@
 ;; hash-table used to represent a set. TODO: use actual set data structure
 (def current-subprocesses
   (make-parameter (make-hash-table)))
+
+(def (spawn/name/logged name function port: (port (current-error-port)))
+  (spawn/name name (thunk-with-logged-exceptions function port: port)))
 
 (def (spawn-subprocess name function . args)
   (let ((subprocess
@@ -85,7 +88,7 @@
 
 ;; TODO: does this leak resources when this wrapper is garbage collected but maybe not the actor?
 (def (sequentialize/actor name fun)
-  (let ((actor (spawn/name name applicable-actor fun)))
+  (let ((actor (spawn/name/logged name (lambda () (applicable-actor fun)))))
     (λ arguments (!!applicable.apply actor arguments))))
 
 ;; vyzo: this is a version of sequentialize that uses a plain mutex
@@ -251,46 +254,10 @@
 (def (make-simple-client-server make-processor (name (##procedure-name make-processor)))
   (def (server-loop)
     (simple-server thread-receive (make-processor)))
-  (def server (spawn/name name server-loop))
+  (def server (spawn/name/logged name server-loop))
   (simple-client (cut thread-send server <>) cons))
 
 (def (completion-done val)
   (def c (make-completion))
   (completion-post! c val)
   c)
-
-;; (deftype (FutureStream A) (Fun (Or Nil (Cons A (FutureStream A)))))
-(def future-nil (lambda () '()))
-(defrule (future-cons head tail) (lambda () (cons head tail)))
-
-(def (future-stream-take n s)
-  (unless (<= 0 n) (error "Negative value" 'future-stream-take n))
-  (let loop ((acc []) (s s) (n n))
-    (if (zero? n) (values (reverse acc) s)
-        (match (s)
-          ([] (error "Took too many entries from this stream!"))
-          ([hd . tl] (loop [hd . acc] tl (1- n)))))))
-
-(defclass simple-actor (state thread) constructor: :init!)
-(defmethod {:init! simple-actor}
-  (lambda (self init (name 'simple-actor))
-    (def mx (make-mutex 'init))
-    (mutex-lock! mx)
-    (def (thunk)
-      (set! (simple-actor-state self) (init))
-      (mutex-unlock! mx)
-      (while #t
-        (match (thread-receive)
-          ((? procedure? f) (set! (simple-actor-state self) (f (simple-actor-state self)))))))
-    (set! (simple-actor-thread self) (spawn/name name thunk))
-    (with-lock mx true)))
-(defmethod {peek simple-actor} (cut simple-actor-state <>))
-(defmethod {poke simple-actor} (lambda (self transform) (thread-send (simple-actor-state self) transform)))
-(defmethod {action simple-actor}
-  (lambda (self f in)
-    (def c (make-completion))
-    (def (g state) (let (new (f state))
-                     (completion-post! c new)
-                     new))
-    (thread-send (simple-actor-state self) g)
-    (completion-wait! c)))

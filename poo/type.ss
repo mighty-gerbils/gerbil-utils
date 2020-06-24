@@ -73,6 +73,7 @@
   sexp: 'Z
   .element?: exact-integer?
   methods: =>.+ {
+    .sexp<-: identity
     add: +
     sub: -
     mul: *
@@ -86,8 +87,8 @@
     lognot: bitwise-not ;; more bitwise operations, see Gambit
     shift-left: arithmetic-shift
     shift-right: (λ (x n) (arithmetic-shift x (- n)))
-    marshal: write-varint
-    unmarshal: read-varint
+    .marshal: write-varint
+    .unmarshal: read-varint
     <-string: string->number
     ->string: number->string
     succ: 1+
@@ -147,8 +148,8 @@
     add: (λ (x y) (def z (+ x y)) (if (<= z maxint) z (- z n)))
     sub: (λ (x y) (def z (- x y)) (if (<= 0 z) z (+ z n)))
     mul: (λ (x y) (normalize (* x y)))
-    write-to-bytes: (λ (out n) (write-integer-bytes out n length-in-bytes))
-    read-from-bytes: (λ (in) (read-integer-bytes in length-in-bytes))
+    .marshal: (λ (n out) (write-integer-bytes n length-in-bytes out))
+    .unmarshal: (λ (in) (read-integer-bytes in length-in-bytes))
     <-string: string->number
     ->string: number->string
     succ: (λ (x) (if (= x maxint) 0 (1+ x)))

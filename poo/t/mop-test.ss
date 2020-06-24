@@ -30,9 +30,9 @@
          unit =>.+ {default: 'BTC}}
         sealed: #t)
       (def stolen (new LocatedAmount (location 'MtGox) (quantity 744408)))
-      (assert-equal! (.get stolen location) 'MtGox)
-      (assert-equal! (.get stolen quantity) 744408)
-      (assert-equal! (.get stolen unit) 'BTC)
+      (check-equal? (.get stolen location) 'MtGox)
+      (check-equal? (.get stolen quantity) 744408)
+      (check-equal? (.get stolen unit) 'BTC)
       (map (λ-match ([type element] (typecheck type element)))
            [[Poo stolen]
             [Amount stolen]
@@ -45,4 +45,8 @@
            [[Poo 5]
             [Amount (new Amount (quantity 100))] ;; missing unit
             [LocatedAmount (.o (location 'BitShares) (quantity 50) (unit 'ETH))] ;; missing .type
-            ]))))
+            ]))
+    (test-case "Lenses"
+      (check-equal?
+       (.sorted-alist (.method Lens .modify (slot-lens 'a) 1+ (.o a: 1 b: 6)))
+       '((a . 2) (b . 6))))))

@@ -1,5 +1,14 @@
-(export with-catch/cont)
+(export
+  with-catch/cont
+  call-with-logged-exceptions
+  thunk-with-logged-exceptions)
 
+(import
+  :gerbil/gambit/continuations :gerbil/gambit/exceptions :gerbil/gambit/threads
+  :std/format)
+
+;; The exception and continuation are valid for use with display-exception-in-context
+;; and display-continuation-backtrace
 ;; with-catch/cont : [Exception Continuation -> A] [-> A] -> A
 (def (with-catch/cont handler thunk)
   (let/esc outside
@@ -11,3 +20,17 @@
           (lambda ()
             (outside (handler exn inside)))))))
     (with-exception-handler escaping-handler thunk)))
+
+(def (call-with-logged-exceptions thunk port: (port (current-error-port)))
+  (with-catch/cont
+   (lambda (e k)
+     (fprintf port "In thread ~a:\n" (thread-name (current-thread)))
+     (display-exception-in-context e k port)
+     (display-continuation-backtrace k port)
+     (display-continuation-environment k port)
+     (display-continuation-dynamic-environment k port)
+     (raise e))
+   thunk))
+
+(def (thunk-with-logged-exceptions thunk port: (port (current-error-port)))
+  (lambda () (call-with-logged-exceptions thunk port: port)))

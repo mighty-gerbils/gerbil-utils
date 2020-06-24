@@ -5,7 +5,13 @@
   "utils/simple-rpc-client.ss"
   (gerbil/core std/actor std/logger std/text/json))
  (clan/utils/source "utils/source.ss" (gerbil/core))
- (clan/utils/exception "utils/exception.ss" (gerbil/core))
+ (clan/utils/exception
+  "utils/exception.ss"
+  (gerbil/core
+   gerbil/gambit/continuations
+   gerbil/gambit/exceptions
+   gerbil/gambit/threads
+   std/format))
  (clan/utils/base "utils/base.ss" (gerbil/core std/sugar))
  (clan/utils/exit
   "utils/exit.ss"
@@ -122,6 +128,7 @@
   "utils/concurrency.ss"
   (clan/utils/base
    clan/utils/error
+   clan/utils/exception
    gerbil/core
    gerbil/gambit/bytes
    gerbil/gambit/continuations
@@ -443,13 +450,6 @@
    std/srfi/13
    std/sugar))
  (clan/poo/brace "poo/brace.ss" (clan/poo/poo clan/utils/base gerbil/core))
- (clan/poo/monads
-  "poo/monads.ss"
-  (clan/poo/brace
-   clan/poo/poo
-   clan/utils/failure
-   clan/utils/option
-   gerbil/core))
  (clan/poo/mop
   "poo/mop.ss"
   (clan/poo/brace

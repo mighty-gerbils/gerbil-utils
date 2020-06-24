@@ -116,7 +116,6 @@
   sexp: (error "missing type sexp" @)
   .element?: (error "missing element?" @)
   methods: {
-    .sexp<-: (lambda (x) (.@ x sexp))
   })
 
 (def (typecheck type x (msg #f))
@@ -262,7 +261,8 @@
   methods: =>.+ {
     .get: (lambda (l s) (.call l .get s))
     .set: (lambda (l a s) (.call l .set a s))
-    .modify: (lambda (l f s) (.call l .set (f (.call l .get s)) s)) ;; over in haskell
+    .modify: (lambda (l f s)
+               (.call l .set (f (.call l .get s)) s)) ;; over in haskell
 
     ;; Same order as in Haskell, opposite to OCaml. (compose x y) will access x then y
     ;; (Lens 'a 'c)  <- (Lens 'a 'b) (Lens 'b 'c)
@@ -279,9 +279,11 @@
 (.def (Class @ Type)
    sexp: 'Class
    slot-descriptor-class: Slot ;; MOP magic!
-   (slots =>.+
+   slots: =>.+
     {slots: {type: PooPoo} ;; would be (MonomorphicPoo Slot) if we didn't automatically append Slot
-     sealed: {type: Bool default: #f}})
+     sealed: {type: Bool default: #f}}
+   methods: =>.+
+    {.sexp<-: (lambda (x) (.@ x sexp))}
    proto: Class.)
 
 (def (proto class) (.@ class proto))
@@ -306,7 +308,7 @@
   (λ (self (port (current-output-port)) (options (current-representation-options)))
     (cond
      ((.has? self .type print-object) (.call (.@ self .type) print-object self port options))
-     ((.has? self .type methods .sexp<-) (write (sexp<- (.@ self type) self) port))
+     ((.has? self .type methods .sexp<-) (write (sexp<- (.@ self .type) self) port))
      ((.has? self .type) (print-class-object self port options))
      ((.has? self :pr) (.call self :pr port options))
      ((.has? self sexp) (write (.@ self sexp) port))
@@ -325,7 +327,7 @@
 (defmethod (@@method :sexp poo)
   (λ (self)
     (cond
-     ((.has? self .type .method .sexp<-) (.call (.@ self .type .method) .sexp<- self))
+     ((.has? self .type methods .sexp<-) (.call (.@ self .type methods) .sexp<- self))
      ((.has? self sexp) (object->string (.@ self sexp))))))
 
 (def (print-class-object

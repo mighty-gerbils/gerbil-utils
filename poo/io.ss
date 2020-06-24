@@ -13,8 +13,8 @@
     (if (input-port? in) (read-byte in)
         (error "Trying to read-byte from unsupported object" in))))
 
-;; Unit <- Out Byte
-(.defgeneric (poo-write-byte out byte))
+;; Unit <- Byte Out
+(.defgeneric (poo-write-byte byte out))
 
 ;; Unit <- In Bytes ?offset: Nat ?length: Nat
 (.defgeneric (read-bytes-into in bs offset: (offset 0) length: (length (- (bytes-length bs) offset)))
@@ -34,12 +34,12 @@
       (read-bytes-into in bs length: length))
     bs))
 
-;; Unit <- Out Bytes ?offset: Nat ?length: Nat
-(.defgeneric (poo-write-bytes out bs offset: (offset 0) length: (length (- (bytes-length bs) offset)))
+;; Unit <- Bytes Out ?offset: Nat ?length: Nat
+(.defgeneric (poo-write-bytes bs out offset: (offset 0) length: (length (- (bytes-length bs) offset)))
    default:
    (λ (out bs offset: (offset 0) length: (length (- (bytes-length bs) offset)))
      (for (i (in-range length))
-       (write-byte out (bytes-ref bs (+ i offset))))))
+       (write-byte (bytes-ref bs (+ i offset)) out))))
 
 (.defgeneric (marshal type x port)
    slot: .marshal from: methods)
