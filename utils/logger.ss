@@ -17,7 +17,7 @@
 ;; The logger itself is a function that takes two Strings and a hook:
 ;; the first string is a file name, the second string is text to log,
 ;; and the hook (which defaults to the hook passed to the logger)
-;; is called whe the file name changed.
+;; is called when the file name changed.
 ;; (<- String String) <- name: (Optional Any) on-new-file: (Optional FunctionDesignator)
 (define-memo-function (text-logger name: (name #f) on-new-file: (on-new-file #f))
   (sequentialize
@@ -59,13 +59,13 @@
 ;; is called whe the file name changed.
 ;; (<- Any (Optional Timestamp)) <- String top: (Optional String) name: (Optional Any)
 (define-memo-function ((json-logger
-                        normalization: (λ (path top: (top (data-directory)) name: (name #f))
+                        normalization: (λ (path top: (top (log-directory)) name: (name #f))
                                          [path top name]))
                        path top name)
   (def directory (subpath top path))
   (def log (text-logger name: (or name path)))
   (def date-string<-unix-time (caching-date-string<-unix-time))
-  (def caching-adjustment<-tai (caching-adjustment<-tai))
+  (def caching-adjustment<-tai (caching-adjustment<-tai-time))
   (sequentialize
    ['json-logger (or name path)]
    (λ (json (tai-timestamp (current-tai-timestamp)))
@@ -82,7 +82,7 @@
 ;;; Logging JSON into a directory named after the arguments under the data-directory
 ;; (<- Any (Optional Timestamp)) <- String *
 (def (json-data-logger . x)
-  (json-logger (string-join x "/")))
+  (json-logger (string-join x "/") top: (data-directory)))
 
 ;;; Logging JSON into a directory named after the arguments under the run-directory
 ;; (<- Any (Optional Timestamp)) <- String *

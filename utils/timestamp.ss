@@ -450,7 +450,7 @@
   (tai-timestamp<-srfi-19-time (time-utc-start-of-n-month-period (srfi-19-time<-tai-timestamp timestamp time-utc) n tz-offset)))
 
 
-;; Like date-string<-timestamp but caching the previous answer.
+;; Like adjustment<-tai-time but caching the previous answer.
 ;; This assumes TAI-UTC only changes just the second before January 1st UTC or July 1st UTC.
 ;; NB: closures created by this function are not thread-safe.
 (def (caching-adjustment<-tai-time)
@@ -460,17 +460,17 @@
         (last-adjustment 0))
     (λ (tai)
       (unless (<= period-start tai period-end)
-        (let* ((date (time-tai->date tai))
+        (let* ((date (date<-tai-time tai))
                (semester-start (date-start-of-n-month-period date 6))
                (next-semester-start (roll-date semester-start months: 6)))
-          (set! period-start (date->time-tai semester-start))
-          (set! period-end (- (date->time-tai next-semester-start) 1))
+          (set! period-start (tai-time<-date semester-start))
+          (set! period-end (- (tai-time<-date next-semester-start) 1))
           (set! adjustment (adjustment<-tai-time period-start))
           (when (= tai period-end)
             (let ((next-adjustment (adjustment<-tai-time (+ 1 period-end))))
               (when (> next-adjustment adjustment) ;; it will be n+1
                 (set! period-start period-end)
-                (set! period-end (- (date->time-tai (roll-date semester-start years: 1))
+                (set! period-end (- (tai-time<-date (roll-date semester-start years: 1))
                                     2)) ; 2 is conservative, so we don't check a third time
                 (set! adjustment next-adjustment))))))
       adjustment)))

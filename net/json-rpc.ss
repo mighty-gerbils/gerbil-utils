@@ -117,7 +117,7 @@
   (def id (id-counter))
   (def request-string (string<-request method (param-encoder params) id))
   (when log
-    (log (format "Sending ~a rpc request ~s" server-url request-string)))
+    (log [to: server-url request: request-string]))
 
   ;; TODO: implement timeouts, with semi-asynchronous aborts the http-post thread itself.
   (def response-bytes
@@ -134,7 +134,7 @@
     (try (content->json response-bytes) ;; todo: move to decode-json-rpc-response ?
          (catch (e) (raise (malformed-response request-id: id response: response-bytes e: e)))))
   (when log
-    (log (format "Received from ~a rpc response ~a" server-url (bytes->string response-bytes))))
+    (log [from: server-url response: (bytes->string response-bytes)]))
 
   (decode-json-rpc-response result-decoder
                    (and (hash-table? response-json) (hash-get response-json "id"))
