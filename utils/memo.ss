@@ -6,7 +6,7 @@
 (import
   :gerbil/gambit/threads
   :std/misc/hash
-  :clan/utils/assert :clan/utils/base)
+  ./base ./assert)
 
 ;; The basic helper for computing with a memoized function as specified by the info structure
 ;; being called with given arguments.

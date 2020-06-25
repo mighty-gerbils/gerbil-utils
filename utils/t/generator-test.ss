@@ -4,7 +4,7 @@
 (import
   :gerbil/gambit/exceptions
   :std/sort :std/test
-  :clan/utils/base :clan/utils/generator :clan/utils/list :clan/utils/vector)
+  ../base ../generator ../list ../vector)
 
 (def stupid-list [1 2 3 4 5])
 (def (generating-stupid-list) (generating<-list stupid-list))

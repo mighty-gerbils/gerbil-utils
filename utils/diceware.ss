@@ -7,8 +7,7 @@
 (import
   :gerbil/gambit/random
   :std/format :std/iter :std/misc/list :std/misc/ports :std/pregexp :std/srfi/13 :std/sugar
-  :clan/utils/base :clan/utils/basic-parsers :clan/utils/basic-printers
-  :clan/utils/basic-parsers :clan/utils/number :clan/utils/random)
+  ./base ./basic-parsers ./basic-printers ./basic-parsers ./number ./random)
 
 
 (def diceware-file (getenv "DICEWARE_FILE" #f))

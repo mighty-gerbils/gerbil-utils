@@ -1,8 +1,8 @@
 (export symdict-test)
 
 (import :std/test
-        :clan/pure/dict/symdict
-        :clan/pure/dict/assq)
+        ../symdict
+        ../assq)
 
 (def symdict-test
   (test-suite "test suite for clan/pure/dict/symdict"

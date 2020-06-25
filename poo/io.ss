@@ -3,8 +3,8 @@
 (import
   :gerbil/gambit/bytes :gerbil/gambit/ports
   :std/iter :std/sugar
-  :clan/utils/base :clan/utils/io
-  :clan/poo/poo :clan/poo/mop :clan/poo/brace)
+  ../utils/base ../utils/io
+  ./poo ./mop ./brace)
 
 ;; Byte <- In
 (.defgeneric (poo-read-byte in)

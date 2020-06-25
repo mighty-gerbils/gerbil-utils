@@ -5,7 +5,7 @@
 
 (import
   :std/iter :std/misc/list :std/sugar
-  :clan/utils/base :clan/utils/list :clan/utils/number)
+  ./base ./list ./number)
 
 ;;; Assuming a sorted vector, a predicate on vector elements that is "increasing",
 ;;; i.e. if true, true on all subsequent elements, and optionally

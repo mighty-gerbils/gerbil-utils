@@ -8,7 +8,7 @@
   :gerbil/gambit/exact :gerbil/gambit/threads
   :scheme/base
   :std/format :std/srfi/19 :std/sugar
-  :clan/utils/base :clan/utils/basic-parsers :clan/utils/number)
+  ./base ./basic-parsers ./number)
 
 ;; We deal with several time representations:
 ;;

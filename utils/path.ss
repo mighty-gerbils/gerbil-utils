@@ -4,7 +4,7 @@
 
 (import
   :std/misc/list :std/pregexp :std/srfi/1 :std/srfi/13 :std/sugar
-  :clan/utils/base :clan/utils/list)
+  ./base ./list)
 
 (def (subpath top . sub-components)
   (path-expand (string-join sub-components "/") top))

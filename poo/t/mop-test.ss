@@ -1,11 +1,10 @@
 (export mop-test)
 
 (import
-  :std/misc/repr
-  :clan/poo/poo :clan/poo/mop :clan/poo/type
   :gerbil/gambit/ports
-  :std/format :std/sort :std/srfi/13 :std/sugar :std/test
-  :clan/utils/assert :clan/utils/base :clan/poo/brace)
+  :std/format :std/misc/repr :std/sort :std/srfi/13 :std/sugar :std/test
+  :clan/utils/assert :clan/utils/base
+  ../poo ../mop ../type ../brace)
 
 (def mop-test
   (test-suite "test suite for clan/poo/mop"

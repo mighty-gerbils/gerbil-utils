@@ -185,7 +185,6 @@
   "utils/subtitles.ss"
   (clan/utils/base
    clan/utils/basic-parsers
-   clan/utils/debug
    clan/utils/files
    clan/utils/number
    gerbil/core
@@ -208,6 +207,9 @@
    gerbil/gambit/threads
    std/misc/hash))
  (clan/utils/supervisor "utils/supervisor.ss" (gerbil/core))
+ (clan/utils/shell
+  "utils/shell.ss"
+  (clan/utils/base clan/utils/basic-parsers gerbil/core std/srfi/13))
  (clan/utils/list
   "utils/list.ss"
   (clan/utils/base gerbil/core std/misc/list std/srfi/1 std/sugar))
@@ -487,7 +489,6 @@
    clan/poo/mop
    clan/poo/poo
    clan/utils/base
-   clan/utils/debug
    clan/utils/hash
    clan/utils/io
    clan/utils/number
@@ -537,8 +538,7 @@
    gerbil/core))
  (clan/runtime/db
   "runtime/db.ss"
-  (clan/utils/debug
-   clan/utils/number
+  (clan/utils/number
    clan/utils/path
    gerbil/core
    gerbil/gambit/threads

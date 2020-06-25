@@ -4,7 +4,7 @@
   :gerbil/gambit/exceptions
   :std/test
   :clan/t/test-support
-  :clan/utils/option :clan/utils/maybe)
+  ../option ../maybe)
 
 (def maybe-test
   (test-suite "test suite for clan/utils/maybe"

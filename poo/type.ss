@@ -2,13 +2,12 @@
 ;;; More types on top of POO and its MOP
 
 (export #t)
-(import :clan/utils/debug)
 
 (import
   :gerbil/gambit/bits :gerbil/gambit/exact :gerbil/gambit/ports :scheme/base
   :std/format :std/generic :std/iter :std/lazy :std/misc/list :std/misc/repr :std/srfi/1 :std/sugar
-  :clan/utils/base :clan/utils/hash :clan/utils/io :clan/utils/number
-  :clan/poo/poo :clan/poo/mop :clan/poo/brace :clan/poo/io)
+  ../utils/base ../utils/hash ../utils/io ../utils/number
+  ./poo ./mop ./brace ./io)
 
 (.def (Tuple. @ Type. types)
   sexp: `(Tuple ,@(map (cut .@ <> sexp) (vector->list types)))

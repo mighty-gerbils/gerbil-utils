@@ -3,7 +3,7 @@
 (import
   :gerbil/gambit/exceptions
   :std/test
-  :clan/utils/base :clan/utils/date :clan/utils/number)
+  ../base ../date ../number)
 
 (def date-test
   (test-suite "test suite for clan/utils/date"

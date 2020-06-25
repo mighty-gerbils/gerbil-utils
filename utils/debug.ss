@@ -7,7 +7,7 @@
 (import
   :gerbil/gambit/ports :gerbil/gambit/threads
   :std/format :std/misc/repr :std/sugar
-  :clan/utils/base :clan/utils/concurrency)
+  ./base ./concurrency)
 
 ;; DBG macro for easier print-debugging
 ;; as ported from Common Lisp's ASDF (in asdf/uiop/contrib/debug.lisp).

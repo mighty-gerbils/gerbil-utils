@@ -15,7 +15,7 @@
 
 (import :std/iter
         :std/misc/repr
-        (prefix-in :clan/pure/dict/symdict-unwrapped bare-))
+        (prefix-in ./symdict-unwrapped bare-))
 
 (defstruct symdict (unwrapped))
 

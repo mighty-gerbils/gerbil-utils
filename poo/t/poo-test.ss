@@ -4,10 +4,11 @@
 ;; NB: For debugging, use (import :std/interactive)
 
 (import
-  :clan/poo/poo :clan/poo/brace
   :gerbil/gambit/ports
   :std/format :std/sort :std/srfi/13 :std/test
-  :clan/utils/assert :clan/utils/base)
+  :clan/utils/assert :clan/utils/base
+  ../poo ../brace)
+
 
 (def poo-test
   (test-suite "test suite for clan/poo/poo"

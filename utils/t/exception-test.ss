@@ -1,10 +1,9 @@
 (export exception-test)
 
-(import :std/format)
-(import :std/test
-        :std/srfi/13
-        :gerbil/gambit
-        :clan/utils/exception)
+(import
+  :gerbil/gambit
+  :std/format :std/test :std/srfi/13
+  ../exception)
 
 (def (inside0 x) (cons 0 (inside1 x)))
 

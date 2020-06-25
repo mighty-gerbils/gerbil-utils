@@ -50,9 +50,7 @@
   :gerbil/gambit/threads
   :std/db/leveldb
   :std/misc/completion :std/misc/list :std/sugar
-  :clan/utils/number :clan/utils/path)
-
-(import :clan/utils/debug)
+  ../utils/number ../utils/path)
 
 (defstruct DbConnection
   (name leveldb mx txcounter

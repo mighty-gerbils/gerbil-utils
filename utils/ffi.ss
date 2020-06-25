@@ -12,8 +12,8 @@
 
 (import
   :gerbil/gambit/exceptions :gerbil/gambit/ports
-  :std/sugar
-  :clan/utils/base :std/misc/process)
+  :std/misc/process :std/sugar
+  ./base)
 
 (begin-foreign
   (c-declare #<<END-C

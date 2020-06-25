@@ -2,7 +2,7 @@
 
 (import
   :std/test
-  :clan/utils/base)
+  ../base)
 
 (def (double x) (* x 2))
 (def (square x) (* x x))

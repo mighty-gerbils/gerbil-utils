@@ -7,7 +7,7 @@
 (import
   :gerbil/gambit/ports
   :std/net/request :std/text/json :std/sugar
-  :clan/utils/base)
+  ../utils/base)
 
 ;; Create a query string...
 ;; BEWARE!!! This does NO VALIDATION of the command and option syntax.

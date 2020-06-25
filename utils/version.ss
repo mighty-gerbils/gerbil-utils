@@ -8,7 +8,7 @@
 
 (import
   :std/format :std/misc/ports :std/misc/process :std/misc/string :std/pregexp
-  :clan/utils/base :clan/utils/basic-parsers)
+  ./base ./basic-parsers)
 (extern namespace: #f gerbil-greeting)
 
 ;; Name and version of the topmost software layer, typically your application.

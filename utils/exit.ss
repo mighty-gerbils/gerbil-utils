@@ -6,7 +6,7 @@
 (import
   :gerbil/gambit/ports
   :std/format :std/misc/list :std/misc/repr :std/sugar
-  :clan/utils/base)
+  ./base)
 
 (defrule (eval-print-exit body ...) (call-print-exit (λ () body ...)))
 

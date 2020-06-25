@@ -14,7 +14,7 @@
   :gerbil/gambit/exceptions :gerbil/gambit/ports
   :std/sugar
   ;; :std/os/error ; for commented out make-temporary-file
-  :clan/utils/base :clan/utils/random)
+  ./base ./random)
 
 ;; TODO: upstream as std/os/temp.ss
 

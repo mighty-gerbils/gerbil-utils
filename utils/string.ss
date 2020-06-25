@@ -3,7 +3,7 @@
 
 (import
   :std/iter :std/srfi/13
-  :clan/utils/number)
+  ./number)
 
 ;; TODO: write a string-substitute function in the style of http://clhs.lisp.se/Body/f_sbs_s.htm
 ;; and/or of SRFI 13 (that will be contributed to std/misc/string);

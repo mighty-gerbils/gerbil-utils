@@ -4,7 +4,7 @@
   :gerbil/gambit/exceptions
   :std/test
   :clan/t/test-support
-  :clan/utils/option)
+  ../option)
 
 (def option-test
   (test-suite "test suite for clan/utils/option"

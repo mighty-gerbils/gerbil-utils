@@ -5,7 +5,7 @@
 
 (import
   :std/logger :std/sugar
-  :clan/utils/base :clan/utils/error)
+  ./base ./error)
 
 (defrules assert-comparison! ()
   ((_ pred expr1 expr2) (assert-comparison-helper! 'pred 'expr1 'expr2 pred expr1 expr2)))

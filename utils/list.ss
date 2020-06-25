@@ -6,7 +6,7 @@
 
 (import
   :std/misc/list :std/sugar :std/srfi/1
-  :clan/utils/base)
+  ./base)
 
 ;; Variant of map with arguments reversed, which nest-s nicer.
 ;; : (list Y) <- (list X) (Y <- X)

@@ -2,7 +2,7 @@
 (import
   :gerbil/gambit/bits :gerbil/gambit/bytes :gerbil/gambit/ports
   :std/misc/bytes :std/sugar
-  :clan/utils/base :clan/utils/number)
+  ./base ./number)
 
 ;;(def (write-u8vector v p) (write-subu8vector v 0 (u8vector-length v) p))
 ;;(def (read-u8vector v p) (def l (u8vector-length v)) (read-subu8vector v 0 l p l))

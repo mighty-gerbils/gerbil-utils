@@ -2,7 +2,7 @@
 
 (import
   :std/format :std/test
-  :clan/utils/base :clan/utils/list)
+  ../base ../list)
 
 (def (copy-list lst) (foldr cons '() lst))
 

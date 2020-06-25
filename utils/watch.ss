@@ -27,8 +27,7 @@
   :gerbil/gambit/ports :gerbil/gambit/threads
   :std/actor :std/format :std/logger :std/misc/list :std/misc/ports :std/misc/process
   :std/pregexp :std/srfi/13 :std/sugar
-  :clan/utils/base :clan/utils/basic-parsers :clan/utils/date
-  :clan/utils/ffi :clan/utils/files :clan/utils/json :clan/utils/list :clan/utils/logger :clan/utils/path-config)
+  ./base ./basic-parsers ./date ./ffi ./files ./json ./list ./logger ./path-config)
 
 ;; Class Daemon-Status-Register
 (defclass daemon-status-register ())

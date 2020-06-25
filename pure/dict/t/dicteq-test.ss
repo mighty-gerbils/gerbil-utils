@@ -1,8 +1,7 @@
 (export dicteq-test)
 
 (import :std/test
-        :clan/pure/dict/dicteq
-        :clan/pure/dict/assq)
+        ../dicteq ../assq)
 
 (def dicteq-test
   (test-suite "test suite for clan/pure/dict/dicteq"

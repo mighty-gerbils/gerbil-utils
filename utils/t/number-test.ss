@@ -3,7 +3,7 @@
 (import
   :gerbil/gambit/exceptions
   :std/test
-  :clan/utils/base :clan/utils/number)
+  ../base ../number)
 
 (def (fit-to-string n width)
   (call-with-output-string []

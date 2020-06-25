@@ -7,7 +7,7 @@
   :gerbil/gambit/bytes :gerbil/gambit/continuations :gerbil/gambit/random :gerbil/gambit/threads
   :std/actor :std/error :std/logger
   :std/misc/bytes :std/misc/completion :std/misc/list :std/misc/repr :std/sugar
-  :clan/utils/base :clan/utils/error :clan/utils/exception)
+  ./base ./error ./exception)
 
 ;;; Protocol for process shutdown: periodically check for the (shutdown?) flag,
 ;; so you can shutdown gracefully after having received a signal,
@@ -78,13 +78,13 @@
 (def (applicable-actor fun)
   (let loop ()
     (<- ((!applicable.apply arguments k)
-	 (try
-	  (!!value (apply fun arguments) k)
-	  (catch (e)
-	    (!!error e k)))
-	 (loop))
-	((!rpc.shutdown)
-	 (void)))))
+         (try
+          (!!value (apply fun arguments) k)
+          (catch (e)
+            (!!error e k)))
+         (loop))
+        ((!rpc.shutdown)
+         (void)))))
 
 ;; TODO: does this leak resources when this wrapper is garbage collected but maybe not the actor?
 (def (sequentialize/actor name fun)

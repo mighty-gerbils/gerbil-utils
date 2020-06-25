@@ -3,8 +3,8 @@
 (import
   :gerbil/gambit/threads
   :std/misc/completion :std/misc/queue :std/sugar
-  :clan/utils/base :clan/utils/concurrency
-  :clan/poo/poo :clan/poo/mop :clan/poo/io
+  ../utils/base ../utils/concurrency
+  ../poo/poo ../poo/mop ../poo/io
   ./db)
 
 (.defgeneric (walk-dependencies type f x) ;; Unit <- 'a:Type (Unit <- 'b:Type 'b) 'a

@@ -2,7 +2,7 @@
 
 (import
   :std/sugar :std/test
-  :clan/utils/json :clan/utils/logger)
+  ../json ../logger)
 
 (def logger-test
   (test-suite "test suite for clan/utils/logger"

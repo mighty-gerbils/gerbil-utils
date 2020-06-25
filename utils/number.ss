@@ -7,7 +7,7 @@
   :gerbil/gambit/bits :gerbil/gambit/bytes :gerbil/gambit/exact
   :scheme/base
   :std/misc/bytes :std/sugar
-  :clan/utils/base)
+  ./base)
 
 ;;;; Numbers
 (def (integer-part real)

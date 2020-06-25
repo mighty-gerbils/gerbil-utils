@@ -7,7 +7,7 @@
 (import
   :gerbil/gambit/ports
   :std/format :std/misc/ports :std/sugar :std/pregexp
-  :clan/utils/base :clan/utils/ports :clan/utils/temporary-files)
+  ./base ./ports ./temporary-files)
 
 ;; Atomically replace a file by one produced from the contents using output-contents
 (def (clobber-file file contents settings: (settings '()))

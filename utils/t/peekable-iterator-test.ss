@@ -3,7 +3,7 @@
 (import
   :std/test
   :std/iter
-  :clan/utils/peekable-iterator)
+  ../peekable-iterator)
 
 (def (iter-abcde)
   (:peekable-iter '(a b c d e)))

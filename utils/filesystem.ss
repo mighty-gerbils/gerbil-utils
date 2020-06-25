@@ -6,7 +6,7 @@
 (import
   :gerbil/gambit/exceptions :gerbil/gambit/os :gerbil/gambit/ports
   :std/misc/list :std/pregexp :std/srfi/1 :std/sugar
-  :clan/utils/base :clan/utils/list :clan/utils/path)
+  ./base ./list ./path)
 
 ;; TODO: distinguish between properties of paths and properties of files denoted by those paths.
 ;; So path-is-absolute? vs path-denotes-symlink?

@@ -10,7 +10,7 @@
 (import
   :gerbil/gambit/threads
   :std/coroutine :std/generic :std/iter :std/sugar
-  :clan/utils/base)
+  ./base)
 
 ;; Keep raising
 (def (keep-raising e) (λ _ (while #t (raise e))))

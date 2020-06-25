@@ -7,7 +7,7 @@
 (import
   :gerbil/gambit/os
   :std/error :std/format :std/logger
-  :clan/utils/base)
+  ./base)
 
 (def (warn-and-err format type . args)
   (apply warning format type args)

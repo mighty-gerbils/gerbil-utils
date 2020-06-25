@@ -2,7 +2,7 @@
 
 (import
   :std/test
-  :clan/utils/base :clan/utils/temporary-files)
+  ../base ../temporary-files)
 
 (def temporary-files-test
   (test-suite "test suite for clan/utils/temporary-files"

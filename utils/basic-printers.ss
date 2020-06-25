@@ -6,7 +6,7 @@
 (import
   :scheme/base
   :std/error :std/srfi/13 :std/sugar
-  :clan/utils/base)
+  ./base)
 
 ;; Assume ASCII, base 2 to 36
 ;; : (Or Char '#f) <- Integer (Optional Integer 10) (Optional Bool #f)

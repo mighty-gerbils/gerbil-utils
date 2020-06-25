@@ -17,7 +17,7 @@
 
 (import :std/iter
         :std/misc/repr
-        (prefix-in :clan/pure/dict/intdict-unwrapped bare-))
+        (prefix-in ./intdict-unwrapped bare-))
 
 (defstruct intdict (unwrapped))
 

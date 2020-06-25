@@ -14,7 +14,7 @@
 
 (import :std/iter
         :std/misc/repr
-        (prefix-in :clan/pure/dict/dicteq-unwrapped bare-))
+        (prefix-in ./dicteq-unwrapped bare-))
 
 (defstruct dicteq (unwrapped))
 

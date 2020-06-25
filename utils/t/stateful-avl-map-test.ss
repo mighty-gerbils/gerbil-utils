@@ -3,7 +3,7 @@
 
 (import
   :std/iter :std/misc/list :std/sort :std/srfi/1 :std/test
-  :clan/utils/base :clan/utils/generator :clan/utils/list :clan/utils/number :clan/utils/random :clan/utils/stateful-avl-map)
+  ../base ../generator ../list ../number ../random ../stateful-avl-map)
 
 ;; NB: these functions assume no repeated / shadowed keys in alist-s, which is the case in these tests.
 (def N number-comparer)

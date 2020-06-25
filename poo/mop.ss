@@ -10,7 +10,7 @@
   :gerbil/gambit/exact :gerbil/gambit/hash :gerbil/gambit/ports
   :std/format :std/generic :std/iter :std/lazy
   :std/misc/list :std/misc/repr :std/srfi/1 :std/sugar
-  :clan/utils/base :clan/utils/hash :clan/poo/poo :clan/poo/brace)
+  ../utils/base ../utils/hash ./poo ./brace)
 
 ;;TODO: Parse Gerbil Scheme formals, extract call arguments
 (begin-syntax

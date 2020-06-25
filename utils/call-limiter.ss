@@ -23,7 +23,7 @@
   :gerbil/gambit/threads
   :std/actor :std/format :std/logger :std/misc/list :std/misc/pqueue :std/sort
   :std/srfi/1 :std/srfi/19 :std/sugar
-  :clan/utils/base :clan/utils/concurrency :clan/utils/date :clan/utils/multicall :clan/utils/number)
+  ./base ./concurrency ./date ./multicall ./number)
 
 ;;; Some infrastructure for call limiters:
 
@@ -82,7 +82,6 @@
 (def use-limiter-server (make-parameter #f))
 (def registered-limiters (values '()))
 
-;;;(import :clan/utils/debug)
 ;; Given a name, a limiter function and some arguments to that function,
 ;; lazily spawn an actor for that function with given name,
 ;; define a function of given name that consults either a local actor or a remote server.

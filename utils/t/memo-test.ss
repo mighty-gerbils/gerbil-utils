@@ -2,7 +2,7 @@
 
 (import
   :std/test
-  :clan/utils/base :clan/utils/memo :clan/utils/number)
+  ../base ../memo ../number)
 
 (def memo-test
   (test-suite "test suite for clan/utils/memo"

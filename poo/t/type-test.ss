@@ -2,10 +2,11 @@
   type-test)
 
 (import
-  :clan/poo/poo :clan/poo/mop :clan/poo/type
   :gerbil/gambit/ports
   :std/format :std/sort :std/srfi/13 :std/sugar :std/test
-  :clan/utils/assert :clan/utils/base)
+  :clan/utils/assert :clan/utils/base
+  ../poo ../mop ../type)
+
 
 (def type-test
   (test-suite "test suite for clan/poo/type"

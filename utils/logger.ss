@@ -9,10 +9,8 @@
   :gerbil/gambit/ports
   :std/format :std/misc/list :std/logger :std/misc/process :std/misc/sync
   :std/srfi/13 :std/sugar :std/text/json
-  :clan/utils/base :clan/utils/basic-parsers :clan/utils/concurrency
-  :clan/utils/date :clan/utils/filesystem
-  :clan/utils/generator :clan/utils/json :clan/utils/list :clan/utils/memo :clan/utils/number
-  :clan/utils/path :clan/utils/path-config :clan/utils/version)
+  ./base ./basic-parsers ./concurrency ./date ./filesystem ./generator
+  ./json ./list ./memo ./number ./path ./path-config ./version)
 
 ;;; Logging text to a series of log files.
 ;; Start a new logger, with given name (optional) and a hook to call when switching files.
@@ -45,8 +43,8 @@
 
 (def (log-line<-json timestamp json)
   (call-with-output-string
-    '() (λ (o) (display-timestamp timestamp o) (display " " o)
-           (write-json json o) (newline o))))
+   [] (λ (o) (display-timestamp timestamp o) (display " " o)
+         (write-json json o) (newline o))))
 
 
 ;;; Logging JSON into a directory

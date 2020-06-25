@@ -6,7 +6,7 @@
 (import
   :gerbil/gambit/threads
   :std/actor :std/error :std/logger :std/net/websocket :std/text/json :std/sugar
-  :clan/utils/base)
+  ../utils/base)
 
 (defproto websocket-client
   event: ;; asynchronous

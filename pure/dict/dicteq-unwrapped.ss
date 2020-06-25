@@ -14,8 +14,8 @@
 (import :std/iter
         :std/misc/rbtree
         :std/srfi/1
-        :clan/pure/dict/assq
-        :clan/pure/dict/intdict-unwrapped)
+        ./assq
+        ./intdict-unwrapped)
 
 
 

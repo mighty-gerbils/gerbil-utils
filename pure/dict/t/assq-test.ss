@@ -1,7 +1,7 @@
 (export assq-test)
 
 (import :std/test
-        :clan/pure/dict/assq)
+        ../assq)
 
 (def assq-test
   (test-suite "test suite for clan/pure/dict/assq"
