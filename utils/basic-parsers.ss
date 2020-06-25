@@ -13,7 +13,7 @@
 (import
   :scheme/char
   :std/error :std/srfi/13 :std/sugar
-  :clan/utils/base)
+  ./base)
 
 (def (numeric-char? x)
   (and (char? x) (char-numeric? x)))
@@ -22,14 +22,17 @@
   (and (char? x) (char-whitespace? x)))
 
 ;; NB: This assumes Latin / English alphabet
-(def (alphabetic-char? x)
-  (and (char? x) (char-alphabetic? x)))
+(def (ascii-alphabetic? x)
+  (or (char<=? #\A x #\Z) (char<=? #\a x #\z)))
 
-(def (alphanumeric-char? x)
-  (and (char? x) (or (char-alphabetic? x) (char-numeric? x))))
+(def (ascii-numeric? x)
+  (char<=? #\0 x #\9))
 
-(def (ascii-graphic-char? x)
-  (and (char? x) (<= 32 (char->integer x) 127)))
+(def (ascii-alphanumeric? x)
+  (or (ascii-alphabetic? x) (ascii-numeric? x)))
+
+(def (ascii-graphic? x)
+  (<= 32 (char->integer x) 127))
 
 ;; Assume ASCII, base 2 to 36
 ;; : (Or Integer '#f) <- Char Integer
