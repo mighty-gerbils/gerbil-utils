@@ -26,9 +26,7 @@
    (lambda (e k)
      (fprintf port "In thread ~a:\n" (thread-name (current-thread)))
      (display-exception-in-context e k port)
-     (display-continuation-backtrace k port)
-     (display-continuation-environment k port)
-     (display-continuation-dynamic-environment k port)
+     (display-continuation-backtrace k port #t #t 20 20)
      (raise e))
    thunk))
 

@@ -554,8 +554,11 @@
    clan/runtime/db
    clan/utils/base
    clan/utils/concurrency
+   clan/utils/debug
    gerbil/core
+   gerbil/gambit/bytes
    gerbil/gambit/threads
+   std/format
    std/misc/completion
    std/misc/queue
    std/sugar)))

@@ -102,8 +102,12 @@
       (assert-equal! 2 (.get (.o a: 1 b: (+ a 1)) b))
       (assert-equal! 2 (.get {a: 1 b: (+ a 1)} b))
       (assert-equal! 2 (let ((a 0)) (.get (.o a: 1 b: (+ a 1)) b))) ;; proper shadowing
-      (assert-equal! 2 (let ((a 0)) (.@ {a: 1 b: (+ a 1)} b))) ;; proper shadowing
+      (assert-equal! 2 (let ((a 0)) (.@ {a: 1 b: (+ a 1)} b)))) ;; proper shadowing
     (test-case "referring to another method"
       (def m (.o a: 1+ b: a c: ((lambda (aa) (lambda (x) (aa x))) a) d: (lambda (x) (a x))))
       (assert-equal! (map (lambda (x) ((.ref m x) 2)) '(a b c d)) [3 3 3 3]))
-    )))
+    (test-case "testing overrides"
+      (def m (.o a: 1 b: 2 c: 3))
+      (def n (.cc m b: 20 'c 30 d: 40))
+      (assert-equal! (.sorted-alist n) '((a . 1) (b . 20) (c . 30) (d . 40))))
+    ))

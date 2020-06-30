@@ -53,7 +53,9 @@
   ../utils/number ../utils/path)
 
 (defstruct DbConnection
-  (name leveldb mx txcounter
+  (name ;; name, a string, also path to the leveldb storage
+   leveldb ;; leveldb handle
+   mx txcounter
    blocked-transactions open-transactions pending-transactions hooks
    batch-id batch manager timer
    ready? triggered?)
@@ -63,15 +65,15 @@
     (def mx (make-mutex name)) ;; Mutex
     (def txcounter 0) ;; Nat
     (def hooks (make-hash-table)) ;; (Table (<-) <- Any)
-    (def blocked-transactions []) ;; (List Transaction))
+    (def blocked-transactions []) ;; (List Transaction)
     (def open-transactions (make-hash-table)) ;; mutable (HashSet Transaction)
-    (def pending-transactions []) ;; (List Transaction))
+    (def pending-transactions []) ;; (List Transaction)
     (def batch-id 0) ;; Nat
     (def batch (leveldb-writebatch)) ;; leveldb-writebatch
-    (def ready? #t)
-    (def triggered? #f)
-    (def manager (db-manager self))
-    (def timer #f)
+    (def ready? #t) ;; Bool
+    (def triggered? #f) ;; Bool
+    (def manager (db-manager self)) ;; Thread
+    (def timer #f) ;; (Or Thread '#f)
     (struct-instance-init!
      self name leveldb mx txcounter
      blocked-transactions open-transactions pending-transactions hooks
@@ -138,6 +140,10 @@
   (with-db-lock (conn) (fun conn)))
 
 ;; status: blocked open pending complete
+;; When opening a transaction, it may be blocked at first so the previous batch may be completed,
+;; but by the time it is returned to the user, it is in open status;
+;; when it is closed, it becomes pending until its batch is committed,
+;; at which point it becomes complete and any thread sync'ing on it will be awakened.
 (defstruct DbTransaction (connection txid status completion) transparent: #t)
 (def current-db-transaction (make-parameter #f))
 
@@ -163,20 +169,31 @@
            (hash-put! (DbConnection-open-transactions c) txid transaction)
            (values transaction #f))))))
   (when blocked? (completion-wait! completion)) ;; Wait without hold the lock
-  transaction)
-(def (call-with-new-tx fun (c #f))
+   transaction)
+
+;; For now, let's
+;; * Disallow nested transaction / auto-transactions. We want a clear transaction owner, and
+;;   the type / signature of functions will ensure that there is always one.
+;; * Return the result of the inner expression, after the transaction is closed but not committed.
+;;   If you need to synchronize on the transaction, be sure to return it or otherwise memorize it,
+;;   or use after-commit from within the body.
+(def (call-with-tx fun (c #f))
+  (awhen (t (current-db-transaction))
+    (error "Cannot nest transactions" t))
   (def tx (open-transaction (or c (current-db-connection))))
   (try
    (parameterize ((current-db-transaction tx))
      (fun tx))
-   (finally (commit-transaction tx))))
-(def (call-with-tx fun (tx #f) (c #f))
-  (def t (or tx (current-db-transaction)))
-  (if t (fun t) (call-with-new-tx fun c)))
-(defrule (with-tx (tx dbtx ...) body ...)
-  (call-with-tx (lambda (tx) body ...) dbtx ...))
-(defrule (with-new-tx (tx dbc ...) body ...)
-  (call-with-new-tx (lambda (tx) body ...) dbc ...))
+   (finally (close-transaction tx))))
+(defrule (with-tx (tx dbc ...) body ...)
+  (call-with-tx (lambda (tx) body ...) dbc ...))
+
+(def (call-with-committed-tx fun (c #f))
+  (defvalues (result tx) (with-tx (tx_) (values (fun tx_) tx_)))
+  (sync-transaction tx)
+  result)
+(defrule (with-committed-tx (tx dbc ...) body ...)
+  (call-with-committed-tx (lambda (tx) body ...) dbc ...))
 (defrule (after-commit (tx) body ...)
   (spawn (lambda () (completion-wait! (DbTransaction-completion tx)) body ...)))
 
@@ -203,6 +220,11 @@
   (completion-wait! (close-transaction transaction)))
 
 ;; Sync to a transaction being committed.
+;; Thou Shalt Not sync with the end of a transaction from within another transaction,
+;; or you may deadlock, since that other transaction might be part of the same batch.
+;; Instead, thou shalt sync on it in a background thread, that will then run
+;; the very same code as you would if you would resume the persistent activity,
+;; and that code must be effectively idempotent.
 (def (sync-transaction (transaction (current-db-transaction)))
   (completion-wait! (DbTransaction-completion transaction)))
 
@@ -292,6 +314,6 @@
         open-db-connection open-db-connection!
         close-db-connection! close-db-connection call-with-db-connection
         db-trigger! call-with-db-lock
-        open-transaction call-with-new-tx call-with-tx close-transaction
+        open-transaction call-with-tx call-with-committed-tx close-transaction
         commit-transaction register-commit-hook! db-manager finalize-batch!
         get-batch-id db-get db-key? db-put! db-put-many! db-delete!)

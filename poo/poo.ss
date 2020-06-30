@@ -240,8 +240,8 @@
   (let loop ((l overrides))
     (match l
       ([] (void))
-      ([(? symbol? s) v] (hash-put! i s v))
-      ([(? keyword? k) v] (hash-put! i (string->symbol (keyword->string k)) v))
+      ([(? symbol? s) v . r] (hash-put! i s v) (loop r))
+      ([(? keyword? k) v . r] (hash-put! i (string->symbol (keyword->string k)) v) (loop r))
       (else (error "invalid poo overrides" overrides))))
   o)
 ;; TODO: a syntax that allows for => / =>.+ overrides as well as setting values.

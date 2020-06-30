@@ -113,8 +113,8 @@
    slot: .element?)
 
 (.def (Type. @)
-  sexp: (error "missing type sexp" @)
-  .element?: (error "missing element?" @)
+  sexp: (error "missing type sexp" @) ;; Any
+  .element?: (error "missing element?" @) ;; Bool <- Any
   methods: {
   })
 

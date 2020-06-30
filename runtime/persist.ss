@@ -1,8 +1,8 @@
 ;; Persisting Data
 (export #t)
 (import
-  :gerbil/gambit/threads
-  :std/misc/completion :std/misc/queue :std/sugar
+  :gerbil/gambit/bytes :gerbil/gambit/threads
+  :std/format :std/misc/completion :std/misc/queue :std/sugar
   ../utils/base ../utils/concurrency
   ../poo/poo ../poo/mop ../poo/io
   ./db)
@@ -32,10 +32,9 @@
     (make-dependencies-persistent type x tx)
     (db-put! k (bytes<- type x) tx)))
 
-;; NB: persistent activities may use dynamic parameters for context,
-;; such as current database connection, etc.
-(.def (PersistentActivity @ Type.
-       ;; S-expression that that can be eval'ed back to an equivalent activity
+
+;; Persistent objects, whether passive data or activities.
+(.def (Persistent. @ Type.
        sexp ;; : Any
        ;; Prefix for keys in database. In a relational DB, that would be the name of the table.
        key-prefix ;; : u8vector
@@ -43,19 +42,19 @@
        Key ;; : Type
        ;; Type descriptor for the persistent state
        State ;; : Type ;; states
-       ;; Internal method to re-create the activity from
+       ;; Internal method to re-create the data object from
        ;; (1) the key,
        ;; (2) a function to persist the state,
        ;; (3) the initial state (whether a default state or one read from the database),
        ;; (4) a current transaction context in which the initial state was read.
        ;; The type must provide this method, but users won't use it directly:
-       ;; they will call the get method, that will indirectly call make-activity with proper arguments.
+       ;; they will call the read method, that will indirectly call make-activity with proper arguments.
        ;; : @ <- Key (Unit <- State TX) State TX
-       make-activity)
+       restore)
 
-  ;; Internal table of activities that have already been loaded from database.
+  ;; Internal table of objects that have already been loaded from database.
   ;; : (Table @ <- Key)
-  loaded: (make-hash-table weak-keys: #t weak-values: #t)
+  loaded: (make-hash-table) ;; weak-values: #t
 
   ;; Internal function that associates a key in the key-value store to a user-level key object of type Key.
   ;; : Bytes <- Key
@@ -75,27 +74,37 @@
   saving: (lambda (db-key state tx)
             (make-dependencies-persistent State state tx)
             (db-put! db-key (bytes<- State state) tx))
-
-  ;; Internal function that given (1) a db-key (as returned by the function above),
-  ;; (2) a current state of type State, and (3) a current transaction context,
-  ;; will save said current state in the current transaction.
-  ;; Note that this will only be committed with the transaction, and the activity will have to
-  ;; either synchronously commit-transaction if it owns the transaction, or asynchronously call
-  ;; sync-transaction if it doesn't, before it may assume the state being committed.
-  ;; : @ <- Key State TX
-  resume: (lambda (key state tx) ;; @ <- Key State
-            (when (hash-key? loaded key)
-              (error "persistent activity already resumed" sexp key))
-            (def activity (make-activity key (cut saving (db-key<- key) <> <>) state tx))
-            (hash-put! loaded key activity)
-            activity)
-
   ;; Internal function that given a key returns a default state to associate with that key
   ;; when no state is found in the database.
   ;; Not all activities have a default state, and the default method will just raise an error.
   ;; : State <- Key
   make-default-state: (lambda (key) ;; override this method to provide a default state
                         (error "Failed to load key" sexp key))
+
+  ;; Internal function that given (1) a db-key (as returned by the function above),
+  ;; (2) a current state of type State, and (3) a current transaction context [TODO: no TX?]
+  ;; will restore the object and register it as loaded.
+  ;; Note that this will only be committed with the transaction, and the activity will have to
+  ;; either synchronously commit-transaction if it owns the transaction, or asynchronously call
+  ;; sync-transaction if it doesn't, before it may assume the state being committed.
+  ;; : @ <- Key State TX
+  resume: (lambda (key state tx)
+            (def db-key (db-key<- key))
+            (when (hash-key? loaded db-key)
+              (error "persistent activity already resumed" sexp key))
+            (def object (restore key (cut saving db-key <> <>) state tx))
+            (hash-put! loaded db-key object)
+            object)
+
+  ;; Internal function to resume an object from the database given a key and a transaction,
+  ;; assuming the object wasn't loaded yet.
+  resume-from-db:
+  (lambda (db-key key tx)
+    (def state
+      (cond
+       ((db-get db-key tx) => (cut <-bytes State <>))
+       (else (make-default-state key))))
+    (resume key state tx))
 
   ;; Function to create a new activity (1) associated to the given key,
   ;; (2) the state of which will be computed by the given initialization function
@@ -109,70 +118,82 @@
   ;; Also, proper mutual exclusion must be used to ensure only one piece of code
   ;; may attempt create to create an activity with the given key at any point in time.
   ;; : @ <- Key (State <- (<- State TX) TX) TX
-  make: (lambda (key init tx)
-          (def db-key (db-key<- key))
-          (when (db-key? db-key)
-            (error "persistent activity already created" sexp key))
-          (def state (init (cut saving db-key <> <>) tx))
-          (resume key state tx))
+  make:
+  (lambda (key init tx)
+    (def db-key (db-key<- key))
+    (when (db-key? db-key tx)
+      (error "persistent activity already created" sexp (sexp<- Key key)))
+    (def state (init (cut saving db-key <> <>) tx))
+    (resume key state tx)))
 
-  ;; Function to access an existing activity by (1) its key, and (2) a transaction context.
-  ;; For those kinds of activities where it makes sense, this may create a default activity.
+;; Persistent Data has no activity of its own,
+;; and can be synchronously owned or asynchronously borrowed by persistent activities,
+;; that will provide a transaction as a context to read of modify the data.
+;; In case they may be borrowed, they must provide some mutual exclusion mechanism
+;; that the borrowing activity will use to ensure data consistency.
+(.def (PersistentData @ Persistent.
+       loaded resume-from-db db-key<-)
+  ;; Read the object from its key, given a context.
+  ;; For activities, this is an internal function that should only be called via get.
+  ;; For passive data, this is a function that borrowers may use after they ensure mutual exclusion.
+  ;; For those kinds of objects where it makes sense, this may create a default activity.
   ;; Clients of this code must use proper mutual exclusion so there are no concurrent calls to get.
   ;; Get may indirectly call resume if the object is in the database, and make-default-state if not.
-  ;; : @ <- Key TX
-  get: (lambda (key tx)
-         (or (hash-get loaded key)
-             (let (state
-                   (cond
-                    ((db-get (db-key<- key) tx) => (cut <-bytes State <>))
-                    (else (make-default-state key))))
-               (resume key state tx)))))
+  ;; @ <- Key TX
+  get:
+  (lambda (key tx)
+    (def db-key (db-key<- key))
+    (or (hash-get loaded db-key) ;; use the db-key as key so we get the correct equality
+        (resume-from-db db-key key tx))))
 
+;; Persistent activities compute independently from each other;
+;; they may create transactions when they need to and borrow persistent data;
+;; they may synchronize to I/O (including the DB) though outside transactions.
+;; Activities communicate with each other using asynchronous messages.
+(.def (PersistentActivity @ Persistent.
+       loaded resume-from-db db-key<-)
+  ;; Get the activity by its key.
+  ;; No transaction is provided: the activity will make its own if needed.
+  ;; @ <- Key
+  <-key:
+  (lambda (key)
+    (def db-key (db-key<- key))
+    (or (hash-get loaded db-key) ;; use the db-key as key so we get the correct equality
+        (with-tx (tx) (resume-from-db db-key key tx)))))
+
+(defstruct persistent-cell (mx datum save!))
+
+(def (call-with-persistent-cell cell f)
+  (with-lock (persistent-cell-mx cell)
+    (f (fun (with-cell accessor tx)
+         (def (get-state)
+           (assert! (eq? (DbTransaction-status tx) 'open))
+           (persistent-cell-datum cell))
+         (def (set-state! new-state)
+           ((persistent-cell-save! cell) new-state tx)
+           (set! (persistent-cell-datum cell) new-state))
+         (accessor get-state set-state!)))))
+
+(import :clan/utils/debug)
+
+;; Persistent actor that fully commits between two requests,
+;; as opposed to pipelining commits.
 (.def (PersistentActor @ PersistentActivity
-                         Key sexp get)
-
-  make-activity: ;; Provide the interface function declared above.
+                         Key State sexp get)
+  restore: ;; Provide the interface function declared above.
   (lambda (key save! state tx)
     (def name [sexp (sexp<- Key key)])
-    (spawn/name/logged
-     [sexp (sexp<- Key key)]
-     (fun (make-persistent-actor)
-       (def owner #f)
-       (def (check-owner tx)
-         (unless (eq? owner tx) (error "bad transaction" [sexp key] owner tx)))
-       (def (set-state-default x)
-         (check-owner #f) (with-new-tx (tx) (save! state tx) (set! state x)))
-       (def set-state! set-state-default)
-       (def txq (make-queue)) ;; queue of txs to process
-       (def msgs (make-hash-table)) ;; maps tx to reverse sequence of relevant messages.
-       (def (process msg)
-         (match msg
-           ([Read: k] (k state))
-           ([Transform: tx k]
-            (cond
-             ((eq? tx owner)
-              (k state set-state!))
-             ((not owner)
-              (set! owner tx)
-              (set! set-state!
-                (lambda (x) (check-owner tx) (save! state tx) (set! state x)))
-              (k state set-state!))
-             (else
-              (let (id (DbTransaction-txid tx))
-                (hash-put! msgs id (cons msg (or (hash-get msgs id)
-                                                 (begin (enqueue! txq id) []))))))))
-           ([Sync: tx]
-            (check-owner tx)
-            (set! owner #f)
-            (set! set-state! set-state-default)
-            (sync-transaction tx)
-            (unless (queue-empty? txq)
-              (let* ((id (dequeue! txq))
-                     (l (reverse (hash-get msgs id))))
-                (hash-remove! msgs id)
-                (for-each process l))))))
-       (while #t (process (thread-receive))))))
+    (def (get-state) state)
+    (def (set-state! new-state) (save! new-state tx) (set! state new-state))
+    (def (process msg)
+      (DBG process: (sexp<- Key key) (sexp<- State state) msg)
+      (match msg
+        ([Transform: f k]
+         (call/values (lambda () (with-tx (tx) (values (f get-state set-state!) tx))) k))))
+    (def thread
+      (spawn/name/logged name (fun (make-persistent-actor) (while #t (process (thread-receive))))))
+    (set! (thread-specific thread) get-state)
+    thread)
 
   ;; Run an asynchronous action (1) on the actor with given key, as given by
   ;; (2) a function that takes the current state as a parameter as well as
@@ -185,8 +206,8 @@
   ;; and synchronized; the action function may then use after-commit to send notifications.
   ;; : Unit <- Key (Unit <- State (<- State)) TX
   async-action:
-  (lambda (key k tx)
-    (thread-send (get key tx) [Transform: tx k]))
+  (lambda (key k)
+    (thread-send (get key) [Transform: k void]))
 
   ;; Run a synchronous action (1) on the actor with given key, as given by
   ;; (2) a function that takes the current state as a parameter as well as
@@ -196,16 +217,42 @@
   ;; After all actions with a given tx are run, the sync method must be called.
   ;; : 'a <- Key ('a <- State (<- State)) TX
   action:
-  (lambda (key f tx)
+  (lambda (key f)
     (def c (make-completion))
-    (def (k state set-state!) (completion-post! c (f state set-state!)))
-    (async-action key k tx)
+    (def (k res tx) (completion-post! c (values res tx)))
+    (thread-send (get key) [Transform: f k])
     (completion-wait! c))
 
   ;; Asynchronously notify (1) the actor with the given key that (2) work with the current tx is done;
   ;; the actor will must synchronize with that tx being committed before it starts processing requests
   ;; for other txs.
   ;; : Unit <- Key TX
-  sync:
-  (lambda (key tx)
-    (thread-send (get key tx) [Sync: tx])))
+  sync-action:
+  (lambda (key f)
+    (defvalues (res tx) (action key f))
+    (sync-transaction tx)
+    res)
+
+  ;; State <- @
+  read:
+  (lambda (x)
+    ((thread-specific x))))
+
+
+;; TODO: handle mixin inheritance graph so we can make this a mixin rather than an alternative superclass
+(.def (SavingDebug @ [] Key State sexp key-prefix)
+  saving: =>
+  (lambda (super)
+    (fun (saving db-key state tx)
+      (def key (<-bytes Key (subu8vector db-key (bytes-length key-prefix) (bytes-length db-key))))
+      (printf "SAVING ~s ~s => ~s\n" sexp (sexp<- Key key) (sexp<- State state))
+      (super db-key state tx)))
+  resume: =>
+  (lambda (super)
+    (fun (resume key state tx)
+      (printf "RESUME ~s ~s => ~s\n" sexp (sexp<- Key key) (sexp<- State state))
+      (DBG resume-2:
+      (super key state tx)
+      ))))
+
+(.def (DebugPersistentActivity @ [SavingDebug PersistentActivity]))

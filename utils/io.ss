@@ -16,7 +16,9 @@
 ;; : Bytes <- In
 (def (read-sized16-bytes port)
   (def size (read-uint16 port))
-  (read-bytes size port))
+  (if (zero? size)
+    #u8()
+    (read-bytes size port)))
 
 ;; : <- UInt16 Out
 (def (write-uint16 n port)
@@ -48,11 +50,11 @@
 (def (unmarshal<-<-bytes <-bytes n)
   (lambda (port) (<-bytes (read-bytes n port))))
 
-;; : Nat <- In Nat
+;; : Nat <- In Nat+
 (def (read-integer-bytes in l)
   (nat<-bytes (read-bytes in l)))
 
-;; : <- Int Nat Out
+;; : <- Int Nat+ Out
 (def (write-integer-bytes n l out)
   (write-bytes (bytes<-nat n l) out))
 

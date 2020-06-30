@@ -162,7 +162,10 @@
 
 
 ;;;; Multiple values
-(defrule (first-value form) (with ((values x . _) form) x))
+(defrules first-value ()
+  ((_ form) (with ((values x . _) form) x))
+  ((_ form forms ...) (error "syntax error"))
+  (_ (lambda (x . _) x)))
 
 (defrule (nth-value n form) (with ((values . x) form) (list-ref x n)))
 
