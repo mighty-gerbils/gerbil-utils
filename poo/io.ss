@@ -1,9 +1,9 @@
 (export #t)
 
 (import
-  :gerbil/gambit/bytes :gerbil/gambit/ports
-  :std/iter :std/sugar
-  ../utils/base ../utils/io
+  :gerbil/gambit/bytes :gerbil/gambit/hash :gerbil/gambit/ports
+  :std/generic :std/iter :std/misc/repr :std/sugar :std/text/json
+  ../utils/base ../utils/io ../utils/json
   ./poo ./mop ./brace)
 
 ;; Byte <- In
@@ -41,6 +41,43 @@
      (for (i (in-range length))
        (write-byte (bytes-ref bs (+ i offset)) out))))
 
+(defmethod (@@method :pr poo)
+  (λ (self (port (current-output-port)) (options (current-representation-options)))
+    (cond
+     ((.has? self .type print-object) => (lambda (m) (m self port options)))
+     ((.has? self .type methods .sexp<-) => (lambda (m) (write (m self) port)))
+     ((.has? self .type) (print-class-object self port options))
+     ((.has? self :pr) => (lambda (m) (m port options)))
+     ((.has? self sexp) => (lambda (s) (write s port)))
+     (else (print-unrepresentable-object self port options)))))
+
+(.defgeneric (sexp<- type x) from: methods slot: .sexp<-)
+(.defgeneric (<-json type j) from: methods slot: .<-json)
+(.defgeneric (json<- type x) from: methods slot: .json<-)
+
+(defgeneric :sexp
+  (lambda (x)
+    (cond
+     ((or (number? x) (boolean? x) (string? x) (char? x) (void? x) (keyword? x) (eof-object? x))
+      x)
+     (else `',x)))) ;; TODO: do better than that.
+
+(defmethod (@@method :sexp poo)
+  (λ (self)
+    (cond
+     ((.has? self .type methods .sexp<-) (.call (.@ self .type methods) .sexp<- self))
+     ((.has? self sexp) (object->string (.@ self sexp))))))
+
+(def (print-class-object
+      x (port (current-output-port)) (options (current-representation-options)))
+  (def (d x) (display x port))
+  (def (w x) (write x port))
+  (d "(begin0 #") (d (object->serial-number x)) (d " {")
+  (try
+   (for-each (λ-match ([k . v] (d " (") (w k) (d " ") (prn v) (d ")"))) (.alist x))
+   (catch (e) (void)))
+  (d "})"))
+
 (.defgeneric (marshal type x port)
    slot: .marshal from: methods)
 
@@ -62,3 +99,13 @@
 (.def (un/marshal<-bytes @ [] .<-bytes .bytes<- length-in-bytes)
    .marshal: (marshal<-bytes<- .bytes<-)
    .unmarshal: (unmarshal<-<-bytes .<-bytes length-in-bytes))
+
+(.defgeneric (printable-slots x)
+   from: type
+   default: .all-slots
+   slot: .printable-slots)
+
+(def (@@method :json poo) (json<- (.@ poo .type) poo))
+
+(def (json-string<- type x)
+  (string<-json (json<- type x)))

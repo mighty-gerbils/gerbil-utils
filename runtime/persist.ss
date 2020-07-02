@@ -2,10 +2,10 @@
 (export #t)
 (import
   :gerbil/gambit/bytes :gerbil/gambit/threads
-  :std/format :std/misc/completion :std/misc/queue :std/sugar
+  :std/format :std/misc/completion :std/misc/hash :std/sugar
   ../utils/base ../utils/concurrency
   ../poo/poo ../poo/mop ../poo/io
-  ./db)
+  ./db ./db-queue)
 
 (.defgeneric (walk-dependencies type f x) ;; Unit <- 'a:Type (Unit <- 'b:Type 'b) 'a
    slot: .walk-dependencies from: methods default: void)
@@ -18,10 +18,16 @@
 (def (content-addressed-storage-key digest)
   (u8vector-append content-addressed-storage-prefix digest))
 
-;; Load an object from database based on its contents address
-;; 'a <- 'a:Type Digest
+(def content-addressed-storage-mutex (make-mutex 'cas))
+(def content-addressed-storage-cache (make-hash-table weak-values: #t))
+
+;; Load an object from database based on its contents address, with a cache
+;; 'a <- 'a:Type Digest TX
 (def (<-digest type digest tx)
-  (<-bytes type (db-get (content-addressed-storage-key digest) tx)))
+  (with-lock content-addressed-storage-mutex
+    (cut hash-ensure-ref
+         content-addressed-storage-cache [type . digest]
+         (cut <-bytes type (db-get (content-addressed-storage-key digest) tx)))))
 
 (def (make-dependencies-persistent type x tx)
   (walk-dependencies type (cut make-persistent <> <> tx) x))
@@ -88,13 +94,14 @@
   ;; either synchronously commit-transaction if it owns the transaction, or asynchronously call
   ;; sync-transaction if it doesn't, before it may assume the state being committed.
   ;; : @ <- Key State TX
-  resume: (lambda (key state tx)
-            (def db-key (db-key<- key))
-            (when (hash-key? loaded db-key)
-              (error "persistent activity already resumed" sexp key))
-            (def object (restore key (cut saving db-key <> <>) state tx))
-            (hash-put! loaded db-key object)
-            object)
+  resume:
+  (lambda (key state tx)
+    (def db-key (db-key<- key))
+    (when (hash-key? loaded db-key)
+      (error "persistent activity already resumed" sexp key))
+    (def object (restore key (cut saving db-key <> <>) state tx))
+    (hash-put! loaded db-key object)
+    object)
 
   ;; Internal function to resume an object from the database given a key and a transaction,
   ;; assuming the object wasn't loaded yet.
@@ -176,10 +183,48 @@
 
 (import :clan/utils/debug)
 
-;; Persistent actor that fully commits between two requests,
-;; as opposed to pipelining commits.
+;; Persistent actor that has a persistent queue
+(.def (PersistentQueueActor @ PersistentActivity
+       Key State sexp <-key db-key<-
+       ;; type of messages sent to the actor
+       Message ;; : Type
+       ;; function to process a message
+       process) ;; : <- Message (State <-) (<- State) TX
+  restore: ;; Provide the interface function declared above.
+  (lambda (key save! state tx)
+    (def name [sexp (sexp<- Key key)])
+    (def (get-state) state)
+    (def (set-state! new-state) (save! new-state tx) (set! state new-state))
+    (def (process-bytes msg tx)
+      (def message (<-bytes Message msg))
+      (DBG process: (sexp<- Key key) (sexp<- State state) (sexp<- Message message))
+      (process message get-state set-state! tx))
+    (def qkey (u8vector-append (db-key<- key) #u8(81))) ;; 81 is ASCII for #\Q
+    (def q (DbQueue-restore name qkey process))
+    (cons q get-state))
+
+  ;; Send a message to a persistent actor.
+  ;; NB: to avoid redundant (de)serialization, use content-addressing of objects
+  ;; to share cached values loaded from the database.
+  ;; : <- Message TX
+  send:
+  (lambda (key message tx)
+    (DbQueue-send! (car (<-key key)) (bytes<- Message message) tx))
+
+  ;; : State <- Key
+  read:
+  (lambda (k) ((cdr (<-key k)))))
+
+
+;; Persistent actor that has a transaction at every request.
+;; Two functions are called: f within the request, k outside of it, both in the context of the actor thread.
+;; IMPORTANT: messages sent to the actor MUST be deterministically determined by other persistent data,
+;; and idempotent in their effects; they must be re-sent until the desired effect is observed,
+;; in case the process is halted before the message was fully processed.
+;; Sometimes, you may have to pre-allocate a ticket/nonce/serial-number, save it,
+;; so that you can feed the actor an idempotent message.
 (.def (PersistentActor @ PersistentActivity
-                         Key State sexp get)
+       Key State sexp <-key)
   restore: ;; Provide the interface function declared above.
   (lambda (key save! state tx)
     (def name [sexp (sexp<- Key key)])
@@ -189,7 +234,7 @@
       (DBG process: (sexp<- Key key) (sexp<- State state) msg)
       (match msg
         ([Transform: f k]
-         (call/values (lambda () (with-tx (tx) (values (f get-state set-state!) tx))) k))))
+         (call/values (lambda () (with-tx (tx) (values (f get-state set-state! tx) tx))) k))))
     (def thread
       (spawn/name/logged name (fun (make-persistent-actor) (while #t (process (thread-receive))))))
     (set! (thread-specific thread) get-state)
@@ -207,7 +252,7 @@
   ;; : Unit <- Key (Unit <- State (<- State)) TX
   async-action:
   (lambda (key k)
-    (thread-send (get key) [Transform: k void]))
+    (thread-send (<-key key) [Transform: k void]))
 
   ;; Run a synchronous action (1) on the actor with given key, as given by
   ;; (2) a function that takes the current state as a parameter as well as
@@ -220,7 +265,7 @@
   (lambda (key f)
     (def c (make-completion))
     (def (k res tx) (completion-post! c (values res tx)))
-    (thread-send (get key) [Transform: f k])
+    (thread-send (<-key key) [Transform: f k])
     (completion-wait! c))
 
   ;; Asynchronously notify (1) the actor with the given key that (2) work with the current tx is done;
@@ -237,6 +282,7 @@
   read:
   (lambda (x)
     ((thread-specific x))))
+
 
 
 ;; TODO: handle mixin inheritance graph so we can make this a mixin rather than an alternative superclass

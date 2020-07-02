@@ -7,10 +7,11 @@
 
 (import
   (for-syntax :std/srfi/1)
-  :gerbil/gambit/exact :gerbil/gambit/hash :gerbil/gambit/ports
+  :gerbil/gambit/exact :gerbil/gambit/ports
   :std/format :std/generic :std/iter :std/lazy
   :std/misc/list :std/misc/repr :std/srfi/1 :std/sugar
-  ../utils/base ../utils/hash ./poo ./brace)
+  ../utils/base ../utils/hash ../utils/io
+  ./poo ./brace)
 
 ;;TODO: Parse Gerbil Scheme formals, extract call arguments
 (begin-syntax
@@ -130,7 +131,19 @@
 
 (.def (Any @ Type.) sexp: 'Any .element?: true)
 (.def (Poo @ Type.) sexp: 'Poo .element?: poo?)
-(.def (Bool @ Type.) sexp: 'Bool .element?: boolean?)
+
+(.def (Bool @ Type.)
+  sexp: 'Bool
+  .element?: boolean?
+  methods: =>.+ {
+    length-in-bytes: 1
+    .json<-: identity
+    .<-json: (cut validate @ <>)
+    .bytes<-: (lambda (x) (if x #u8(1) #u8(0)))
+    .<-bytes: (λ (b) (< 0 (u8vector-ref b 0)))
+    .marshal: (marshal<-bytes<- .bytes<-)
+    .unmarshal: (unmarshal<-<-bytes .<-bytes length-in-bytes)
+  })
 
 (def (monomorphic-poo? type x)
   (and (poo? x) (every (cut element? type <>) (poo-values x))))
@@ -303,42 +316,6 @@
    (.def (class class-options ...) sexp: 'class (slots =>.+ {slotdefs ...}) options ...))
   ((_ class (slotdefs ...) options ...)
    (.defclass (class) (slotdefs ...) options ...)))
-
-(defmethod (@@method :pr poo)
-  (λ (self (port (current-output-port)) (options (current-representation-options)))
-    (cond
-     ((.has? self .type print-object) (.call (.@ self .type) print-object self port options))
-     ((.has? self .type methods .sexp<-) (write (sexp<- (.@ self .type) self) port))
-     ((.has? self .type) (print-class-object self port options))
-     ((.has? self :pr) (.call self :pr port options))
-     ((.has? self sexp) (write (.@ self sexp) port))
-     (else (print-unrepresentable-object self port options)))))
-
-(.defgeneric (sexp<- type x) slot: .sexp<- from: methods)
-
-(defgeneric :sexp
-  (lambda (x)
-    (cond
-     ((or (number? x) (boolean? x) (string? x) (char? x) (void? x) (keyword? x) (eof-object? x))
-      x)
-     (else `',x)))) ;; TODO: do better than that.
-
-
-(defmethod (@@method :sexp poo)
-  (λ (self)
-    (cond
-     ((.has? self .type methods .sexp<-) (.call (.@ self .type methods) .sexp<- self))
-     ((.has? self sexp) (object->string (.@ self sexp))))))
-
-(def (print-class-object
-      x (port (current-output-port)) (options (current-representation-options)))
-  (def (d x) (display x port))
-  (def (w x) (write x port))
-  (d "(begin0 #") (d (object->serial-number x)) (d " {")
-  (try
-   (for-each (λ-match ([k . v] (d " (") (w k) (d " ") (prn v) (d ")"))) (.alist x))
-   (catch (e) (void)))
-  (d "})"))
 
 (def (slot-lens slot-name)
   {(:: @ (proto Lens))

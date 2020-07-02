@@ -330,3 +330,18 @@
     ((_ (name . formals) body ...)
      (with-syntax ((n (datum->syntax #'stx (string->uninterned-symbol (symbol->string (syntax-e #'name))))))
        #'(let () (def (n . formals) body ...) n)))))
+
+(def (sym<-kw k) (string->symbol (keyword->string k)))
+(def (kw<-sym k) (string->keyword (symbol->string k)))
+
+;; Use maybe-intern-symbol instead of string->symbol to avoid DoS attacks
+;; that cause you to intern too many symbols and run out of memory.
+;; : (Or Symbol String) <- String
+(def (maybe-intern-symbol string)
+  (or (##find-interned-symbol string) string))
+
+;; Use maybe-intern-symbol instead of string->keyword to avoid DoS attacks
+;; that cause you to intern too many keywords and run out of memory.
+;; : (Or Keyword String) <- String
+(def (maybe-intern-keyword string)
+  (or (##find-interned-keyword string) string))

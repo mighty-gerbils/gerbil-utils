@@ -11,7 +11,7 @@
 ;;
 ;; Multiple threads can read the database with db-key? and db-get,
 ;; seeing the state before the current transaction batch,
-;; and contribute to the current transaction with db-put! and db-remove!.
+;; and contribute to the current transaction with db-put! and db-delete!.
 ;; Transactions ensure that all updates made within the transaction are
 ;; included in a same atomic batch. A transaction is scheduled for commit
 ;; with close-transaction, and you can wait for its completion with
@@ -50,14 +50,14 @@
   :gerbil/gambit/threads
   :std/db/leveldb
   :std/misc/completion :std/misc/list :std/sugar
-  ../utils/number ../utils/path)
+  ../utils/base ../utils/concurrency ../utils/number ../utils/path)
 
 (defstruct DbConnection
   (name ;; name, a string, also path to the leveldb storage
    leveldb ;; leveldb handle
    mx txcounter
    blocked-transactions open-transactions pending-transactions hooks
-   batch-id batch manager timer
+   batch-id batch batch-completion manager timer
    ready? triggered?)
   constructor: :init!)
 (defmethod {:init! DbConnection}
@@ -70,6 +70,7 @@
     (def pending-transactions []) ;; (List Transaction)
     (def batch-id 0) ;; Nat
     (def batch (leveldb-writebatch)) ;; leveldb-writebatch
+    (def batch-completion (make-completion))
     (def ready? #t) ;; Bool
     (def triggered? #f) ;; Bool
     (def manager (db-manager self)) ;; Thread
@@ -77,7 +78,7 @@
     (struct-instance-init!
      self name leveldb mx txcounter
      blocked-transactions open-transactions pending-transactions hooks
-     batch-id batch manager timer
+     batch-id batch batch-completion manager timer
      ready? triggered?)))
 
 (def current-db-connection (make-parameter #f))
@@ -144,8 +145,19 @@
 ;; but by the time it is returned to the user, it is in open status;
 ;; when it is closed, it becomes pending until its batch is committed,
 ;; at which point it becomes complete and any thread sync'ing on it will be awakened.
-(defstruct DbTransaction (connection txid status completion) transparent: #t)
+(defstruct DbTransaction (connection txid status) transparent: #t)
 (def current-db-transaction (make-parameter #f))
+(def (DbTransaction-completion tx)
+  (def c (DbTransaction-connection tx))
+  (with-db-lock (c)
+    (case (DbTransaction-status tx)
+      ((open pending)
+       (DbConnection-batch-completion c))
+      (else #f))))
+
+;; : <- (OrFalse Completion)
+(def (wait-completion completion)
+  (when completion (completion-wait! completion)))
 
 ;; Open Transaction
 ;; TODO: assert that the transaction_counter never wraps around?
@@ -155,21 +167,18 @@
 ;; should be released as soon as "the" transaction is complete, unless we're already both
 ;; ready && triggered for the next batch commit. Have an option for that?
 (def (open-transaction (c (current-db-connection)))
-  (def completion (make-completion))
-  (defvalues (transaction blocked?)
+  (defvalues (transaction completion)
     (with-db-lock (c)
-      (let* ((txid (pre-inc! (DbConnection-txcounter c)))
-             (status (if (and (DbConnection-ready? c) (DbConnection-triggered? c)) 'blocked 'open))
-             (transaction (DbTransaction c txid status completion)))
-        (case status
-          ((blocked)
-           (push! transaction (DbConnection-blocked-transactions c))
-           (values transaction #t))
-          ((open)
-           (hash-put! (DbConnection-open-transactions c) txid transaction)
-           (values transaction #f))))))
-  (when blocked? (completion-wait! completion)) ;; Wait without hold the lock
-   transaction)
+      (let* ((txid (post-inc! (DbConnection-txcounter c)))
+             (blocked? (and (DbConnection-ready? c) (DbConnection-triggered? c)))
+             (status (if blocked? 'blocked 'open))
+             (transaction (DbTransaction c txid status)))
+        (if blocked?
+          (push! transaction (DbConnection-blocked-transactions c))
+          (hash-put! (DbConnection-open-transactions c) txid transaction))
+        (values transaction (and blocked? (DbConnection-batch-completion c))))))
+  (wait-completion completion) ;; wait without holding the lock
+  transaction)
 
 ;; For now, let's
 ;; * Disallow nested transaction / auto-transactions. We want a clear transaction owner, and
@@ -204,20 +213,23 @@
 ;; or is otherwise some client's responsibility to restart if the program acts as a server.
 (def (close-transaction (tx (current-db-transaction)))
   (match tx
-    ((DbTransaction c txid status completion)
-     (case status
-       ((blocked open)
-        (set! (DbTransaction-status tx) 'pending)
-        (with-db-lock (c)
+    ((DbTransaction c txid status)
+     (with-db-lock (c)
+       (case status
+         ((blocked open)
+          (set! (DbTransaction-status tx) 'pending)
           (hash-remove! (DbConnection-open-transactions c) txid)
           (push! tx (DbConnection-pending-transactions c))
-          (deferred-db-trigger! c))))
-     completion)
+          (deferred-db-trigger! c)
+          (DbConnection-batch-completion c))
+         ((pending)
+          (DbConnection-batch-completion c))
+         (else #f))))
     (else (error "close-transaction: not a transaction" tx))))
 
 ;; Close a transaction, then wait for it to be committed.
 (def (commit-transaction (transaction (current-db-transaction)))
-  (completion-wait! (close-transaction transaction)))
+  (wait-completion (close-transaction transaction)))
 
 ;; Sync to a transaction being committed.
 ;; Thou Shalt Not sync with the end of a transaction from within another transaction,
@@ -226,7 +238,7 @@
 ;; the very same code as you would if you would resume the persistent activity,
 ;; and that code must be effectively idempotent.
 (def (sync-transaction (transaction (current-db-transaction)))
-  (completion-wait! (DbTransaction-completion transaction)))
+  (wait-completion (DbTransaction-completion transaction)))
 
 ;; Register post-commit finalizer actions to be run after this batch commits,
 ;; with the batch id as a parameter.
@@ -240,19 +252,18 @@
 (def leveldb-sync-write-options (leveldb-write-options sync: #f))
 
 (def (db-manager c)
-  (spawn/name
+  (spawn/name/logged
    ['db-manager (DbConnection-name c)]
-   (lambda ()
+   (fun (db-manager-1)
      (let loop ()
        (match (thread-receive)
-         ([batch-id batch hooks pending-transactions]
+         ([batch-id batch batch-completion hooks pending-transactions]
           ;; TODO: run the leveldb-write in a different OS thread.
           (leveldb-write (DbConnection-leveldb c) batch leveldb-sync-write-options)
-          (for-each (lambda (tx)
-                      (set! (DbTransaction-status tx) 'complete)
-                      (completion-post! (DbTransaction-completion tx) batch-id))
+          (for-each (lambda (tx) (set! (DbTransaction-status tx) 'complete))
                     pending-transactions)
           (for-each (lambda (hook) (hook batch-id)) hooks)
+          (completion-post! batch-completion batch-id)
           (with-db-lock (c)
             (if (and (DbConnection-triggered? c) (zero? (hash-length (DbConnection-open-transactions c))))
               (finalize-batch! c)
@@ -266,12 +277,13 @@
 (def (finalize-batch! c)
   (def batch-id (DbConnection-batch-id c))
   (def batch (DbConnection-batch c))
+  (def batch-completion (DbConnection-batch-completion c))
   (def hooks (hash-values (DbConnection-hooks c)))
   (def blocked-transactions (DbConnection-blocked-transactions c))
   (def pending-transactions (DbConnection-pending-transactions c))
-  (def new-batch-id (1+ batch-id))
-  (set! (DbConnection-batch-id c) new-batch-id)
+  (set! (DbConnection-batch-id c) (1+ batch-id))
   (set! (DbConnection-batch c) (leveldb-writebatch))
+  (set! (DbConnection-batch-completion c) (make-completion))
   (set! (DbConnection-pending-transactions c) [])
   (set! (DbConnection-blocked-transactions c) [])
   (set! (DbConnection-ready? c) #f)
@@ -279,11 +291,9 @@
   (set! (DbConnection-timer c) #f)
   (for-each (lambda (tx)
               (set! (DbTransaction-status tx) 'open)
-              (hash-put! (DbConnection-open-transactions c) (DbTransaction-txid tx) tx)
-              (completion-post! (DbTransaction-completion tx) new-batch-id)
-              (set! (DbTransaction-completion tx) (make-completion)))
+              (hash-put! (DbConnection-open-transactions c) (DbTransaction-txid tx) tx))
             blocked-transactions)
-  (thread-send (DbConnection-manager c) [batch-id batch hooks pending-transactions]))
+  (thread-send (DbConnection-manager c) [batch-id batch batch-completion hooks pending-transactions]))
 
 ;; Get the batch id: not just for testing,
 ;; but also, within a transaction, to get the id to prepare a hook,

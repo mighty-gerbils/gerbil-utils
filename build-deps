@@ -458,9 +458,9 @@
    clan/poo/poo
    clan/utils/base
    clan/utils/hash
+   clan/utils/io
    gerbil/core
    gerbil/gambit/exact
-   gerbil/gambit/hash
    gerbil/gambit/ports
    std/format
    std/generic
@@ -477,34 +477,16 @@
    clan/poo/poo
    clan/utils/base
    clan/utils/io
+   clan/utils/json
    gerbil/core
    gerbil/gambit/bytes
+   gerbil/gambit/hash
    gerbil/gambit/ports
-   std/iter
-   std/sugar))
- (clan/poo/type
-  "poo/type.ss"
-  (clan/poo/brace
-   clan/poo/io
-   clan/poo/mop
-   clan/poo/poo
-   clan/utils/base
-   clan/utils/hash
-   clan/utils/io
-   clan/utils/number
-   gerbil/core
-   gerbil/gambit/bits
-   gerbil/gambit/exact
-   gerbil/gambit/ports
-   scheme/base
-   std/format
    std/generic
    std/iter
-   std/lazy
-   std/misc/list
    std/misc/repr
-   std/srfi/1
-   std/sugar))
+   std/sugar
+   std/text/json))
  (clan/pure/dict/assq "pure/dict/assq.ss" (gerbil/core))
  (clan/pure/dict/intdict-unwrapped
   "pure/dict/intdict-unwrapped.ss"
@@ -523,6 +505,46 @@
  (clan/pure/dict/intdict
   "pure/dict/intdict.ss"
   (clan/pure/dict/intdict-unwrapped gerbil/core std/iter std/misc/repr))
+ (clan/poo/number
+  "poo/number.ss"
+  (clan/poo/brace
+   clan/poo/io
+   clan/poo/mop
+   clan/poo/poo
+   clan/pure/dict/intdict
+   clan/utils/base
+   clan/utils/io
+   clan/utils/number
+   gerbil/core
+   gerbil/gambit/bits
+   gerbil/gambit/bytes
+   gerbil/gambit/exact
+   gerbil/gambit/ports
+   scheme/base
+   std/iter
+   std/misc/bytes
+   std/srfi/1
+   std/sugar))
+ (clan/poo/type
+  "poo/type.ss"
+  (clan/poo/brace
+   clan/poo/io
+   clan/poo/mop
+   clan/poo/number
+   clan/poo/poo
+   clan/utils/base
+   clan/utils/hash
+   clan/utils/io
+   clan/utils/maybe
+   gerbil/core
+   gerbil/gambit/bytes
+   gerbil/gambit/ports
+   std/format
+   std/iter
+   std/lazy
+   std/misc/list
+   std/srfi/1
+   std/sugar))
  (clan/pure/dict/symdict-unwrapped
   "pure/dict/symdict-unwrapped.ss"
   (gerbil/core std/iter std/misc/rbtree))
@@ -538,12 +560,32 @@
    gerbil/core))
  (clan/runtime/db
   "runtime/db.ss"
-  (clan/utils/number
+  (clan/utils/base
+   clan/utils/concurrency
+   clan/utils/number
    clan/utils/path
    gerbil/core
    gerbil/gambit/threads
    std/db/leveldb
    std/misc/completion
+   std/misc/list
+   std/sugar))
+ (clan/runtime/db-queue
+  "runtime/db-queue.ss"
+  (clan/poo/io
+   clan/poo/mop
+   clan/poo/number
+   clan/poo/poo
+   clan/poo/type
+   clan/runtime/db
+   clan/utils/base
+   clan/utils/concurrency
+   clan/utils/number
+   gerbil/core
+   gerbil/gambit/threads
+   std/db/leveldb
+   std/misc/completion
+   std/misc/deque
    std/misc/list
    std/sugar))
  (clan/runtime/persist
@@ -552,6 +594,7 @@
    clan/poo/mop
    clan/poo/poo
    clan/runtime/db
+   clan/runtime/db-queue
    clan/utils/base
    clan/utils/concurrency
    clan/utils/debug
@@ -560,6 +603,6 @@
    gerbil/gambit/threads
    std/format
    std/misc/completion
-   std/misc/queue
+   std/misc/hash
    std/sugar)))
 

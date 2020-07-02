@@ -58,13 +58,15 @@
 (def (write-integer-bytes n l out)
   (write-bytes (bytes<-nat n l) out))
 
+;; Encoding and decoding integers into self-delimited byte streams, preserving lexicographic order
+;; supposing the first byte is compared signed and the rest unsigned.
 ;; : Int <- In
 (def (read-varint in)
   (let ((x (read-byte in)))
     (if (< x 128)
       (cond
        ((< x 64) x)
-       ((< x 127) (let* ((l (- x 64))
+       ((< x 127) (let* ((l (- x 63))
                          (n (read-integer-bytes in l)))
                     (assert! (>= n 64))
                     (assert! (= (integer-length-in-bytes n) l))
@@ -72,7 +74,7 @@
        (else ; (= x 127)
         (let* ((l (read-varint in))
                (n (read-integer-bytes in l)))
-          (assert! (> l 62))
+          (assert! (>= l 64))
           (assert! (= (integer-length-in-bytes n) l))
           n)))
       (cond
@@ -83,9 +85,9 @@
                     (assert! (= l (integer-length-in-bytes n)))
                     n))
        (else ; (= x 128)
-        (let* ((l (read-varint in))
+        (let* ((l (- (read-varint in)))
                (n (bitwise-ior (arithmetic-shift -1 l) (read-integer-bytes in l))))
-          (assert! (> l 62))
+          (assert! (> l 63))
           (assert! (= l (integer-length-in-bytes n)))
           n))))))
 
@@ -94,21 +96,52 @@
   (if (negative? n)
     (if (>= n -64) (write-byte (bitwise-and 255) out)
         (let ((l (integer-length-in-bytes n)))
-          (if (<= 62)
+          (if (<= 63)
             (begin
               (write-byte (- 192 l) out)
               (write-integer-bytes n l out))
             (begin
               (write-byte 128 out)
-              (write-varint l out)
+              (write-varint (- l) out)
               (write-integer-bytes n l out)))))
     (if (<= n 63) (write-byte n out)
         (let ((l (integer-length-in-bytes n)))
-          (if (<= l 62)
+          (if (<= l 63)
             (begin
-              (write-byte (+ l 64) out)
+              (write-byte (+ l 63) out)
               (write-integer-bytes n l out))
             (begin
               (write-byte 127 out)
               (write-varint l out)
               (write-integer-bytes n l out)))))))
+
+;; Encoding and decoding natural integers into self-delimited byte streams, preserving lexicographic order.
+;; : Nat <- In
+(def (read-varnat in)
+  (let ((x (read-byte in)))
+    (cond
+     ((< x 128) x)
+     ((< x 255) (let* ((l (- x 127))
+                       (n (read-integer-bytes in l)))
+                    (assert! (> n 127))
+                    (assert! (= (integer-length-in-bytes n) l))
+                    n))
+     (else ; (= x 255)
+      (let* ((l (read-varnat in))
+             (n (read-integer-bytes in l)))
+          (assert! (> l 127))
+          (assert! (= (integer-length-in-bytes n) l))
+          n)))))
+
+;; : <- Nat Out
+(def (write-varnat n out)
+  (if (<= n 127) (write-byte n out)
+      (let ((l (integer-length-in-bytes n)))
+        (if (<= l 127)
+          (begin
+            (write-byte (+ l 127) out)
+            (write-integer-bytes n l out))
+            (begin
+              (write-byte 255 out)
+              (write-varnat l out)
+              (write-integer-bytes n l out))))))
