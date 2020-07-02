@@ -196,6 +196,8 @@
    (finally (close-transaction tx))))
 (defrule (with-tx (tx dbc ...) body ...)
   (call-with-tx (lambda (tx) body ...) dbc ...))
+(defrule (without-tx body ...)
+  (parameterize ((current-db-transaction #f)) body ...))
 
 (def (call-with-committed-tx fun (c #f))
   (defvalues (result tx) (with-tx (tx_) (values (fun tx_) tx_)))
@@ -204,7 +206,7 @@
 (defrule (with-committed-tx (tx dbc ...) body ...)
   (call-with-committed-tx (lambda (tx) body ...) dbc ...))
 (defrule (after-commit (tx) body ...)
-  (spawn (lambda () (completion-wait! (DbTransaction-completion tx)) body ...)))
+  (without-tx (spawn (lambda () (completion-wait! (DbTransaction-completion tx)) body ...))))
 
 ;; Mark a transaction as ready to be committed.
 ;; Return a completion that will be posted when the transaction is committed to disk.

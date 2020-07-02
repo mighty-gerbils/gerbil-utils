@@ -40,7 +40,9 @@
 
 ;; * Options
 ;; default: default value when no method is defined, also bottom value for fixed-point
-;; from: type specifies that the methods will be provided by the methods of the .type field.
+;; from: one of the symbols instance (default), methods or type. Specifies who provides methods
+;;   for the generic function: the instance directly, its .type field,
+;;   or the methods field of its .type field, respectively.
 ;; slot: slot-name can specify an alternate slot-name, which helps avoid with-slot shadowing
 ;;   when calling the gf from a method definition.
 ;; TODO: add method combination, which requires integration with the recursion in .ref.
@@ -116,15 +118,23 @@
 (.def (Type. @)
   sexp: (error "missing type sexp" @) ;; Any
   .element?: (error "missing element?" @) ;; Bool <- Any
+  .validate: (lambda (x ctx) (typecheck @ x ctx) x)
   methods: {
   })
 
-(def (typecheck type x (msg #f))
-  (assert! (element? type x)
-           (format "~a type ~a: ~a"
-                   (or msg "not an element of") (.@ type sexp) (repr x))))
+(def (typecheck type x (context '()))
+  (or (element? type x) (type-error context (.@ type sexp) (repr x))))
+(def (type-error . args)
+  (apply error "type-error" (flatten-heads args)))
+(def (flatten-heads x)
+  (match x
+    ([] [])
+    ([hd . tl] (append (flatten-heads hd) tl))
+    (x [x])))
 
-(def (validate type x (msg #f)) (typecheck type x msg) x)
+(.defgeneric (%validate type x ctx) slot: .validate)
+;; TODO: use macro that leaves source info by default, returns a function when passed as argument.
+(def (validate type x (ctx '())) (%validate type x ctx))
 
 (def (poo-values x) (map (cut .ref x <>) (.all-slots x)))
 (def (symbolify x) (!> x object->string string->symbol))
@@ -160,10 +170,28 @@
             (.all-slots poo))
   m)
 
-;; TODO: support optional and keyword arguments in the input types
+;; TODO: support optional and keyword arguments in the input types, and multiple arities a la case-lambda
+;; TODO: support contract-checking validation wrapping that works well with tail-calls and continuations,
+;; by avoiding the accumulation of wrappers for the same types, instead having a single wrapper that
+;; accumulates and de-duplicates types to check, maybe in a weak-values hash-table.
+;; TODO: support validation in incremental amortized O(1) rather than O(n) for recursive data-structures,
+;; possibly with a weak-values hash-table for less trivial invariants.
 (.def (Function. @ Type. outputs inputs)
   sexp: `(Function (@list ,@(map (cut .@ <> sexp) outputs)) (@list ,@(map (cut .@ <> sexp) inputs)))
   .element?: procedure? ;; we can't dynamically test that a function has the correct signature :-(
+  .validate: (lambda (f ctx)
+               (unless (procedure? f) (type-error ctx @ f))
+               (def (validate-row context kind types elems k)
+                 (unless (= (length elems) (length types))
+                   (type-error context invalid-number-of: kind))
+                 (k (map (lambda (type elem i)
+                           (validate type elem [ctx position: i]))
+                         types elems (iota (length types)))))
+               (nest
+                (lambda ins) (let (ctx2 [ctx fun: f type: sexp inputs: ins]))
+                (validate-row ctx2 inputs: inputs ins) (lambda (vins))
+                (call/values (lambda () (apply f vins))) (lambda outs)
+                (validate-row [ctx2 outputs: outs] outputs: outputs outs ##list->values)))
   arity: (length inputs))
 
 (def (Function outputs inputs)
@@ -174,7 +202,7 @@
 ;; The expander complains "Syntax Error: Ambiguous pattern".
 ;; TODO: Use syntax-case, detect when there are opposite arrows, curry when there are multiple ones?
 (defsyntax (Fun stx)
-  (syntax-case stx (<- ->)
+  (syntax-case stx ()
     ((_ . io)
      (let (iol (syntax->list #'io))
        (cond
@@ -187,7 +215,7 @@
                   => (lambda (k)
                        (defvalues (inputs moreinputs) (split-at i k))
                        (loop [[#'Function [#'@list . o] [#'@list . inputs]]] (cdr moreinputs))))
-                 (else [#'Function [#'@list . o] [#'@list i]])))))
+                 (else [#'Function [#'@list . o] [#'@list . i]])))))
         ((list-index (lambda (x) (eq? (stx-e x) '->)) iol)
          => (lambda (k)
               (defvalues (inputs ios) (split-at iol k))

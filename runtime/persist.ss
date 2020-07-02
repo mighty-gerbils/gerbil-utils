@@ -1,7 +1,7 @@
 ;; Persisting Data
 (export #t)
 (import
-  :gerbil/gambit/bytes :gerbil/gambit/threads
+  :gerbil/gambit/bytes :gerbil/gambit/ports :gerbil/gambit/threads
   :std/format :std/misc/completion :std/misc/hash :std/sugar
   ../utils/base ../utils/concurrency
   ../poo/poo ../poo/mop ../poo/io
@@ -15,6 +15,11 @@
 
 (def content-addressed-storage-prefix (string->bytes "CA"))
 
+(def type-tags (make-hash-table))
+(def (type-tag type)
+  (hash-ensure-ref type-tags type
+                   (cut object->string (.@ type sexp))))
+
 (def (content-addressed-storage-key digest)
   (u8vector-append content-addressed-storage-prefix digest))
 
@@ -26,7 +31,7 @@
 (def (<-digest type digest tx)
   (with-lock content-addressed-storage-mutex
     (cut hash-ensure-ref
-         content-addressed-storage-cache [type . digest]
+         content-addressed-storage-cache [(type-tag type) . digest]
          (cut <-bytes type (db-get (content-addressed-storage-key digest) tx)))))
 
 (def (make-dependencies-persistent type x tx)
@@ -236,7 +241,8 @@
         ([Transform: f k]
          (call/values (lambda () (with-tx (tx) (values (f get-state set-state! tx) tx))) k))))
     (def thread
-      (spawn/name/logged name (fun (make-persistent-actor) (while #t (process (thread-receive))))))
+      (without-tx
+        (spawn/name/logged name (fun (make-persistent-actor) (while #t (process (thread-receive)))))))
     (set! (thread-specific thread) get-state)
     thread)
 

@@ -600,6 +600,7 @@
    clan/utils/debug
    gerbil/core
    gerbil/gambit/bytes
+   gerbil/gambit/ports
    gerbil/gambit/threads
    std/format
    std/misc/completion
