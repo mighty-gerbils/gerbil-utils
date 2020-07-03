@@ -7,34 +7,43 @@
 (export #t)
 
 (import
-  :std/format :std/misc/ports :std/misc/process :std/misc/string :std/pregexp
-  ./base ./basic-parsers)
+  :gerbil/gambit/system
+  :std/format :std/iter :std/misc/list :std/misc/ports :std/misc/process :std/misc/string :std/pregexp
+  ./base)
 (extern namespace: #f gerbil-greeting)
 
 ;; Name and version of the topmost software layer, typically your application.
 ;; NB: the (values ...) wrapper below prevent Gerbil constant inlining optimization. Yuck.
-(def software-name (values #f)) ;; : String
-(def software-version (values #f)) ;; : String
+(def software-layers [["Gerbil" (gerbil-version-string)...]
+                      ["Gambit" (system-version-string)...]])
+(def (software-name) (caar software-layers)) ;; : String
+(def (software-version) (cdar software-layers)) ;; : String
 
 ;; Register the (so far) topmost software layer.
 ;; If you build your software in layers, a further specialized application may later override it.
 ;; : <- String String
 (def (register-software name version)
   ;; Update the name and version to just the topmost software layer (application)
-  (set! software-name name)
-  (set! software-version version)
-  ;; Update the Gerbil-Greeting to include all layers of software loaded.
-  (set! gerbil-greeting (format "~a ~a on ~a" name version gerbil-greeting)))
+  (set! software-layers [[name . version] . software-layers]) ;; (aset software-layers name version)
+  ;; Update the Gerbil-Greeting to the latest layer
+  (set! gerbil-greeting (format "~a ~a" name version)))
 
 ;; : String <-
-(def (software-identifier)
-  (string-join `(,@(if software-name [software-name] [])
-                 ,@(if software-version [software-version] []))
-               #\space))
+(def (software-identifier (complete #f))
+  (apply string-append
+    (with-list-builder (p)
+      (def layers (if complete software-layers [(car software-layers)]))
+      (def l (length layers))
+      (for ((i (in-range l)) (layer layers))
+        (cond
+         ((zero? i) (void))
+         ((= i 1) (p " on "))
+         (else (p ", ")))
+        (match layer ([name . version] (p name) (p " ") (p version)))))))
 
 ;; <- (Optional Port)
-(def (show-version (port (current-output-port)))
-  (fprintf port "~a\n" (software-identifier)))
+(def (show-version complete: (complete #f) port: (port (current-output-port)))
+  (fprintf port "~a\n" (software-identifier complete)))
 
 ;; Parse a git description as returned by git describe --tags into a list-encoded tuple of:
 ;; the top tag in the commit, the number of commits since that tag, and the 7-hex-char commit hash
@@ -43,7 +52,7 @@
 (def (parse-git-description description)
   (match (pregexp-match "^(.*)-([0-9]+)-g([0-9a-f]{7})$" description)
     ([_ tag commits hash]
-     [tag (call-with-input-string commits (λ (port) (expect-natural port))) hash])
+     [tag (string->number commits) hash])
     (else
      [description 0 #f])))
 
@@ -58,7 +67,7 @@
 (def (update-version-from-git
       name: name
       repo: (repo #f)
-      path: (path "config/version.ss"))
+      path: (path "version.ss"))
   (let* ((git-version
           (and (file-exists? (path-expand ".git" (or repo ".")))
                (with-catch false

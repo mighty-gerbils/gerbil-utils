@@ -2,7 +2,8 @@
 ;; -*- Gerbil -*-
 
 (import
-  :std/make :std/misc/list :std/misc/ports :std/misc/process :std/pregexp :std/srfi/1)
+  :std/make :std/misc/list :std/misc/ports :std/misc/process :std/pregexp :std/srfi/1
+  "utils/version")
 
 (def verbose #f)
 
@@ -10,7 +11,7 @@
 (current-directory srcdir)
 
 (def (files)
-  ["t/test-support.ss"
+  ["version.ss" "t/test-support.ss"
    (append-map
     (lambda (dir)
       (filter-map
@@ -28,9 +29,11 @@
                stdin-redirection: #f stdout-redirection: #f))
 
 (def (main . args)
+  (when (match args ([] #t) (["compile" . _] #t) (_ #f))
+    (update-version-from-git name: "Gerbil-utils"))
   (match args
     (["meta"] (write '("spec" "compile" "docker")) (newline))
     (["docker" . args] (displayln (apply build-docker args)))
-    (["spec"] (pretty-print (build-spec)))
+    (["spec"] (pretty-print (files)))
     (["compile"] (build))
     ([] (build))))
