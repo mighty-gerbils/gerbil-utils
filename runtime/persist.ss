@@ -4,8 +4,12 @@
   :gerbil/gambit/bytes :gerbil/gambit/ports :gerbil/gambit/threads
   :std/format :std/misc/completion :std/misc/hash :std/sugar
   ../utils/base ../utils/concurrency
-  ../poo/poo ../poo/mop ../poo/io
+  ../poo/poo ../poo/mop ../poo/io ../poo/type
   ./db ./db-queue)
+
+(.def (Port @ Type.) sexp: 'Port .element?: port?)
+(.def (Thread @ Type.) sexp: 'Thread .element?: thread?)
+(.def (Completion @ Type.) sexp: 'Completion .element?: completion?)
 
 (.defgeneric (walk-dependencies type f x) ;; Unit <- 'a:Type (Unit <- 'b:Type 'b) 'a
    slot: .walk-dependencies from: methods default: void)
@@ -43,6 +47,9 @@
     (make-dependencies-persistent type x tx)
     (db-put! k (bytes<- type x) tx)))
 
+(.def (TX @ Type.)
+   sexp: 'TX
+   .element?: DbTransaction?)
 
 ;; Persistent objects, whether passive data or activities.
 (.def (Persistent. @ Type.
@@ -61,10 +68,11 @@
        ;; The type must provide this method, but users won't use it directly:
        ;; they will call the read method, that will indirectly call make-activity with proper arguments.
        ;; : @ <- Key (Unit <- State TX) State TX
-       restore)
+       .restore)
+  restore: (validate (Fun @ <- Key (Fun Unit <- State TX) State TX) .restore)
 
   ;; Internal table of objects that have already been loaded from database.
-  ;; : (Table @ <- Key)
+  ;;loaded:: (Table @ <- Key)
   loaded: (make-hash-table) ;; weak-values: #t
 
   ;; Internal function that associates a key in the key-value store to a user-level key object of type Key.
@@ -81,14 +89,14 @@
   ;; and start sending according messages to external systems and notifying the user it's done
   ;; (though if transactions have high latency, it might optimistically notify the user
   ;; that the change is underway).
-  ;; : <- Bytes State TX
+  ;; : (Fun Unit <- Bytes State TX)
   saving: (lambda (db-key state tx)
             (make-dependencies-persistent State state tx)
             (db-put! db-key (bytes<- State state) tx))
   ;; Internal function that given a key returns a default state to associate with that key
   ;; when no state is found in the database.
   ;; Not all activities have a default state, and the default method will just raise an error.
-  ;; : State <- Key
+  ;; : (Fun State <- Key)
   make-default-state: (lambda (key) ;; override this method to provide a default state
                         (error "Failed to load key" sexp key))
 
@@ -98,8 +106,9 @@
   ;; Note that this will only be committed with the transaction, and the activity will have to
   ;; either synchronously commit-transaction if it owns the transaction, or asynchronously call
   ;; sync-transaction if it doesn't, before it may assume the state being committed.
-  ;; : @ <- Key State TX
-  resume:
+  ;; : (Fun @ <- Key State TX)
+  resume: (validate (Fun @ <- Key State TX) .resume)
+  .resume:
   (lambda (key state tx)
     (def db-key (db-key<- key))
     (when (hash-key? loaded db-key)
@@ -110,6 +119,7 @@
 
   ;; Internal function to resume an object from the database given a key and a transaction,
   ;; assuming the object wasn't loaded yet.
+  ;; : (Fun @ <- Bytes Key TX)
   resume-from-db:
   (lambda (db-key key tx)
     (def state
@@ -129,8 +139,8 @@
   ;; has to sync-transaction to wait for it being saved.
   ;; Also, proper mutual exclusion must be used to ensure only one piece of code
   ;; may attempt create to create an activity with the given key at any point in time.
-  ;; : @ <- Key (State <- (<- State TX) TX) TX
-  make:
+  make: (validate (Fun @ <- Key (Fun State <- (Fun Unit <- State TX) TX) TX) .make)
+  .make:
   (lambda (key init tx)
     (def db-key (db-key<- key))
     (when (db-key? db-key tx)
@@ -144,15 +154,15 @@
 ;; In case they may be borrowed, they must provide some mutual exclusion mechanism
 ;; that the borrowing activity will use to ensure data consistency.
 (.def (PersistentData @ Persistent.
-       loaded resume-from-db db-key<-)
+       Key loaded resume-from-db db-key<-)
   ;; Read the object from its key, given a context.
   ;; For activities, this is an internal function that should only be called via get.
   ;; For passive data, this is a function that borrowers may use after they ensure mutual exclusion.
   ;; For those kinds of objects where it makes sense, this may create a default activity.
   ;; Clients of this code must use proper mutual exclusion so there are no concurrent calls to get.
   ;; Get may indirectly call resume if the object is in the database, and make-default-state if not.
-  ;; @ <- Key TX
-  get:
+  get: (validate (Fun @ <- Key TX) .get)
+  .get:
   (lambda (key tx)
     (def db-key (db-key<- key))
     (or (hash-get loaded db-key) ;; use the db-key as key so we get the correct equality
@@ -163,11 +173,11 @@
 ;; they may synchronize to I/O (including the DB) though outside transactions.
 ;; Activities communicate with each other using asynchronous messages.
 (.def (PersistentActivity @ Persistent.
-       loaded resume-from-db db-key<-)
+       Key loaded resume-from-db db-key<-)
   ;; Get the activity by its key.
   ;; No transaction is provided: the activity will make its own if needed.
-  ;; @ <- Key
-  <-key:
+  <-key: (validate (Fun @ <- Key) .<-key)
+  .<-key:
   (lambda (key)
     (def db-key (db-key<- key))
     (or (hash-get loaded db-key) ;; use the db-key as key so we get the correct equality
@@ -186,8 +196,6 @@
            (set! (persistent-cell-datum cell) new-state))
          (accessor get-state set-state!)))))
 
-(import :clan/utils/debug)
-
 ;; Persistent actor that has a persistent queue
 (.def (PersistentQueueActor @ PersistentActivity
        Key State sexp <-key db-key<-
@@ -195,14 +203,14 @@
        Message ;; : Type
        ;; function to process a message
        process) ;; : <- Message (State <-) (<- State) TX
-  restore: ;; Provide the interface function declared above.
+  .restore: ;; Provide the interface function declared above.
   (lambda (key save! state tx)
     (def name [sexp (sexp<- Key key)])
     (def (get-state) state)
     (def (set-state! new-state) (save! new-state tx) (set! state new-state))
     (def (process-bytes msg tx)
       (def message (<-bytes Message msg))
-      (DBG process: (sexp<- Key key) (sexp<- State state) (sexp<- Message message))
+      ;;(DBG process: (sexp<- Key key) (sexp<- State state) (sexp<- Message message))
       (process message get-state set-state! tx))
     (def qkey (u8vector-append (db-key<- key) #u8(81))) ;; 81 is ASCII for #\Q
     (def q (DbQueue-restore name qkey process))
@@ -228,18 +236,18 @@
 ;; in case the process is halted before the message was fully processed.
 ;; Sometimes, you may have to pre-allocate a ticket/nonce/serial-number, save it,
 ;; so that you can feed the actor an idempotent message.
-(.def (PersistentActor @ PersistentActivity
+(.def (PersistentActor @ [Thread PersistentActivity]
        Key State sexp <-key)
-  restore: ;; Provide the interface function declared above.
+  .restore: ;; Provide the interface function declared above.
   (lambda (key save! state tx)
     (def name [sexp (sexp<- Key key)])
     (def (get-state) state)
     (def (set-state! new-state) (save! new-state tx) (set! state new-state))
     (def (process msg)
-      (DBG process: (sexp<- Key key) (sexp<- State state) msg)
+      ;;(DBG process: (sexp<- Key key) (sexp<- State state) msg)
       (match msg
         ([Transform: f k]
-         (call/values (lambda () (with-tx (tx) (values (f get-state set-state! tx) tx))) k))))
+         (call/values (lambda () (with-tx (tx) (f get-state set-state! tx))) k))))
     (def thread
       (without-tx
         (spawn/name/logged name (fun (make-persistent-actor) (while #t (process (thread-receive)))))))
@@ -266,11 +274,11 @@
   ;; The function will be run asynchronously in the context of the actor,
   ;; while the caller waits synchronously for its result as transmitted via a completion.
   ;; After all actions with a given tx are run, the sync method must be called.
-  ;; : 'a <- Key ('a <- State (<- State)) TX
+  ;; : (Fun 'a <- Key (Fun 'a <- State (Fun Unit <- State)) TX)
   action:
   (lambda (key f)
     (def c (make-completion))
-    (def (k res tx) (completion-post! c (values res tx)))
+    (def (k . res) (completion-post! c (list->values res)))
     (thread-send (<-key key) [Transform: f k])
     (completion-wait! c))
 
@@ -280,15 +288,15 @@
   ;; : Unit <- Key TX
   sync-action:
   (lambda (key f)
-    (defvalues (res tx) (action key f))
+    (defvalues (res tx)
+      (action key (lambda (get-state set-state! tx) (values (f get-state set-state! tx) tx))))
     (sync-transaction tx)
     res)
 
-  ;; State <- @
+  ;; State <- Key
   read:
-  (lambda (x)
-    ((thread-specific x))))
-
+  (lambda (key)
+    ((thread-specific (<-key key)))))
 
 
 ;; TODO: handle mixin inheritance graph so we can make this a mixin rather than an alternative superclass
@@ -299,12 +307,12 @@
       (def key (<-bytes Key (subu8vector db-key (bytes-length key-prefix) (bytes-length db-key))))
       (printf "SAVING ~s ~s => ~s\n" sexp (sexp<- Key key) (sexp<- State state))
       (super db-key state tx)))
-  resume: =>
+  .resume: =>
   (lambda (super)
     (fun (resume key state tx)
       (printf "RESUME ~s ~s => ~s\n" sexp (sexp<- Key key) (sexp<- State state))
-      (DBG resume-2:
+      ;;(DBG resume-2:
       (super key state tx)
-      ))))
+      )));;)
 
 (.def (DebugPersistentActivity @ [SavingDebug PersistentActivity]))

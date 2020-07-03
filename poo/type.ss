@@ -5,8 +5,8 @@
 
 (import
   :gerbil/gambit/bytes :gerbil/gambit/ports
-  :std/format :std/iter :std/lazy :std/misc/list :std/srfi/1 :std/sugar
-  ../utils/base ../utils/hash ../utils/io ../utils/maybe
+  :std/format :std/iter :std/lazy :std/misc/hash :std/misc/list :std/srfi/1 :std/sugar
+  ../utils/base ../utils/hash ../utils/io ../utils/json ../utils/maybe
   ./poo ./mop ./brace ./io ./number)
 
 (.def (Tuple. @ Type. types)
@@ -46,12 +46,22 @@
 
 (.def (Exactly. @ Type. value)
   sexp: `(Exactly ,(:sexp value)) ;; TODO: have a better generic sexp function?
-  .element?: (λ (x) (equal? x value)))
+  .element?: (λ (x) (equal? x value))
+  kvalue: (lambda _ value)
+  jsvalue: (json-normalize value)
+  methods: =>.+ {
+    .json<-: (lambda _ jsvalue)
+    .<-json: kvalue
+    .bytes<-: (lambda _ #u8())
+    .<-bytes: kvalue
+    .marshal: void
+    .unmarshal: kvalue})
 (def (Exactly value) {(:: @ Exactly.) (value)})
 
-(def Null (Exactly '()))
-(def False (Exactly #f))
-(def True (Exactly #t))
+(define-type Null (Exactly '()))
+(define-type False (Exactly #f))
+(define-type True (Exactly #t))
+(define-type Unit (Exactly (void)))
 
 (.def (OneOf. @ Type. values)
   sexp: `(OneOf ,@(map :sexp values))
@@ -68,8 +78,7 @@
                 (marshal right (cdr v) port))
     .unmarshal: (lambda (port) (let* ((a (unmarshal left port))
                                  (d (unmarshal right port)))
-                            (cons a d)))
-    })
+                            (cons a d)))})
 (def (Pair left right) {(:: @ Pair.) (left) (right)})
 
 (.def (Maybe. @ Type. type)
@@ -81,9 +90,24 @@
     .<-json: (lambda (j) (if (eq? j null) j ((.@ type methods .<-json) j)))
     .marshal: (λ (x port) (cond ((eq? x null) (write-byte 0 port))
                                 (else (write-byte 1 port) (marshal type x port))))
-    .unmarshal: (λ (port) (if (zero? (read-byte port)) null (unmarshal type port)))
-})
+    .unmarshal: (λ (port) (if (zero? (read-byte port)) null (unmarshal type port)))})
 (def (Maybe type) {(:: @ Maybe.) (type)})
 
-(.def (Symbol @ Type.) sexp: 'Symbol .element?: symbol?)
 (.def (String @ Type.) sexp: 'String .element?: string?)
+(.def (Symbol @ Type.) sexp: 'Symbol .element?: symbol?)
+(.def (Keyword @ Type.) sexp: 'Keyword .element?: keyword?)
+
+(.def (StringMap. @ Type. value-type)
+  sexp: `(StringMap ,(.@ value-type sexp))
+  key-type: String
+  .element?: (lambda (x) (and (hash-table? x)
+                         (let/cc return
+                           (hash-for-each (lambda (k v) (unless (and (element? key-type k)
+                                                                (element? value-type v))
+                                                     (return #f)))
+                                          x) #t)))
+  methods: =>.+ {
+    .json<-: (lambda (m) (hash-value-map (.@ value-type methods .json<-) m))
+    .<-json: (lambda (j) (hash-value-map (.@ value-type methods .<-json) j))
+  })
+(def (StringMap value-type) {(:: @ StringMap.) (value-type)})

@@ -21,7 +21,7 @@
     ["utils" "net" "poo" "pure/dict" "pure" "runtime"])...])
 
 (def (build)
-  (make (files) srcdir: srcdir verbose: verbose))
+  (make (files) srcdir: srcdir verbose: verbose debug: 'env optimize: #t))
 
 (def (build-docker (tag #f))
   (run-process ["./scripts/make-docker-image.ss"]

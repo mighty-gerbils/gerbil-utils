@@ -535,6 +535,7 @@
    clan/utils/base
    clan/utils/hash
    clan/utils/io
+   clan/utils/json
    clan/utils/maybe
    gerbil/core
    gerbil/gambit/bytes
@@ -542,6 +543,7 @@
    std/format
    std/iter
    std/lazy
+   std/misc/hash
    std/misc/list
    std/srfi/1
    std/sugar))
@@ -593,11 +595,11 @@
   (clan/poo/io
    clan/poo/mop
    clan/poo/poo
+   clan/poo/type
    clan/runtime/db
    clan/runtime/db-queue
    clan/utils/base
    clan/utils/concurrency
-   clan/utils/debug
    gerbil/core
    gerbil/gambit/bytes
    gerbil/gambit/ports

@@ -59,3 +59,6 @@
 
 (def (write-file-json file json . settings)
   (clobber-file file (curry write-json json) settings: settings))
+
+(def (json-normalize x)
+  (json<-string (string<-json x)))

@@ -191,7 +191,7 @@
                 (lambda ins) (let (ctx2 [ctx fun: f type: sexp inputs: ins]))
                 (validate-row ctx2 inputs: inputs ins) (lambda (vins))
                 (call/values (lambda () (apply f vins))) (lambda outs)
-                (validate-row [ctx2 outputs: outs] outputs: outputs outs ##list->values)))
+                (validate-row [ctx2 outputs: outs] outputs: outputs outs list->values)))
   arity: (length inputs))
 
 (def (Function outputs inputs)
@@ -226,7 +226,7 @@
                        (defvalues (inputs moreios) (split-at i k))
                        [#'Function [#'@list (loop inputs (cdr moreios))] [#'@list . i]]))
                  (else [#'Function [#'@list . iol] [#'@list . i]])))))
-        (else (error "illegal Fun type" stx))))))) ;; or (Values . io) ?
+        (else (error "illegal Fun type" stx))))))) ;; or should it be (Values . io) ?
 
 (.defgeneric (slot-checker slot-descriptor slot-name base x) slot: .slot-checker from: type)
 (.defgeneric (slot-definer slot-descriptor slot-name x) slot: .slot-definer from: type)
@@ -349,3 +349,6 @@
   {(:: @ (proto Lens))
    .get: (lambda (s) (.ref s slot-name))
    .set: (lambda (x s) (.cc s slot-name x))})
+
+;; For now, types are just runtime descriptors...
+(defrule (define-type a desc) (def a (.mix {sexp: 'a} desc)))
