@@ -244,7 +244,7 @@
     (def (get-state) state)
     (def (set-state! new-state) (save! new-state tx) (set! state new-state))
     (def (process msg)
-      ;;(DBG process: (sexp<- Key key) (sexp<- State state) msg)
+      ;;(DBG process: name (sexp<- State state) msg)
       (match msg
         ([Transform: f k]
          (call/values (lambda () (with-tx (tx) (f get-state set-state! tx))) k))))
@@ -305,12 +305,12 @@
   (lambda (super)
     (fun (saving db-key state tx)
       (def key (<-bytes Key (subu8vector db-key (bytes-length key-prefix) (bytes-length db-key))))
-      (printf "SAVING ~s ~s => ~s\n" sexp (sexp<- Key key) (sexp<- State state))
+      ;;(printf "SAVING ~s ~s => ~s\n" sexp (sexp<- Key key) (sexp<- State state))
       (super db-key state tx)))
   .resume: =>
   (lambda (super)
     (fun (resume key state tx)
-      (printf "RESUME ~s ~s => ~s\n" sexp (sexp<- Key key) (sexp<- State state))
+      ;;(printf "RESUME ~s ~s => ~s\n" sexp (sexp<- Key key) (sexp<- State state))
       ;;(DBG resume-2:
       (super key state tx)
       )));;)
