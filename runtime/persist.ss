@@ -316,3 +316,28 @@
       )));;)
 
 (.def (DebugPersistentActivity @ [SavingDebug PersistentActivity]))
+
+(def (ensure-db-key key)
+  (cond
+   ((bytes? key) key)
+   ((string? key) (string->bytes key))
+   (else (error "Invalid db-key" key))))
+
+(defstruct persistent-variable (mx type key value))
+(def (get-persistent-variable pvar)
+  (with-lock (persistent-variable-mx pvar)
+    (lambda () (persistent-variable-value pvar))))
+(def (get-persistent-variable-set! pvar val)
+  (with-lock (persistent-variable-mx pvar)
+    (lambda () (with-tx (tx) (db-put! (persistent-variable-key pvar) val tx)))))
+(def (%make-persistent-variable name type key initial-value)
+  (make-persistent-variable (make-mutex 'name) type (ensure-db-key key)
+    (with-tx (tx) (or (db-get key tx) initial-value))))
+(defrule (define-persistent-variable stx)
+  (syntax-case stx ()
+    ((d name type key default-value)
+     (with-syntax ((setter (syntax->datum #'d (format-symbol "~a-set!" (stx-e #'name)))))
+       #'(begin
+           (def pvar (%make-persistent-variable 'name type key initial-value))
+           (defrule (name) (get-persistent-variable pvar))
+           (defrule (setter val) (get-persistent-variable-set! pvar val)))))))

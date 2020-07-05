@@ -20,10 +20,10 @@
 (.def (Integer @ Number)
   sexp: 'Integer
   .element?: exact-integer?
-  methods: =>.+ {
+  methods: =>.+ {(:: @@ methods.bytes<-marshal)
     .sexp<-: identity
-    .json<-: (lambda (x) (if (<= (integer-length x) 53) x (string<- x)))
-    .<-json: (lambda (x) (if (exact-integer? x) x (<-string x)))
+    .json<-: (lambda (x) (if (<= (integer-length x) 53) x (.string<- x)))
+    .<-json: (lambda (x) (if (exact-integer? x) x (.<-string x)))
     add: +
     sub: -
     mul: *
@@ -39,8 +39,8 @@
     shift-right: (λ (x n) (arithmetic-shift x (- n)))
     .marshal: write-varint
     .unmarshal: read-varint
-    <-string: (lambda (x) (validate @ (string->number x)))
-    string<-: number->string
+    .<-string: (lambda (x) (validate @ (string->number x)))
+    .string<-: number->string
     succ: 1+
     pred: 1-
     ;; function taking two entries a, b.
@@ -106,12 +106,14 @@
   sexp: `(Z/ ,n)
   .element?: (nat-under? n)
   methods: =>.+ {
+    length-in-bits: (integer-length maxint)
+    length-in-bytes: (integer-length-in-bytes maxint)
+    .bytes<-: (cut bytes<-nat <> length-in-bytes)
+    .<-bytes: (lambda (x) (validate @ (nat<-bytes x)))
     .marshal: (λ (n out) (write-integer-bytes n length-in-bytes out))
     .unmarshal: (λ (in) (read-integer-bytes in length-in-bytes))
     normalize: (λ (x) (modulo x n))
     maxint: (- n 1)
-    length-in-bits: (integer-length maxint)
-    length-in-bytes: (integer-length-in-bytes maxint)
     add-carry?: (λ (x y) (<= n (+ x y)))
     add-negative-overflow?: false
     sub-carry?: false
@@ -141,24 +143,23 @@
   methods: =>.+ {(:: @ [] maxint)
     length-in-bits: n-bits
     length-in-bytes: (n-bytes<-n-bits n-bits)
-    normalize: (λ (x) (bitwise-and x maxint))
-  })
+    .<-bytes: nat<-bytes
+    normalize: (λ (x) (bitwise-and x maxint))})
 (def (UInt n-bits) {(:: @ UInt.) (n-bits)})
 
 (.def (JsInt @ Integer)
-   sexp: 'JsInt
-   .element?: (λ (x) (and (exact-integer? x) (<= .most-negative x .most-positive)))
-   .most-positive: (1- (expt 2 53))
-   .most-negative: (- .most-positive)
-   methods: =>.+ {(:: @@ [un/marshal<-bytes])
+  sexp: 'JsInt
+  .element?: (λ (x) (and (exact-integer? x) (<= .most-negative x .most-positive)))
+  .most-positive: (1- (expt 2 53))
+  .most-negative: (- .most-positive)
+  methods: =>.+ {(:: @@ [methods.marshal<-fixed-length-bytes])
     length-in-bytes: 7
     .json<-: identity
     .<-json: (cut validate @ <>)
     .bytes<-: (λ (n) (def bytes (make-bytes 7))
                  (u8vector-sint-set! bytes 0 n big 7)
                  bytes)
-    .<-bytes: (λ (bytes) (validate @ (u8vector-sint-ref bytes 0 big 7)))
-   })
+    .<-bytes: (λ (bytes) (validate @ (u8vector-sint-ref bytes 0 big 7)))})
 
 (def (bytes<-double d)
   (def bytes (make-bytes 8))
@@ -171,7 +172,7 @@
 (.def (Real @ Number)
    sexp: 'Real
    .element?: real?
-   methods: =>.+ {(:: @@ [un/marshal<-bytes])
+   methods: =>.+ {(:: @@ [methods.marshal<-bytes])
     length-in-bytes: 8
     .json<-: identity
     .<-json: (cut validate @ <>)
@@ -187,7 +188,7 @@
                                    (and (element? Int (car x))
                                         (eq? #t (cdr x))))
                                  (intdict->list x))))
-   methods: =>.+ {(:: methods [bytes<-un/marshal])
+   methods: =>.+ {(:: methods [methods.bytes<-marshal])
      .sexp<-: (lambda (x) `(.call ,sexp .<-list (@list ,@(.list<- x))))
      .json<-: (lambda (x) (map (cut json<- Int <>) (.list<- x)))
      .<-json: (lambda (x) (.<-list (map (cut <-json Int <>) x)))
