@@ -223,8 +223,8 @@
 ;; : (List String) <- String *
 (def (metadata . keys)
   ["metadata"
-   "software" software-name
-   "version" software-version
+   "software" (software-name)
+   "version" (software-version)
    "machine" (machine-name)
    . keys])
 
