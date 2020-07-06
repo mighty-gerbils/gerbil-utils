@@ -1,11 +1,12 @@
 (export
   with-catch/cont
+  with-logged-exceptions
   call-with-logged-exceptions
   thunk-with-logged-exceptions)
 
 (import
   :gerbil/gambit/continuations :gerbil/gambit/exceptions :gerbil/gambit/threads
-  :std/format)
+  :std/format :std/sugar)
 
 ;; The exception and continuation are valid for use with display-exception-in-context
 ;; and display-continuation-backtrace
@@ -32,3 +33,6 @@
 
 (def (thunk-with-logged-exceptions thunk port: (port (current-error-port)))
   (lambda () (call-with-logged-exceptions thunk port: port)))
+
+(defrule (with-logged-exceptions (options ...) body ...)
+  (call-with-logged-exceptions (lambda () body ...) options ...))

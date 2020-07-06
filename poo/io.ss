@@ -140,9 +140,9 @@
    .bytes<-: (bytes<-<-marshal .marshal)
    .<-bytes: (<-bytes<-unmarshal .unmarshal))
 
-(.def (methods.marshal<-bytes @ [] .<-bytes .bytes<- Bytes)
-   .marshal: (lambda (x port) (marshal Bytes (.bytes<- x) port))
-   .unmarshal: (lambda (port) (.<-bytes (unmarshal Bytes port))))
+(.def (methods.marshal<-bytes @ [] .<-bytes .bytes<- .Bytes)
+   .marshal: (lambda (x port) (marshal .Bytes (.bytes<- x) port))
+   .unmarshal: (lambda (port) (.<-bytes (unmarshal .Bytes port))))
 
 (.def (methods.marshal<-fixed-length-bytes @ [] .<-bytes .bytes<- length-in-bytes)
    .marshal: (lambda (x port) (write-bytes (.bytes<- x) port))

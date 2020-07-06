@@ -33,7 +33,7 @@
   {(:: @ Tuple.) (types)})
 
 (.def (List. @ Type. type)
-  sexp: `(List ,(.@ type name))
+  sexp: `(List ,(.@ type sexp))
   .element?: (λ (x) (and (list? x) (every (cut element? type <>) x)))
   methods: {(:: methods [methods.bytes<-marshal methods.string<-json])
     .sexp<-: (lambda (v) ['@list (map (.@ type methods .sexp<-) v) ...])
@@ -121,13 +121,13 @@
                                                                 (element? Value v))
                                                      (return #f)))
                                           x) #t)))
-  methods: =>.+ {
+  methods: =>.+ {(:: @@ methods.string&bytes&marshal<-json)
+    .empty: (make-hash-table)
     .json<-: (lambda (m) (hash-key-value-map m (cut string<- Key <>) (cut json<- Value <>)))
     .<-json: (lambda (j) (hash-key-value-map j (cut <-string Key <>) (cut <-json Value <>)))})
 (defrules Map (<- ->)
   ((_ Value <- Key) {(:: @ Map.) Key: Key Value: Value})
   ((_ Key -> Value) {(:: @ Map.) Key: Key Value: Value}))
-(def (StringMap Value) (Map Value <- String))
 
 (.def methods.bytes
   .sexp<-: (lambda (x) ['hex-decode (hex-encode x)])
@@ -141,16 +141,16 @@
   sexp: 'Bytes
   .element?: bytes?
   methods: =>.+ {(:: @@ [methods.bytes])
-    Length: Nat
-    zero: #u8()
-    .marshal: (lambda (x port) (marshal Length (bytes-length x) port) (write-u8vector x port))
-    .unmarshal: (lambda (port) (def n (unmarshal Length port)) (read-bytes n port))})
+    .Length: Nat
+    .zero: #u8()
+    .marshal: (lambda (x port) (marshal .Length (bytes-length x) port) (write-u8vector x port))
+    .unmarshal: (lambda (port) (def n (unmarshal .Length port)) (read-bytes n port))})
 (.def (BytesN. @ Type. n)
   sexp: `(BytesN ,n)
   .element?: (λ (x) (and (bytes? x) (= (bytes-length x) n)))
   methods: =>.+ {(:: @@ [methods.bytes])
     length-in-bytes: n
-    zero: (make-bytes n)
+    .zero: (make-bytes n)
     .<-string: (λ (x) (validate @ (hex-decode x)))
     .<-bytes: (cut validate @ <>)
     .marshal: write-u8vector
@@ -159,8 +159,8 @@
 
 (.def (String @ Type.) sexp: 'String .element?: string?
   methods: {(:: @ methods.marshal<-bytes)
-    Bytes: Bytes
-    zero: ""
+    .Bytes: Bytes
+    .zero: ""
     .sexp<-: identity
     .<-string: identity
     .string<-: identity

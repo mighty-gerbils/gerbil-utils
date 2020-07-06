@@ -1,9 +1,10 @@
 ;; Persisting Data
 (export #t)
 (import
+  (for-syntax ../utils/syntax)
   :gerbil/gambit/bytes :gerbil/gambit/ports :gerbil/gambit/threads
   :std/format :std/misc/completion :std/misc/hash :std/sugar
-  ../utils/base ../utils/concurrency
+  ../utils/base ../utils/concurrency ../utils/string
   ../poo/poo ../poo/mop ../poo/io ../poo/type
   ./db ./db-queue)
 
@@ -323,20 +324,29 @@
    ((string? key) (string->bytes key))
    (else (error "Invalid db-key" key))))
 
-(defstruct persistent-variable (mx type key value))
+(defstruct persistent-variable (mx type key value loaded?))
 (def (get-persistent-variable pvar)
   (with-lock (persistent-variable-mx pvar)
-    (lambda () (persistent-variable-value pvar))))
+    (lambda ()
+      (unless (persistent-variable-loaded? pvar)
+        (let (bytes (with-tx (tx) (db-get (persistent-variable-key pvar) tx)))
+          (when bytes
+            (let (val (<-bytes (persistent-variable-type pvar) bytes))
+              (set! (persistent-variable-value pvar) val))))
+        (set! (persistent-variable-loaded? pvar) #t))
+      (persistent-variable-value pvar))))
 (def (get-persistent-variable-set! pvar val)
   (with-lock (persistent-variable-mx pvar)
-    (lambda () (with-tx (tx) (db-put! (persistent-variable-key pvar) val tx)))))
+    (lambda ()
+      (with-tx (tx) (db-put! (persistent-variable-key pvar) val tx))
+      (set! (persistent-variable-loaded? pvar) #t)
+      (set! (persistent-variable-value pvar) val))))
 (def (%make-persistent-variable name type key initial-value)
-  (make-persistent-variable (make-mutex 'name) type (ensure-db-key key)
-    (with-tx (tx) (or (db-get key tx) initial-value))))
-(defrule (define-persistent-variable stx)
+  (make-persistent-variable (make-mutex 'name) type (ensure-db-key key) initial-value #f))
+(defsyntax (define-persistent-variable stx)
   (syntax-case stx ()
-    ((d name type key default-value)
-     (with-syntax ((setter (syntax->datum #'d (format-symbol "~a-set!" (stx-e #'name)))))
+    ((d name type key initial-value)
+     (with-syntax ((setter (datum->syntax #'d (symbolify [#'name "-set!"]))))
        #'(begin
            (def pvar (%make-persistent-variable 'name type key initial-value))
            (defrule (name) (get-persistent-variable pvar))

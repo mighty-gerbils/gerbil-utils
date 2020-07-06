@@ -11,7 +11,8 @@
    gerbil/gambit/continuations
    gerbil/gambit/exceptions
    gerbil/gambit/threads
-   std/format))
+   std/format
+   std/sugar))
  (clan/utils/base "utils/base.ss" (gerbil/core std/sugar))
  (clan/utils/exit
   "utils/exit.ss"
@@ -163,7 +164,7 @@
    gerbil/gambit/threads
    std/misc/process
    std/sugar))
- (clan/utils/syntax "utils/syntax.ss" (gerbil/core gerbil/expander std/sugar))
+ (clan/utils/syntax "utils/syntax.ss" (gerbil/core std/sugar))
  (clan/utils/bytes "utils/bytes.ss" (gerbil/core gerbil/gambit/bytes std/iter))
  (clan/utils/temporary-files
   "utils/temporary-files.ss"
@@ -608,6 +609,8 @@
    clan/runtime/db-queue
    clan/utils/base
    clan/utils/concurrency
+   clan/utils/string
+   clan/utils/syntax
    gerbil/core
    gerbil/gambit/bytes
    gerbil/gambit/ports
