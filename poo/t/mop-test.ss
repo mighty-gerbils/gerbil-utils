@@ -4,7 +4,7 @@
   :gerbil/gambit/ports
   :std/format :std/misc/repr :std/sort :std/srfi/13 :std/sugar :std/test
   :clan/utils/assert :clan/utils/base
-  ../poo ../mop ../type ../brace)
+  ../poo ../mop ../number ../type ../brace)
 
 (def mop-test
   (test-suite "test suite for clan/poo/mop"
@@ -47,5 +47,5 @@
             ]))
     (test-case "Lenses"
       (check-equal?
-       (.sorted-alist (.method Lens .modify (slot-lens 'a) 1+ (.o a: 1 b: 6)))
+       (.sorted-alist (.call Lens .modify (slot-lens 'a) 1+ (.o a: 1 b: 6)))
        '((a . 2) (b . 6))))))

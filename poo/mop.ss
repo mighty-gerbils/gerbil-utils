@@ -40,9 +40,8 @@
 
 ;; * Options
 ;; default: default value when no method is defined, also bottom value for fixed-point
-;; from: one of the symbols instance (default), methods or type. Specifies who provides methods
-;;   for the generic function: the instance directly, its .type field,
-;;   or the methods field of its .type field, respectively.
+;; from: one of the symbols instance (default), or type. Specifies who provides methods
+;;   for the generic function: the instance directly, or its .type field, respectively.
 ;; slot: slot-name can specify an alternate slot-name, which helps avoid with-slot shadowing
 ;;   when calling the gf from a method definition.
 ;; TODO: add method combination, which requires integration with the recursion in .ref.
@@ -67,7 +66,6 @@
            (slot: (set! slot-name val))
            (from: (case (syntax-e val)
                     ((type) (set! from 'type))
-                    ((methods) (set! from 'methods))
                     ((instance) (set! from 'instance))
                     (else (error "invalid option" val))))
            (default: (set! default val))
@@ -88,27 +86,22 @@
                       (base (if default #'(λ () default*) #'(no-such-slot self 'slot-name)))
                       (methods (case from
                                  ((instance) #'self)
-                                 ((methods) #'(.get self methods))
-                                 ((type) #'(.get self .type methods))
+                                 ((type) #'(.get self .type))
                                  (else (error "invalid from" (syntax->datum stx)))))
                       (getter #'(.ref methods 'slot-name base))
                       ((evars ...) (case from
                                      ((type) #'(self vars ...))
-                                     ((instance methods) #'(vars ...))
+                                     ((instance) #'(vars ...))
                                      (else (error "invalid from" (syntax->datum stx))))))
-         (if (or funargs (case from ((type) #t) ((instance methods) #f)))
+         (if (or funargs (case from ((type) #t) ((instance) #f)))
            #'(def (gf self args ...) (getter evars ...))
            #'(def (gf self) getter)))))))
 
 ;;(def (and-combination new-value old-value) (and (new-value dont-call-next-method) (old-value)))
 
 (defrules .method ()
-  ((_ poo slot) (.get poo methods slot))
-  ((_ poo slot args ...) ((.method poo slot) args ...)))
-
-(defrules .type.method ()
-  ((_ poo slot) (.get poo .type methods slot))
-  ((_ poo slot args ...) ((.type.method poo slot) args ...)))
+  ((_ poo slot) (.get poo .type slot))
+  ((_ poo slot args ...) ((.method poo .type slot) args ...)))
 
 (.defgeneric (element? type x)
    ;;default: false
@@ -118,9 +111,7 @@
 (.def (Type. @)
   sexp: (error "missing type sexp" @) ;; Any
   .element?: (error "missing element?" @) ;; Bool <- Any
-  .validate: (lambda (x ctx) (typecheck @ x ctx) x)
-  methods: {
-  })
+  .validate: (lambda (x (ctx '())) (typecheck @ x ctx) x)) ;; @ <- Any ;; error if input isn't a @
 
 (def (typecheck type x (context '()))
   (or (element? type x) (type-error context (.@ type sexp) (repr x))))
@@ -132,9 +123,9 @@
     ([hd . tl] (append (flatten-heads hd) tl))
     (x [x])))
 
-(.defgeneric (%validate type x ctx) slot: .validate)
+;; TODO: teach .defgeneric about optional arguments.
 ;; TODO: use macro that leaves source info by default, returns a function when passed as argument.
-(def (validate type x (ctx '())) (%validate type x ctx))
+(def (validate type x (ctx '())) (.call type .validate x ctx))
 
 (def (poo-values x) (map (cut .ref x <>) (.all-slots x)))
 (def (symbolify x) (!> x object->string string->symbol))
@@ -144,16 +135,14 @@
 
 (.def (Bool @ Type.)
   sexp: 'Bool
+  .length-in-bytes: 1
   .element?: boolean?
-  methods: =>.+ {
-    length-in-bytes: 1
-    .json<-: identity
-    .<-json: (cut validate @ <>)
-    .bytes<-: (lambda (x) (if x #u8(1) #u8(0)))
-    .<-bytes: (λ (b) (< 0 (u8vector-ref b 0)))
-    .marshal: (marshal<-bytes<- .bytes<-)
-    .unmarshal: (unmarshal<-<-bytes .<-bytes length-in-bytes)
-  })
+  .json<-: identity
+  .<-json: (cut validate @ <>)
+  .bytes<-: (lambda (x) (if x #u8(1) #u8(0)))
+  .<-bytes: (λ (b) (< 0 (u8vector-ref b 0)))
+  .marshal: (marshal<-bytes<- .bytes<-)
+  .unmarshal: (unmarshal<-<-bytes .<-bytes .length-in-bytes))
 
 (def (monomorphic-poo? type x)
   (and (poo? x) (every (cut element? type <>) (poo-values x))))
@@ -179,7 +168,7 @@
 (.def (Function. @ Type. outputs inputs)
   sexp: `(Function (@list ,@(map (cut .@ <> sexp) outputs)) (@list ,@(map (cut .@ <> sexp) inputs)))
   .element?: procedure? ;; we can't dynamically test that a function has the correct signature :-(
-  .validate: (lambda (f ctx)
+  .validate: (lambda (f (ctx '()))
                (unless (procedure? f) (type-error ctx @ f))
                (def (validate-row context kind types elems k)
                  (unless (= (length elems) (length types))
@@ -271,8 +260,7 @@
     optional: {type: Bool default: #f}
     hidden: {type: Bool default: #f}}
   proto: {.type: @ optional: #f hidden: #f}
-  methods:
-  {.slot-checker:
+  .slot-checker:
     (λ (@@ slot-name base x)
       (with-slots (@@ type constant optional)
         (if (.key? x slot-name)
@@ -281,7 +269,7 @@
               (or (not (.has? @@ type)) (element? type value))
               (or (not (.has? @@ constant)) (equal? constant value))))
           (and (.has? @@ optional) optional))))
-   .slot-definer:
+  .slot-definer:
     (λ (@@ slot-name x)
        (with-slots (@@ type constant compute default)
          (cond
@@ -291,24 +279,22 @@
           ((and (.has? @@ type) (.has? type proto))
            (.putslot! x slot-name (constant-slot (.@ type proto)))))
          ;;TODO: (put-assertion! x (λ (self) (assert! (slot-checker slot-name base self))))
-         ))})
+         )))
 
-;; TODO: functional lenses in (methods .lens foo) as well as imperative accessors
+;; TODO: functional lenses in (.lens foo) as well as imperative accessors
 (.def (Lens @ Class.)
   sexp: 'Lens. ;; Lens 's 'a
   slots: =>.+ { ;; or should we have just a ((f a) <- (f : Functor) ((f b) <- b) a) ?
     .get: { } ;; 's -> 'a
     .set: { }} ;; 'a -> 's -> 's
-  methods: =>.+ {
-    .get: (lambda (l s) (.call l .get s))
-    .set: (lambda (l a s) (.call l .set a s))
-    .modify: (lambda (l f s)
-               (.call l .set (f (.call l .get s)) s)) ;; over in haskell
-
-    ;; Same order as in Haskell, opposite to OCaml. (compose x y) will access x then y
-    ;; (Lens 'a 'c)  <- (Lens 'a 'b) (Lens 'b 'c)
-    .compose: (lambda (l1 l2) {.get: (lambda (s) (.call l2 .get (.call l1 s)))
-                          .set: (lambda (a s) (.modify l1 (cut .call l2 .set a <>) s))})})
+  .get: (lambda (l s) (.call l .get s))
+  .set: (lambda (l a s) (.call l .set a s))
+  .modify: (lambda (l f s)
+             (.call l .set (f (.call l .get s)) s)) ;; over in haskell
+  ;; Same order as in Haskell, opposite to OCaml. (compose x y) will access x then y
+  ;; (Lens 'a 'c)  <- (Lens 'a 'b) (Lens 'b 'c)
+  .compose: (lambda (l1 l2) {.get: (lambda (s) (.call l2 .get (.call l1 s)))
+                        .set: (lambda (a s) (.modify l1 (cut .call l2 .set a <>) s))}))
 
 (.def (Type @ Class.)
   sexp: 'Type
@@ -323,8 +309,7 @@
    slots: =>.+
     {slots: {type: PooPoo} ;; would be (MonomorphicPoo Slot) if we didn't automatically append Slot
      sealed: {type: Bool default: #f}}
-   methods: =>.+
-    {.sexp<-: (lambda (x) (.@ x sexp))}
+   .sexp<-: (lambda (x) (.@ x sexp))
    proto: Class.)
 
 (def (proto class) (.@ class proto))

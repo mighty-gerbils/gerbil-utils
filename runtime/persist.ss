@@ -13,10 +13,9 @@
 (.def (Completion @ Type.) sexp: 'Completion .element?: completion?)
 
 (.defgeneric (walk-dependencies type f x) ;; Unit <- 'a:Type (Unit <- 'b:Type 'b) 'a
-   slot: .walk-dependencies from: methods default: void)
+   slot: .walk-dependencies default: void)
 
-(.defgeneric (digest type b)
-   slot: .digest from: methods)
+(.defgeneric (digest type b) slot: .digest)
 
 (def content-addressed-storage-prefix (string->bytes "CA"))
 

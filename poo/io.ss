@@ -22,37 +22,37 @@
 
 ;; gf to effectfully read bytes from a stream or stream-like object into a u8vector
 ;; Unit <- In Bytes ?offset: Nat ?length: Nat
-(.defgeneric (read-bytes-into in bs offset: (offset 0) length: (length (- (bytes-length bs) offset)))
-   default:
-   (λ (in l)
+(.defgeneric (read-bytes-into bs in offset: (offset 0) length: (length (- (bytes-length bs) offset)))
+  default:
+  (λ (in l)
     (for (i (in-range length))
       (let ((b (read-byte in))) ;; TODO: handle EOF, return number of bytes read???
         (bytes-set! bs (+ i offset) b)))))
 
 ;; gf to effectfully read bytes from a stream or stream-like object into a new u8vector
 ;; Bytes <- In Nat
-(.defgeneric (poo-read-bytes in length)
+(.defgeneric (poo-read-bytes length in)
   default:
   (λ (in length)
     (def bs (make-bytes length))
     (if (input-port? in)
       (let ((n (read-bytes bs in))) (assert! (= n length)))
-      (read-bytes-into in bs length: length))
+      (read-bytes-into bs in length: length))
     bs))
 
 ;; gf to effectfully write bytes to a stream or stream-like object from a u8vector
 ;; Unit <- Bytes Out ?offset: Nat ?length: Nat
 (.defgeneric (poo-write-bytes bs out offset: (offset 0) length: (length (- (bytes-length bs) offset)))
-   default:
-   (λ (out bs offset: (offset 0) length: (length (- (bytes-length bs) offset)))
-     (for (i (in-range length))
-       (write-byte (bytes-ref bs (+ i offset)) out))))
+  default:
+  (λ (out bs offset: (offset 0) length: (length (- (bytes-length bs) offset)))
+    (for (i (in-range length))
+      (write-byte (bytes-ref bs (+ i offset)) out))))
 
 
 ;;; SEXP from values
 
 ;; gf to extract a source sexp from a value of given type
-(.defgeneric (sexp<- type x) from: methods slot: .sexp<-)
+(.defgeneric (sexp<- type x) slot: .sexp<-)
 
 (defgeneric :sexp
   (lambda (x)
@@ -64,7 +64,7 @@
 (defmethod (@@method :sexp poo)
   (λ (self)
     (cond
-     ((.has? self .type methods .sexp<-) (.call (.@ self .type methods) .sexp<- self))
+     ((.has? self .type .sexp<-) (.call (.@ self .type) .sexp<- self))
      ((.has? self sexp) (object->string (.@ self sexp))))))
 
 
@@ -73,11 +73,11 @@
 (defmethod (@@method :pr poo)
   (λ (self (port (current-output-port)) (options (current-representation-options)))
     (cond
-     ((.has? self .type print-object) => (lambda (m) (m self port options)))
-     ((.has? self .type methods .sexp<-) => (lambda (m) (write (m self) port)))
+     ((.has? self .type print-object) ((.@ self .type print-object) self port options))
+     ((.has? self .type .sexp<-) (write ((.@ self .type .sexp<-) self) port))
      ((.has? self .type) (print-class-object self port options))
-     ((.has? self :pr) => (lambda (m) (m port options)))
-     ((.has? self sexp) => (lambda (s) (write s port)))
+     ((.has? self .pr) (.call self .pr port options))
+     ((.has? self sexp) (write (.@ self sexp) port))
      (else (print-unrepresentable-object self port options)))))
 
 (def (print-class-object
@@ -96,10 +96,10 @@
 ;;; JSON I/O
 
 ;; gf to extract a value of given type from some json
-(.defgeneric (<-json type j) from: methods slot: .<-json)
+(.defgeneric (<-json type j) slot: .<-json)
 
 ;; gf to extract some json from a value of given type
-(.defgeneric (json<- type x) from: methods slot: .json<-)
+(.defgeneric (json<- type x) slot: .json<-)
 
 (def (@@method :json poo) (json<- (.@ poo .type) poo))
 
@@ -118,43 +118,37 @@
 ;; A trivial way to satisfy this constraint is for the output to have fixed length,
 ;; or for the length to be prepended. Another way is to have some terminator value (e.g. 0 in C strings).
 
-(.defgeneric (marshal type x port)
-   slot: .marshal from: methods)
+(.defgeneric (marshal type x port) slot: .marshal)
 
-(.defgeneric (unmarshal type port)
-   slot: .unmarshal from: methods)
+(.defgeneric (unmarshal type port) slot: .unmarshal)
 
 
 ;;; Converting to/from bytes
 ;; Unlike with marshaling, these bytes do NOT have to be self-delimited in case length is variable.
 
 ;; : Bytes <- 'a:Type 'a
-(.defgeneric (bytes<- type x)
-   slot: .bytes<- from: methods)
+(.defgeneric (bytes<- type x) slot: .bytes<-)
 
 ;; : 'a <- 'a:Type Bytes
-(.defgeneric (<-bytes type b)
-   slot: .<-bytes from: methods)
+(.defgeneric (<-bytes type b) slot: .<-bytes)
 
 (.def (methods.bytes<-marshal @ [] .marshal .unmarshal)
-   .bytes<-: (bytes<-<-marshal .marshal)
-   .<-bytes: (<-bytes<-unmarshal .unmarshal))
+  .bytes<-: (bytes<-<-marshal .marshal)
+  .<-bytes: (<-bytes<-unmarshal .unmarshal))
 
 (.def (methods.marshal<-bytes @ [] .<-bytes .bytes<- .Bytes)
-   .marshal: (lambda (x port) (marshal .Bytes (.bytes<- x) port))
-   .unmarshal: (lambda (port) (.<-bytes (unmarshal .Bytes port))))
+  .marshal: (lambda (x port) (marshal .Bytes (.bytes<- x) port))
+  .unmarshal: (lambda (port) (.<-bytes (unmarshal .Bytes port))))
 
 (.def (methods.marshal<-fixed-length-bytes @ [] .<-bytes .bytes<- length-in-bytes)
-   .marshal: (lambda (x port) (write-bytes (.bytes<- x) port))
-   .unmarshal: (lambda (port) (.<-bytes (read-bytes length-in-bytes port))))
+  .marshal: (lambda (x port) (write-bytes (.bytes<- x) port))
+  .unmarshal: (lambda (port) (.<-bytes (read-bytes length-in-bytes port))))
 
 ;;; Converting to/from string
 
 ;; : String <- 'a:Type 'a
-(.defgeneric (string<- type x)
-   slot: .string<- from: methods)
+(.defgeneric (string<- type x) slot: .string<-)
 
 ;; : 'a <- 'a:Type String
-(.defgeneric (<-string type b)
-   slot: .<-string from: methods)
+(.defgeneric (<-string type b) slot: .<-string)
 
