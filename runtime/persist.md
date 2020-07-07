@@ -129,3 +129,8 @@ Other possibilities abound.
 Thus, the set of active transactions could be a set of transactions, each with a state (active or not)
 and a number (that tells when the change happens), plus a demon that advances things
 based on what has been committed so far.
+
+## QUESTIONS
+
+* When we persist anything, there needs be a clear continuation that can be deduced from it.
+  How do we ensure that in utility functions that are tempted to create a transaction?
