@@ -67,3 +67,6 @@
 
 (def (path-parent path)
   (path-simplify (path-expand ".." path)))
+
+(def (path-extension-is? path extension)
+  (equal? (path-extension path) extension))
