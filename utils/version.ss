@@ -8,8 +8,7 @@
 
 (import
   :gerbil/gambit/system
-  :std/format :std/iter :std/misc/list :std/misc/ports :std/misc/process :std/misc/string :std/pregexp
-  ./base)
+  :std/format :std/iter :std/misc/list :std/misc/ports :std/misc/process :std/misc/string :std/pregexp)
 (extern namespace: #f gerbil-greeting)
 
 ;; Name and version of the topmost software layer, typically your application.
@@ -84,5 +83,4 @@
         (cut display version-text <>)))))
 
 ;; TODO: use FFI for that -- except it differs on Linux, BSD (mac?), Windows.
-(defonce (machine-name)
-  (string-trim-eol (run-process ["hostname"])))
+(def machine-name (let (d (delay (string-trim-eol (run-process ["hostname"])))) (cut force d)))

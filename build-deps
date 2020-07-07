@@ -13,6 +13,18 @@
    gerbil/gambit/threads
    std/format
    std/sugar))
+ (clan/utils/version
+  "utils/version.ss"
+  (gerbil/core
+   gerbil/gambit/system
+   std/format
+   std/iter
+   std/misc/list
+   std/misc/ports
+   std/misc/process
+   std/misc/string
+   std/pregexp))
+ (clan/version "version.ss" (clan/utils/version gerbil/core))
  (clan/utils/base "utils/base.ss" (gerbil/core std/sugar))
  (clan/utils/exit
   "utils/exit.ss"
@@ -77,19 +89,6 @@
    std/error
    std/format
    std/logger))
- (clan/utils/version
-  "utils/version.ss"
-  (clan/utils/base
-   gerbil/core
-   gerbil/gambit/system
-   std/format
-   std/iter
-   std/misc/list
-   std/misc/ports
-   std/misc/process
-   std/misc/string
-   std/pregexp))
- (clan/version "version.ss" (clan/utils/version gerbil/core))
  (clan/utils/config
   "utils/config.ss"
   (clan/utils/base gerbil/core gerbil/gambit/os))
