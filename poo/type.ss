@@ -104,6 +104,7 @@
 (.def (Json @ [methods.bytes&marshal<-string Type.])
   sexp: 'Json
   .element?: true
+  .sexp<-: identity ;; TODO: recursively handle tables
   .json<-: identity
   .<-json: identity
   .string<-: string<-json
@@ -112,9 +113,22 @@
   .string<-: (compose string<-json .json<-)
   .<-string: (compose .<-json json<-string))
 
-(.def (Or. @ Type. types)
-  sexp: `(Or ,@(map (cut .@ <> name) types))
-  .element?: (λ (x) (any (cut element? <> x) types)))
+(.def (Or. @ [methods.bytes<-marshal Type.] types)
+  sexp: `(Or ,@(map (cut .@ <> sexp) types))
+  types@: (list->vector types)
+  .element?: (λ (x) (any (cut element? <> x) types))
+  .discriminant-length-in-bits: (integer-length (1- (length types)))
+  .discriminant-length-in-bytes: (n-bytes<-n-bits .discriminant-length-in-bits)
+  .discriminant<-: (lambda (v) (let/cc return
+                            (vector-for-each (lambda (i t) (when (element? t v) (return i))) types@) #f))
+  .json<-: (lambda (v) (def disc (.discriminant<- v))
+              [disc (json<- (vector-ref types@ disc) v)])
+  .<-json: (lambda (j) (<-json (vector-ref types@ (car j)) (cadr j))) ;; TODO: validate the json?
+  .marshal: (lambda (v port) (def disc (.discriminant<- v))
+              (write-integer-bytes disc .discriminant-length-in-bytes port)
+              (marshal (vector-ref types@ disc) v port))
+  .unmarshal: (lambda (port) (def disc (read-integer-bytes .discriminant-length-in-bytes port))
+                (unmarshal (vector-ref types@ disc) port)))
 (def (Or . types) {(:: @ Or.) (types)})
 
 (.def (Exactly. @ Type. value)
