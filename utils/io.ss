@@ -16,6 +16,11 @@
 ;; : Bytes <- In
 (def (read-sized16-bytes port)
   (def size (read-uint16 port))
+  (read-bytes* size port))
+
+;; Read a given number of bytes, even if the number is zero
+;; : Bytes <- Nat In
+(def (read-bytes* size port)
   (if (zero? size)
     #u8()
     (read-bytes size port)))
@@ -48,11 +53,11 @@
 
 ;; : ('a <- In) <- ('a <- Bytes) Nat
 (def (unmarshal<-<-bytes <-bytes n)
-  (lambda (port) (<-bytes (read-bytes n port))))
+  (lambda (port) (<-bytes (read-bytes* n port))))
 
 ;; : Nat <- In Nat+
 (def (read-integer-bytes l in)
-  (nat<-bytes (read-bytes l in)))
+  (nat<-bytes (read-bytes* l in)))
 
 ;; : <- Int Nat+ Out
 (def (write-integer-bytes n l out)

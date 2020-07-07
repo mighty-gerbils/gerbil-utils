@@ -60,7 +60,7 @@
   .Length: Nat
   .zero: #u8()
   .marshal: (lambda (x port) (marshal .Length (bytes-length x) port) (write-u8vector x port))
-  .unmarshal: (lambda (port) (def n (unmarshal .Length port)) (read-bytes n port)))
+  .unmarshal: (lambda (port) (def n (unmarshal .Length port)) (read-bytes* n port)))
 (.def (BytesN. @ [methods.bytes Type.] n)
   sexp: `(BytesN ,n)
   .element?: (λ (x) (and (bytes? x) (= (bytes-length x) n)))
@@ -69,7 +69,7 @@
   .<-string: (λ (x) (validate @ (hex-decode x)))
   .<-bytes: (cut validate @ <>)
   .marshal: write-u8vector
-  .unmarshal: (cut read-bytes n <>))
+  .unmarshal: (cut read-bytes* n <>))
 (def (BytesN n) (.cc BytesN. n: n))
 
 (.def (String @ [methods.marshal<-bytes Type.])
@@ -140,13 +140,19 @@
   .element?: (cut member <> vals)
   .vals@: (list->vector vals)
   .json@: (list->vector (map json-normalize vals))
-  .length-in-bytes: (n-bytes<-n-bits (integer-length (vector-length .vals@)))
+  .length-in-bits: (integer-length (1- (vector-length .vals@)))
+  .length-in-bytes: (n-bytes<-n-bits .length-in-bits)
   .<-nat: (cut vector-ref .vals@ <>)
   .nat<-: (lambda (v) (vector-index (cut equal? <> v) .vals@))
   .json<-: (lambda (v) (vector-ref .json@ (.nat<- v)))
   .<-json: (lambda (j) (vector-index (cut equal? <> j) .json@))
   .bytes<-: (compose (cut bytes<-nat <> .length-in-bytes) .nat<-)
-  .<-bytes: (compose .<-nat nat<-bytes))
+  .<-bytes: (compose .<-nat nat<-bytes)
+  .marshal: => (lambda (super) (if (zero? .length-in-bytes) void super))
+  .unmarshal: => (lambda (super) (cond
+                             ((< 0 .length-in-bytes) super)
+                             ((null? vals) (lambda _ (error "no value to unmarshal of type" sexp)))
+                             (else (let (val (car vals)) (lambda _ val)) super))))
 (defrule (Enum values ...) {(:: @ Enum.) vals: '(values ...)})
 
 (.def (Pair. @ [methods.bytes<-marshal Type.] left right)
