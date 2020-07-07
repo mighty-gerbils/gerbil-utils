@@ -536,6 +536,7 @@
    clan/poo/mop
    clan/poo/number
    clan/poo/poo
+   clan/utils/assert
    clan/utils/base
    clan/utils/hash
    clan/utils/io

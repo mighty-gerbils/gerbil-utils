@@ -7,7 +7,7 @@
   :gerbil/gambit/bits :gerbil/gambit/bytes :gerbil/gambit/ports
   :std/format :std/iter :std/lazy :std/misc/hash :std/misc/list
   :std/srfi/1 :std/srfi/43 :std/sugar :std/text/hex
-  ../utils/base ../utils/hash ../utils/io ../utils/json ../utils/maybe ../utils/number
+  ../utils/assert ../utils/base ../utils/hash ../utils/io ../utils/json ../utils/maybe ../utils/number
   ./poo ./mop ./brace ./io ./number)
 
 (.def (Tuple. @ [methods.bytes<-marshal Type.] types)
@@ -117,17 +117,21 @@
   sexp: `(Or ,@(map (cut .@ <> sexp) types))
   types@: (list->vector types)
   .element?: (λ (x) (any (cut element? <> x) types))
+  ;; WE ASSUME THE JSON'S ARE DISJOINT, AS ARE THE VALUES (BUT WE DISCRIMINATE WHEN MARSHALLING)
   .discriminant-length-in-bits: (integer-length (1- (length types)))
   .discriminant-length-in-bytes: (n-bytes<-n-bits .discriminant-length-in-bits)
-  .discriminant<-: (lambda (v) (let/cc return
-                            (vector-for-each (lambda (i t) (when (element? t v) (return i))) types@) #f))
+  .discriminant<-: (lambda (v) (let/cc return (vector-for-each (lambda (i t) (when (element? t v) (return i))) types@) #f))
   .json<-: (lambda (v) (def disc (.discriminant<- v))
-              [disc (json<- (vector-ref types@ disc) v)])
-  .<-json: (lambda (j) (<-json (vector-ref types@ (car j)) (cadr j))) ;; TODO: validate the json?
-  .marshal: (lambda (v port) (def disc (.discriminant<- v))
+              ;;[disc (json<- (vector-ref types@ disc) v)])
+              (json<- (vector-ref types@ disc) v))
+  .<-json: ;;(lambda (j) (<-json (vector-ref types@ (car j)) (cadr j)))
+  (lambda (v) (let/cc return (for-each (lambda (t) (return (<-json t v))) types) #f))
+  .marshal: (lambda (v port)
+              (def disc (.discriminant<- v))
               (write-integer-bytes disc .discriminant-length-in-bytes port)
               (marshal (vector-ref types@ disc) v port))
-  .unmarshal: (lambda (port) (def disc (read-integer-bytes .discriminant-length-in-bytes port))
+  .unmarshal: (lambda (port)
+                (def disc (read-integer-bytes .discriminant-length-in-bytes port))
                 (unmarshal (vector-ref types@ disc) port)))
 (def (Or . types) {(:: @ Or.) (types)})
 
@@ -136,8 +140,8 @@
   .element?: (λ (x) (equal? x value))
   kvalue: (lambda _ value)
   jsvalue: (json-normalize value)
-  .json<-: (lambda _ jsvalue)
-  .<-json: kvalue
+  .json<-: (lambda (x) (assert-equal! x value) jsvalue)
+  .<-json: (lambda (x) (assert-equal! x jsvalue) value)
   .bytes<-: (lambda _ #u8())
   .<-bytes: kvalue
   .marshal: void
