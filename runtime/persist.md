@@ -134,3 +134,5 @@ based on what has been committed so far.
 
 * When we persist anything, there needs be a clear continuation that can be deduced from it.
   How do we ensure that in utility functions that are tempted to create a transaction?
+
+* Maybe with-committed-tx should not be nestable, but with-tx should be?

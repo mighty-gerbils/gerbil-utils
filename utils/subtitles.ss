@@ -43,10 +43,9 @@
 (def (string<-srt-time-offset o)
   (call-with-output-string [] (curry display-srt-time-offset o)))
 
-#| Tests:
-(assert-equal (srt-time-offset<-string "42:02:41,406") 151361406)
-(assert-equal (string<-srt-time-offset 151361406) "42:02:41,406")
-|#
+;;; Tests:
+;;(assert-equal (srt-time-offset<-string "42:02:41,406") 151361406)
+;;(assert-equal (string<-srt-time-offset 151361406) "42:02:41,406")
 
 (def (parse-srt-entry port)
   (expect-and-skip-any-whitespace port)
@@ -68,7 +67,7 @@
 (def (parse-srt-port port)
   ((expect-maybe-char (integer->char #xfeff)) port) ;; Skip any leading UTF-8 BOM.
   (with-list-builder (c)
-    (until (port-eof? port)
+    (until (char-port-eof? port)
       (c (parse-srt-entry port)))))
 
 (def (renumber-srt srt)

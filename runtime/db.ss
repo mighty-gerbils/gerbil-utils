@@ -169,7 +169,7 @@
 (def (open-transaction (c (current-db-connection)))
   (defvalues (transaction completion)
     (with-db-lock (c)
-      (let* ((txid (post-inc! (DbConnection-txcounter c)))
+      (let* ((txid (post-increment! (DbConnection-txcounter c)))
              (blocked? (and (DbConnection-ready? c) (DbConnection-triggered? c)))
              (status (if blocked? 'blocked 'open))
              (transaction (DbTransaction c txid status)))

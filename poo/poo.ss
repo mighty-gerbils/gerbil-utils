@@ -101,6 +101,7 @@
      (with-syntax ((ctx stx)) #'(.o/ctx ctx args ...)))))
 
 ;; the ctx argument exists for macro-scope purposes
+;; TODO: use a syntax-parameter for self instead of the ctx argument?
 (defrules .o/ctx ()
   ((_ ctx (:: self) slot-spec ...)
    (poo/slots ctx self [] () slot-spec ...))

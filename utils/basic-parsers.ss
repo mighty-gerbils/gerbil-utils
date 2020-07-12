@@ -11,44 +11,45 @@
 (export #t)
 
 (import
-  :scheme/char
+  (for-syntax :std/stxutil)
+  :scheme/base-ports :scheme/char
   :std/error :std/srfi/13 :std/sugar
   ./base)
 
-(def (numeric-char? x)
-  (and (char? x) (char-numeric? x)))
-
-(def (whitespace-char? x)
-  (and (char? x) (char-whitespace? x)))
-
 ;; NB: This assumes Latin / English alphabet
-(def (ascii-alphabetic? x)
-  (or (char<=? #\A x #\Z) (char<=? #\a x #\z)))
 
-(def (ascii-numeric? x)
-  (char<=? #\0 x #\9))
+(defsyntax (def-ascii stx)
+  (syntax-case stx ()
+    ((d (name x y ...) body ...)
+     (with-syntax ((char-fun (format-id #'name "char-ascii-~a" #'name))
+                   (byte-fun (format-id #'name "byte-ascii-~a" #'name)))
+       #'(begin
+           (def (byte-fun x y ...) (declare (fixnum)) body ...)
+           (def (char-fun x y ...) (and (char? x) (byte-fun (char->integer x) y ...))))))))
 
-(def (ascii-alphanumeric? x)
-  (or (ascii-alphabetic? x) (ascii-numeric? x)))
-
-(def (ascii-graphic? x)
-  (<= 32 (char->integer x) 127))
-
+(def-ascii (alphabetic? b) (or (<= 65 b 90) #|A-Z|# (<= 97 b 122) #|a-z|#))
+(def-ascii (numeric? b) (<= 48 b 57)) #|0-9|#
+(def-ascii (alphanumeric? b) (or (byte-ascii-alphabetic? b) (byte-ascii-numeric? b)))
+(def-ascii (graphic? b) (<= 32 b 127))
+(def-ascii (whitespace? b)
+  (or (= b #x20) ;; #\space
+      (= b #x09) ;; #\tab
+      (= b #x0A) ;; #\newline
+      (= b #x0C) ;; #\page
+      (= b #x0D))) ;; #\return
 ;; Assume ASCII, base 2 to 36
-;; : (Or Integer '#f) <- Char Integer
-(def (char-digit x (base 10))
-  ;; (assert! (or (char? x) (eof-object? x)))
-  ;; (assert! (and (exact-integer? base) (<= 2 base 36)))
-  (and (char? x)
-       (let ((n (char->integer x))
-             (found (λ (d) (and (< d base) d))))
-         (cond
-          ((<= 48 n 57) (found (- n 48))) ;; ASCII 0-9
-          ((<= 65 n 90) (found (- n 55))) ;; ASCII A-Z
-          ((<= 97 n 122) (found (- n 87))) ;; ASCII a-z
-          (else #f)))))
+(def (byte-ascii-digit b (base 10))
+  (let (found (lambda (d) (and (< d base) d)))
+    (cond
+     ((<= 48 b 57) (found (- b 48))) ;; ASCII 0-9
+     ((<= 65 b 90) (found (- b 55))) ;; ASCII A-Z
+     ((<= 97 b 122) (found (- b 87))) ;; ASCII a-z
+     (else #f))))
+(def (char-ascii-digit c (base 10))
+  (and (char? c) (byte-ascii-digit (char->integer c) base)))
 
-(def (port-eof? port) (eof-object? (peek-char port)))
+(def (char-port-eof? port) (eof-object? (peek-char port)))
+(def (byte-port-eof? port) (eof-object? (peek-u8 port)))
 
 
 ;;; Parse error
@@ -57,10 +58,10 @@
 
 ;;; Expect a natural number in decimal on the current port, return it.
 (def (expect-natural port (base 10))
-  (if-let (digit (char-digit (peek-char port) base))
+  (if-let (digit (char-ascii-digit (peek-char port) base))
      (let loop ((n digit))
        (read-char port)
-       (if-let (next-digit (char-digit (peek-char port) base))
+       (if-let (next-digit (char-ascii-digit (peek-char port) base))
          (loop (+ next-digit (* base n)))
          n))
     (parse-error! 'expect-natural "Not a digit in requested base" (peek-char port) base port)))
@@ -83,7 +84,7 @@
   (expect-one-of (cut eqv? char <>)))
 
 (def (expect-and-skip-any-whitespace port)
-  (while (whitespace-char? (peek-char port))
+  (while (char-ascii-whitespace? (peek-char port))
     (read-char port)))
 
 (def expect-eof (expect-one-of eof-object?))
@@ -105,7 +106,7 @@
     (let loop ((n n) (r 0))
       (if (zero? n) r
           (let* ((char (peek-char port))
-                 (digit (char-digit char base)))
+                 (digit (char-ascii-digit char base)))
             (if digit
               (begin (read-char port) (loop (- n 1) (+ digit (* base r))))
               (parse-error! 'expect-n-digits "not a digit" char base port)))))))

@@ -7,7 +7,7 @@
   ./base ./basic-parsers)
 
 (def (easy-shell-character? x)
-  (or (ascii-alphanumeric? x) (string-index "+-_.,%@:/=" x)))
+  (or (char-ascii-alphanumeric? x) (string-index "+-_.,%@:/=" x)))
 
 (def (needs-shell-escape? token)
   (not (string-every easy-shell-character? token)))

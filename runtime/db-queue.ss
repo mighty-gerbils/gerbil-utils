@@ -40,7 +40,8 @@
 ;; Internal: wake up the manager of a queue that isn't empty anymore.
 ;; : <- DbQueue Any
 (def (%DbQueue-send! q msg tx)
-  (db-put! (db-indexed-key (DbQueue-key q) (+ (DbQueue-start q) (post-inc! (DbQueue-length q)))) msg tx)
+  (db-put! (db-indexed-key (DbQueue-key q) (+ (DbQueue-start q) (post-increment! (DbQueue-length q))))
+           msg tx)
   (%DbQueue-update q tx))
 
 ;; Push a message into a DbQueue
@@ -55,9 +56,9 @@
 ;; Internal: wake up the manager of a queue that isn't empty anymore.
 ;; : <- DbQueue Any
 (def (%DbQueue-receive! q tx)
-  (let* ((index (post-inc! (DbQueue-start q)))
+  (let* ((index (post-increment! (DbQueue-start q)))
          (db-key (db-indexed-key (DbQueue-key q) index)))
-    (dec! (DbQueue-length q))
+    (decrement! (DbQueue-length q))
     (begin0
         (db-get db-key tx)
       (db-delete! db-key tx) ;; or should we keep it indefinitely?

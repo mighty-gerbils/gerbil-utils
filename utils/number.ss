@@ -29,6 +29,9 @@
   (let ((mod (modulo n alignment)))
     (if (zero? mod) n (- (+ n alignment) mod))))
 
+(def (plus? x) (< 0 x))
+(def (minus? x) (> 0 x))
+
 (def (nat? n)
   (and (exact-integer? n) (not (negative? n))))
 
@@ -59,24 +62,20 @@
       (loop (+ i 1)))))
 
 (defrules increment! ()
-  ((_ var) (increment! var 1))
-  ((_ var increment) (set! var (+ var increment))))
-
+  ((_ place) (increment! place 1))
+  ((_ place increment ...) (set! place (+ place increment ...))))
 (defrules pre-increment! ()
-  ((_ var . opt-increment) (begin (increment! var . opt-increment) var)))
-
+  ((_ place increment ...) (begin (increment! place increment ...) place)))
 (defrules post-increment! ()
-  ((_ var . opt-increment) (begin0 var (increment! var . opt-increment))))
+  ((_ place increment ...) (begin0 place (increment! place increment ...))))
 
 (defrules decrement! ()
-  ((_ var) (decrement! var 1))
-  ((_ var decrement) (set! var (- var decrement))))
-
+  ((_ place) (decrement! place 1))
+  ((_ place decrement ...) (set! place (- place decrement ...))))
 (defrules pre-decrement! ()
-  ((_ var . opt-decrement) (begin (decrement! var . opt-decrement) var)))
-
+  ((_ place decrement ...) (begin (decrement! place decrement ...) place)))
 (defrules post-decrement! ()
-  ((_ var . opt-decrement) (begin0 var (decrement! var . opt-decrement))))
+  ((_ place decrement ...) (begin0 place (decrement! place decrement ...))))
 
 (def (make-counter (n 0))
   (λ () (post-increment! n)))
@@ -116,11 +115,11 @@
 
 (def (display-integer/fit n width out)
   (assert! (exact-integer? n))
-  (assert! (>= n 0))
-  (assert! (> width 0))
+  (assert! (nat? n))
+  (assert! (plus? width))
   (let* ((digits (number->string n))
          (padding (- width (string-length digits))))
-    (assert! (>= padding 0))
+    (assert! (nat? padding))
     (display (make-string padding #\0) out)
     (display digits out)))
 
@@ -155,14 +154,19 @@
      (roman-numeral<-digit tens "X" "L" "C")
      (roman-numeral<-digit units "I" "V" "X"))))
 
-(defrules inc! ()
-  ((_ x n) (set! x (+ x n)))
-  ((_ x) (inc! x 1)))
-(defrule (pre-inc! x n ...) (begin (inc! x n ...) x))
-(defrule (post-inc! x n ...) (begin0 x (inc! x n ...)))
-
-(defrules dec! ()
-  ((_ x n) (set! x (- x n)))
-  ((_ x) (dec! x 1)))
-(defrule (pre-dec! x n ...) (begin (dec! x n ...) x))
-(defrule (post-dec! x n ...) (begin0 x (dec! x n ...)))
+(def (round/ x y)
+  (cond
+   ((zero? y) (/ x 0))
+   ((plus? x)
+    (if (plus? y)
+      (let-values (((q r) (truncate/ (+ x (/ y 2)) y)))
+        (values q (- r (/ y 2))))
+      (let-values (((q r) (round/ x (- y))))
+        (values (- q) r))))
+    ((minus? x)
+     (if (plus? y)
+       (let-values (((q r) (round/ (- x) y)))
+         (values (- q) (- r)))
+       (let-values (((q r) (round/ (- x) (- y))))
+         (values q (- r)))))
+   ((zero? x) (values 0 0))))

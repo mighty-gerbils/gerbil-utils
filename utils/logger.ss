@@ -101,7 +101,7 @@
 ;; Call a function on each entry in a log file
 ;; : <- Port (<- (Pair Integer String))
 (def (for-each-port-log-entry! port fun)
-  (until (port-eof? port)
+  (until (char-port-eof? port)
     (fun (read-log-entry port))
     (expect-and-skip-any-whitespace port)))
 
