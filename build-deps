@@ -1,6 +1,15 @@
 (gerbil-build-deps-v2:
  (clan/utils/ports "utils/ports.ss" (gerbil/core gerbil/gambit/ports))
  (clan/utils/hash "utils/hash.ss" (gerbil/core))
+ (clan/utils/bytestring
+  "utils/bytestring.ss"
+  (gerbil/core
+   gerbil/gambit/bytes
+   scheme/base-ports
+   std/iter
+   std/misc/list
+   std/srfi/43
+   std/sugar))
  (clan/utils/simple-rpc-client
   "utils/simple-rpc-client.ss"
   (gerbil/core std/actor std/logger std/text/json))
@@ -97,7 +106,14 @@
   (clan/utils/base gerbil/core scheme/base std/error std/srfi/13 std/sugar))
  (clan/utils/basic-parsers
   "utils/basic-parsers.ss"
-  (clan/utils/base gerbil/core scheme/char std/error std/srfi/13 std/sugar))
+  (clan/utils/base
+   gerbil/core
+   scheme/base-ports
+   scheme/char
+   std/error
+   std/srfi/13
+   std/stxutil
+   std/sugar))
  (clan/utils/diceware
   "utils/diceware.ss"
   (clan/utils/base
@@ -113,6 +129,20 @@
    std/misc/ports
    std/pregexp
    std/srfi/13
+   std/sugar))
+ (clan/utils/bcsv
+  "utils/bcsv.ss"
+  (clan/utils/bytestring
+   gerbil/core
+   gerbil/gambit/bytes
+   scheme/base-ports
+   std/error
+   std/iter
+   std/misc/list
+   std/srfi/1
+   std/srfi/43
+   std/stxparam
+   std/stxutil
    std/sugar))
  (clan/utils/timestamp
   "utils/timestamp.ss"
@@ -382,6 +412,19 @@
  (clan/utils/string
   "utils/string.ss"
   (clan/utils/number gerbil/core std/iter std/srfi/13))
+ (clan/utils/decimal
+  "utils/decimal.ss"
+  (clan/utils/basic-parsers
+   clan/utils/basic-printers
+   clan/utils/number
+   clan/utils/string
+   gerbil/core
+   gerbil/gambit/bits
+   gerbil/gambit/exact
+   scheme/base-impl
+   std/error
+   std/iter
+   std/sugar))
  (clan/utils/option "utils/option.ss" (gerbil/core))
  (clan/utils/maybe "utils/maybe.ss" (clan/utils/option gerbil/core))
  (clan/utils/failure
