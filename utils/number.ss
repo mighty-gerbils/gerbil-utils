@@ -80,8 +80,8 @@
 (def (make-counter (n 0))
   (λ () (post-increment! n)))
 
-;;; Assuming pred? is "increasing", i.e. if true for some integer, true for all larger integers,
-;;; find the smallest integer in interval [start, end) for which pred? holds.
+;;; Binary search in interval [start, end) to find the least integer for which pred? holds,
+;;; assuming pred? is "increasing", i.e. if true for some integer, true for all larger integers.
 ;;; If no integer in the interval satisfies pred?, return end. If all do, return start.
 (def (least-integer pred? start end)
   (if (<= end start) end ; empty interval, return end.
@@ -90,8 +90,9 @@
           (least-integer pred? start mid)
           (least-integer pred? (1+ mid) end)))))
 
-;;; Assuming pred? is "decreasing", i.e. if true for some integer, true for all smaller integers,
-;;; find the greatest integer in interval (start, end] for which pred? holds.
+;;; Binary search in interval (start, end] to find the most integer i for which pred? holds
+;;; for all indexes in [start i), assuming pred? is "decreasing",
+;;; i.e. if true for some integer, true for all smaller integers.
 ;;; If no integer in the interval satisfies pred?, return start. If all do, return end.
 (def (most-integer pred? start end)
   (if (<= end start) start ; empty interval, return start.
@@ -99,7 +100,6 @@
         (if (pred? mid)
           (most-integer pred? mid end)
           (most-integer pred? start (- 1 mid))))))
-
 
 ;;;; Comparison in R + infinities
 ;;;; #f is +infinity, #t is -infinity

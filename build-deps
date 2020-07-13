@@ -1,6 +1,6 @@
 (gerbil-build-deps-v2:
  (clan/utils/ports "utils/ports.ss" (gerbil/core gerbil/gambit/ports))
- (clan/utils/hash "utils/hash.ss" (gerbil/core))
+ (clan/utils/hash "utils/hash.ss" (gerbil/core std/iter))
  (clan/utils/bytestring
   "utils/bytestring.ss"
   (gerbil/core

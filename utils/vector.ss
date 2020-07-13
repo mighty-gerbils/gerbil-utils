@@ -12,7 +12,7 @@
 ;;; a start (inclusive, defaults to 0) and an end (exclusive, defaults to vector length),
 ;;; return the least index of a vector element in the interval [start, env)
 ;;; that satisfies the predicate, or the end if none does.
-(def (least-vector-index pred? vector (start 0) (end (vector-length vector)))
+(def (vector-least-index pred? vector start: (start 0) end: (end (vector-length vector)))
   (least-integer (λ (i) (pred? (vector-ref vector i))) start end))
 
 ;;; Assuming a sorted vector, a predicate on vector elements that is "decreasing",
@@ -20,7 +20,7 @@
 ;;; a start (inclusive, defaults to 0) and an end (exclusive, defaults to vector length),
 ;;; return the most index such that all previous vector elements in the interval [start, env)
 ;;; satisfy the predicate, or the start if none does.
-(def (most-vector-index pred? vector (start 0) (end (vector-length vector)))
+(def (vector-most-index pred? vector start: (start 0) end: (end (vector-length vector)))
   (least-integer (λ (i) (not (pred? (vector-ref vector i)))) start end))
 
 ;;; Copy a vector if necessary: return the same if no change in start and end requested.
@@ -58,3 +58,21 @@
 ;;;; by invoking the function on its previous value
 ;;(def (vector-update! vector index fun)
 ;;  (vector-set! vector index (fun (vector-ref vector index))))
+
+;; Linear search in a vector (e.g. the vector of rows of a mat)
+(def (vector-scan-index pred? v start: (start 0) end: (end (vector-length v)))
+  (let loop ((i start))
+    (and (< i end) (if (pred? (vector-ref v i)) i (loop (1+ i))))))
+
+;; Linear search in a vector, backward (e.g. the vector of rows of a mat)
+(def (vector-scan-index-right pred? v start: (start 0) end: (end (vector-length v)))
+  (let loop ((i (1- end)))
+    (and (>= i start) (if (pred? (vector-ref v i)) i (loop (1- i))))))
+
+;; Filter entries of a vector to those that satisfy the predicate
+(def (vector-filter pred? v start: (start 0) end: (end (vector-length v)))
+  (list->vector
+   (with-list-builder (c)
+     (for (i (in-range start end))
+       (def e (vector-ref v i))
+       (when (pred? e) (c e))))))
