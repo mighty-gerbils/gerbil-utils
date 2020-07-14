@@ -4,7 +4,7 @@
         ../dicteq ../assq)
 
 (def dicteq-test
-  (test-suite "test suite for clan/pure/dict/dicteq"
+  (test-suite "test suite for pure/dict/dicteq"
     (check dicteq=? (list->dicteq []) empty-dicteq)
     (check-equal? (dicteq->list empty-dicteq) [])
     (check-equal? (dicteq-empty? empty-dicteq) #t)

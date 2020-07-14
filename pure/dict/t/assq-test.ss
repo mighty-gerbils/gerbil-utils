@@ -4,7 +4,7 @@
         ../assq)
 
 (def assq-test
-  (test-suite "test suite for clan/pure/dict/assq"
+  (test-suite "test suite for pure/dict/assq"
     (check-equal? (list->assq []) [])
     (check-equal? (list->assq '((red . 5))) '((red . 5)))
 

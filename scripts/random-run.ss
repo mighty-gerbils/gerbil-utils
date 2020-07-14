@@ -7,8 +7,8 @@
   :gerbil/gambit/exceptions
   :std/format :std/getopt :std/logger :std/iter
   :std/misc/list :std/misc/process :std/srfi/1 :std/sugar
-  :clan/utils/base :clan/utils/error :clan/utils/list
-  :clan/utils/filesystem :clan/utils/multicall :clan/utils/random)
+  :utils/base :utils/error :utils/list
+  :utils/filesystem :utils/multicall :utils/random)
 
 (define-entry-point (random-run . arguments)
   "Run a command with arguments in random order"

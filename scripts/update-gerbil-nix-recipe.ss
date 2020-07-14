@@ -8,8 +8,8 @@
 (import
   :gerbil/gambit/ports
   :std/format :std/getopt :std/misc/list :std/misc/ports :std/srfi/13 :std/sugar :std/pregexp
-  :clan/utils/base :clan/utils/basic-parsers :clan/utils/multicall
-  :clan/utils/timestamp :clan/utils/files)
+  :utils/base :utils/basic-parsers :utils/multicall
+  :utils/timestamp :utils/files)
 
 ;; Initialize paths from the environment
 (defonce (default-checkouts-dir)
@@ -184,6 +184,24 @@
         stable: {stable}))
      (unless (or {gerbil-off} {stable})
        (update-recipe
+        name: "gerbil-poo"
+        github: "fare/gerbil-poo"
+        recipe-path: (recipe-path "gerbil" "gerbil-poo")
+        checkouts-dir: {checkouts-dir}
+        source-dir: {gerbil-crypto-dir}
+        nixpkgs-dir: {nixpkgs-dir}
+        stable: {stable}))
+     (unless (or {gerbil-off} {stable})
+       (update-recipe
+        name: "gerbil-persist"
+        github: "fare/gerbil-persist"
+        recipe-path: (recipe-path "gerbil" "gerbil-persist")
+        checkouts-dir: {checkouts-dir}
+        source-dir: {gerbil-crypto-dir}
+        nixpkgs-dir: {nixpkgs-dir}
+        stable: {stable}))
+     (unless (or {gerbil-off} {stable})
+       (update-recipe
         name: "gerbil-ethereum"
         github: "fare/gerbil-ethereum"
         recipe-path: (recipe-path "gerbil" "gerbil-ethereum")
@@ -199,5 +217,3 @@
      (exit 2))))
 
 (def main update-gerbil-nix-recipe)
-
-;;(import :clan/utils/debug) (trace! update-recipe parse-github-argument call-with-input-process)

@@ -5,7 +5,7 @@
 (import
   :gerbil/gambit/ports :gerbil/gambit/exceptions
   :std/error :std/format :std/net/request :std/text/json :std/sugar
-  ../utils/base ../utils/json ../utils/maybe ../net/simple-http-client)
+  ../base ../json ../maybe ./simple-http-client)
 
 (defclass (json-rpc-error jsonable)
   (code    ;; SInt16

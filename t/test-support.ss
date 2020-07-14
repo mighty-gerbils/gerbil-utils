@@ -10,7 +10,7 @@
 (import
   :gerbil/expander
   :std/sort :std/misc/repr :std/sugar :std/test
-  ../utils/path ../utils/filesystem)
+  ../path ../filesystem)
 
 ;; Given a directory name (with no trailing /), is it a test directory named "t"?
 (def (test-dir? x)

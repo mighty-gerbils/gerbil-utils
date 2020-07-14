@@ -2,8 +2,12 @@
 ;; -*- Gerbil -*-
 
 (import
+  :gerbil/gambit/misc
   :std/make :std/misc/list :std/misc/ports :std/misc/process :std/pregexp :std/srfi/1
-  "utils/version")
+  "versioning")
+
+(def (path-extension-is? path extension)
+  (equal? (path-extension path) extension))
 
 (def verbose #f)
 
@@ -11,15 +15,17 @@
 (current-directory srcdir)
 
 (def (files)
-  ["version.ss" "t/test-support.ss"
+  ["t/test-support.ss"
+   ((cut lset-difference equal? <> '("build.ss" "unit-tests.ss"))
+    (filter (cut path-extension-is? <> ".ss") (directory-files "."))) ...
    (append-map
     (lambda (dir)
       (filter-map
        (lambda (filename)
-         (and (equal? (path-extension filename) ".ss")
+         (and (path-extension-is? filename ".ss")
               (path-expand filename dir)))
        (directory-files dir)))
-    ["utils" "net" "poo" "pure/dict" "pure" "runtime"])...])
+    ["net" "pure/dict" "pure"])...])
 
 (def (build)
   (make (files) srcdir: srcdir verbose: verbose debug: 'env optimize: #t))

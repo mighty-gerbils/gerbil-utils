@@ -5,7 +5,7 @@
 (import
   :gerbil/gambit/exceptions :gerbil/gambit/ports
   :std/getopt :std/misc/ports :std/misc/process :std/sugar
-  :clan/utils/path :clan/utils/files :clan/utils/multicall)
+  :utils/path :utils/files :utils/multicall)
 
 ;; Initialize paths from the environment
 (def here (path-directory (path-normalize (this-source-file))))
@@ -58,5 +58,3 @@
      (exit 2))))
 
 (def main make-gerbil-docker-image)
-
-;;(import :clan/utils/debug) (trace! update-recipe parse-github-argument call-with-input-process)

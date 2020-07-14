@@ -2,11 +2,11 @@
 
 (import
   :std/misc/repr :std/sugar :std/test :std/text/json
-  :clan/utils/json :clan/utils/maybe
-  :clan/net/json-rpc)
+  ../../json ../../maybe
+  ../json-rpc)
 
 (def json-rpc-test
-  (test-suite "test suite for clan/net/json-rpc"
+  (test-suite "test suite for utils/net/json-rpc"
     (test-case "encode params"
       (check-equal? (string<-request "foo" [42 "hello"] 13)
                     "{\"jsonrpc\":\"2.0\",\"id\":13,\"method\":\"foo\",\"params\":[42,\"hello\"]}"))

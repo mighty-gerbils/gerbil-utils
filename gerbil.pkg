@@ -1,2 +1,2 @@
-;; These free software utilities are part of the clan commons meta-package
-(package: clan)
+;; Free software utilities by Fare + friends
+(package: utils)

@@ -5,7 +5,7 @@
         ../assq)
 
 (def symdict-test
-  (test-suite "test suite for clan/pure/dict/symdict"
+  (test-suite "test suite for pure/dict/symdict"
     (check symdict=? (list->symdict []) empty-symdict)
     (check-equal? (symdict->list empty-symdict) [])
     (check-equal? (symdict-empty? empty-symdict) #t)

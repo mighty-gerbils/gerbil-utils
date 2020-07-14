@@ -9,7 +9,7 @@
 (import
   :gerbil/gambit/ports
   :std/misc/ports :std/misc/process
-  ../utils/base ../utils/basic-parsers ../utils/date)
+  ../base ../basic-parsers ../timestamp)
 
 (def space19 (make-string 19 #\space))
 

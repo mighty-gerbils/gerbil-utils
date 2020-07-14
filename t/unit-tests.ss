@@ -1,6 +1,6 @@
 (import
   :gerbil/gambit/ports
-  ../utils/exit ../utils/path ../utils/path-config ../utils/ports ../utils/source
+  ../exit ../path ../path-config ../ports ../source
   ./test-support)
 
 (set-current-ports-encoding-standard-unix!)

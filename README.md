@@ -1,7 +1,7 @@
 # Gerbil Clan
 
 A collection of utilities for [Gerbil Scheme](http://cons.io/).
-This collection homesteads the toplevel name `clan` in the global package namespace.
+This collection homesteads the toplevel name `utils` in the global package namespace.
 It is intended to host utilities that, if and when complete, well-designed and well-documented,
 are headed for the `std/` hierarchy of standard libraries,
 but are not there yet (and for some of them may never be).
@@ -43,7 +43,7 @@ with the rest of the codebase).
 The APIs of functions in this collection should not be considered stable unless otherwise noted;
 still, efforts should be made to not *gratuitously* introduce backward incompatibility.
 When the APIs are stable, the functions and macros will be moved to the standard library,
-under the prefix `std/` instead of `clan/` --- though slightly different style standards may
+under the prefix `std/` instead of `utils/` --- though slightly different style standards may
 apply there, as vyzo is the curator and may have different tastes.
 
 That said, current version of `gerbil-utils` requires Gerbil v0.16 or later to work.
