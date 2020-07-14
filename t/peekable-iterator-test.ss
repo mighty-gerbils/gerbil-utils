@@ -9,7 +9,7 @@
   (:peekable-iter '(a b c d e)))
 
 (def peekable-iterator-test
-  (test-suite "test suite for utils/peekable-iterator"
+  (test-suite "test suite for clan/peekable-iterator"
     (test-case "test extremum<-list"
       (def it (iter-abcde))
       (check-equal? (peek it) 'a)

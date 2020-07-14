@@ -8,7 +8,7 @@
   ../number ../vector)
 
 (def vector-test
-  (test-suite "test suite for utils/vector"
+  (test-suite "test suite for clan/vector"
     (test-case "vector-scan-index"
       (check-equal? (vector-scan-index plus? #(-10 -6 -2 -1 0 3 8 19)) 5)
       (check-equal? (vector-scan-index plus? #(-20 -16 -12 -11 -10 -9 -8 -3)) #f)

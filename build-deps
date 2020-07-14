@@ -1,7 +1,7 @@
 (gerbil-build-deps-v2:
- (utils/ports "ports.ss" (gerbil/core gerbil/gambit/ports))
- (utils/hash "hash.ss" (gerbil/core std/iter))
- (utils/versioning
+ (clan/ports "ports.ss" (gerbil/core gerbil/gambit/ports))
+ (clan/hash "hash.ss" (gerbil/core std/iter))
+ (clan/versioning
   "versioning.ss"
   (gerbil/core
    gerbil/gambit/system
@@ -12,7 +12,7 @@
    std/misc/process
    std/misc/string
    std/pregexp))
- (utils/bytestring
+ (clan/bytestring
   "bytestring.ss"
   (gerbil/core
    gerbil/gambit/bytes
@@ -21,11 +21,11 @@
    std/misc/list
    std/srfi/43
    std/sugar))
- (utils/simple-rpc-client
+ (clan/simple-rpc-client
   "simple-rpc-client.ss"
   (gerbil/core std/actor std/logger std/text/json))
- (utils/source "source.ss" (gerbil/core))
- (utils/exception
+ (clan/source "source.ss" (gerbil/core))
+ (clan/exception
   "exception.ss"
   (gerbil/core
    gerbil/gambit/continuations
@@ -33,83 +33,87 @@
    gerbil/gambit/threads
    std/format
    std/sugar))
- (utils/version "version.ss" (gerbil/core utils/versioning))
- (utils/base "base.ss" (gerbil/core std/sugar))
- (utils/exit
+ (clan/version "version.ss" (clan/versioning gerbil/core))
+ (clan/base "base.ss" (gerbil/core std/sugar))
+ (clan/exit
   "exit.ss"
-  (gerbil/core
+  (clan/base
+   gerbil/core
    gerbil/gambit/ports
    std/format
    std/misc/list
    std/misc/repr
-   std/sugar
-   utils/base))
- (utils/number
+   std/sugar))
+ (clan/number
   "number.ss"
-  (gerbil/core
+  (clan/base
+   gerbil/core
    gerbil/gambit/bits
    gerbil/gambit/bytes
    gerbil/gambit/exact
    scheme/base
    std/misc/bytes
-   std/sugar
-   utils/base))
- (utils/io
-  "io.ss"
-  (gerbil/core
-   gerbil/gambit/bits
-   gerbil/gambit/bytes
-   gerbil/gambit/ports
-   std/misc/bytes
-   std/sugar
-   utils/base
-   utils/number))
- (utils/ffi
+   std/sugar))
+ (clan/io "io.ss"
+          (clan/base
+           clan/number
+           gerbil/core
+           gerbil/gambit/bits
+           gerbil/gambit/bytes
+           gerbil/gambit/ports
+           std/misc/bytes
+           std/sugar))
+ (clan/ffi
   "ffi.ss"
-  (gerbil/core
+  (clan/base
+   gerbil/core
    gerbil/gambit/exceptions
    gerbil/gambit/ports
    std/misc/process
-   std/sugar
-   utils/base))
- (utils/peekable-iterator
+   std/sugar))
+ (clan/peekable-iterator
   "peekable-iterator.ss"
-  (gerbil/core
+  (clan/base
+   gerbil/core
    gerbil/gambit/threads
    std/coroutine
    std/generic
    std/iter
-   std/sugar
-   utils/base))
- (utils/random
+   std/sugar))
+ (clan/random
   "random.ss"
-  (gerbil/core
+  (clan/base
+   clan/number
+   gerbil/core
    gerbil/gambit/random
    std/misc/list
    std/srfi/1
-   std/sugar
-   utils/base
-   utils/number))
- (utils/error
+   std/sugar))
+ (clan/error
   "error.ss"
-  (gerbil/core gerbil/gambit/os std/error std/format std/logger utils/base))
- (utils/config "config.ss" (gerbil/core gerbil/gambit/os utils/base))
- (utils/basic-printers
+  (clan/base gerbil/core gerbil/gambit/os std/error std/format std/logger))
+ (clan/config "config.ss" (clan/base gerbil/core gerbil/gambit/os))
+ (clan/basic-printers
   "basic-printers.ss"
-  (gerbil/core scheme/base std/error std/srfi/13 std/sugar utils/base))
- (utils/basic-parsers
+  (clan/base gerbil/core scheme/base std/error std/srfi/13 std/sugar))
+ (clan/basic-parsers
   "basic-parsers.ss"
-  (gerbil/core
+  (clan/base
+   gerbil/core
    scheme/base-ports
    scheme/char
    std/error
    std/srfi/13
    std/stxutil
-   std/sugar
-   utils/base))
- (utils/diceware
+   std/sugar))
+ (clan/diceware
   "diceware.ss"
-  (gerbil/core
+  (clan/base
+   clan/basic-parsers
+   clan/basic-printers
+   clan/number
+   clan/random
+   gerbil/core
    gerbil/gambit/random
    std/format
    std/iter
@@ -117,15 +121,11 @@
    std/misc/ports
    std/pregexp
    std/srfi/13
-   std/sugar
-   utils/base
-   utils/basic-parsers
-   utils/basic-printers
-   utils/number
-   utils/random))
- (utils/bcsv
+   std/sugar))
+ (clan/bcsv
   "bcsv.ss"
-  (gerbil/core
+  (clan/bytestring
+   gerbil/core
    gerbil/gambit/bytes
    scheme/base-ports
    std/error
@@ -135,23 +135,25 @@
    std/srfi/43
    std/stxparam
    std/stxutil
-   std/sugar
-   utils/bytestring))
- (utils/timestamp
+   std/sugar))
+ (clan/timestamp
   "timestamp.ss"
-  (gerbil/core
+  (clan/base
+   clan/basic-parsers
+   clan/number
+   gerbil/core
    gerbil/gambit/exact
    gerbil/gambit/threads
    scheme/base
    std/format
    std/srfi/19
-   std/sugar
-   utils/base
-   utils/basic-parsers
-   utils/number))
- (utils/concurrency
+   std/sugar))
+ (clan/concurrency
   "concurrency.ss"
-  (gerbil/core
+  (clan/base
+   clan/error
+   clan/exception
+   gerbil/core
    gerbil/gambit/bytes
    gerbil/gambit/continuations
    gerbil/gambit/random
@@ -163,52 +165,53 @@
    std/misc/completion
    std/misc/list
    std/misc/repr
-   std/sugar
-   utils/base
-   utils/error
-   utils/exception))
- (utils/debug
+   std/sugar))
+ (clan/debug
   "debug.ss"
-  (gerbil/core
+  (clan/base
+   clan/concurrency
+   gerbil/core
    gerbil/gambit/ports
    gerbil/gambit/threads
    std/format
    std/misc/repr
-   std/sugar
-   utils/base
-   utils/concurrency))
- (utils/subprocess
+   std/sugar))
+ (clan/subprocess
   "subprocess.ss"
-  (gerbil/core
+  (clan/base
+   gerbil/core
    gerbil/gambit/ports
    gerbil/gambit/threads
    std/misc/process
-   std/sugar
-   utils/base))
- (utils/syntax "syntax.ss" (gerbil/core std/sugar))
- (utils/bytes "bytes.ss" (gerbil/core gerbil/gambit/bytes std/iter))
- (utils/temporary-files
+   std/sugar))
+ (clan/syntax "syntax.ss" (gerbil/core std/sugar))
+ (clan/bytes "bytes.ss" (gerbil/core gerbil/gambit/bytes std/iter))
+ (clan/temporary-files
   "temporary-files.ss"
-  (gerbil/core
+  (clan/base
+   clan/random
+   gerbil/core
    gerbil/gambit/exceptions
    gerbil/gambit/ports
-   std/sugar
-   utils/base
-   utils/random))
- (utils/files
+   std/sugar))
+ (clan/files
   "files.ss"
-  (gerbil/core
+  (clan/base
+   clan/ports
+   clan/temporary-files
+   gerbil/core
    gerbil/gambit/ports
    std/format
    std/misc/ports
    std/pregexp
-   std/sugar
-   utils/base
-   utils/ports
-   utils/temporary-files))
- (utils/subtitles
+   std/sugar))
+ (clan/subtitles
   "subtitles.ss"
-  (gerbil/core
+  (clan/base
+   clan/basic-parsers
+   clan/files
+   clan/number
+   gerbil/core
    gerbil/gambit/exact
    scheme/base-impl
    scheme/char
@@ -216,49 +219,48 @@
    std/misc/list
    std/misc/string
    std/srfi/13
-   std/sugar
-   utils/base
-   utils/basic-parsers
-   utils/files
-   utils/number))
- (utils/assert
+   std/sugar))
+ (clan/assert
   "assert.ss"
-  (gerbil/core std/logger std/sugar utils/base utils/error))
- (utils/memo
+  (clan/base clan/error gerbil/core std/logger std/sugar))
+ (clan/memo
   "memo.ss"
-  (gerbil/core gerbil/gambit/threads std/misc/hash utils/assert utils/base))
- (utils/supervisor "supervisor.ss" (gerbil/core))
- (utils/shell
-  "shell.ss"
-  (gerbil/core std/srfi/13 utils/base utils/basic-parsers))
- (utils/list
+  (clan/assert clan/base gerbil/core gerbil/gambit/threads std/misc/hash))
+ (clan/supervisor "supervisor.ss" (gerbil/core))
+ (clan/shell "shell.ss" (clan/base clan/basic-parsers gerbil/core std/srfi/13))
+ (clan/list
   "list.ss"
-  (gerbil/core std/misc/list std/srfi/1 std/sugar utils/base))
- (utils/json
+  (clan/base gerbil/core std/misc/list std/srfi/1 std/sugar))
+ (clan/json
   "json.ss"
-  (gerbil/core
+  (clan/base
+   clan/files
+   clan/list
+   clan/subprocess
+   gerbil/core
    gerbil/gambit/ports
    std/misc/ports
    std/misc/rtd
    std/sort
    std/sugar
-   std/text/json
-   utils/base
-   utils/files
-   utils/list
-   utils/subprocess))
- (utils/vector
+   std/text/json))
+ (clan/vector
   "vector.ss"
-  (gerbil/core
+  (clan/base
+   clan/list
+   clan/number
+   gerbil/core
    std/iter
    std/misc/list
-   std/sugar
-   utils/base
-   utils/list
-   utils/number))
- (utils/generator
+   std/sugar))
+ (clan/generator
   "generator.ss"
-  (gerbil/core
+  (clan/base
+   clan/list
+   clan/number
+   clan/peekable-iterator
+   clan/vector
+   gerbil/core
    gerbil/gambit/threads
    std/actor
    std/coroutine
@@ -266,78 +268,86 @@
    std/misc/list
    std/misc/pqueue
    std/misc/queue
-   std/sugar
-   utils/base
-   utils/list
-   utils/number
-   utils/peekable-iterator
-   utils/vector))
- (utils/stateful-avl-map
+   std/sugar))
+ (clan/stateful-avl-map
   "stateful-avl-map.ss"
-  (gerbil/core
+  (clan/base
+   clan/generator
+   gerbil/core
    std/iter
    std/misc/list
    std/misc/repr
-   std/sugar
-   utils/base
-   utils/generator))
- (utils/multicall
+   std/sugar))
+ (clan/multicall
   "multicall.ss"
-  (gerbil/core
+  (clan/base
+   clan/exit
+   clan/list
+   clan/versioning
+   gerbil/core
    std/format
    std/misc/list
    std/sort
-   std/srfi/13
-   utils/base
-   utils/exit
-   utils/list
-   utils/versioning))
- (utils/path
+   std/srfi/13))
+ (clan/path
   "path.ss"
-  (gerbil/core
+  (clan/base
+   clan/list
+   gerbil/core
    std/misc/list
    std/pregexp
    std/srfi/1
    std/srfi/13
-   std/sugar
-   utils/base
-   utils/list))
- (utils/filesystem
+   std/sugar))
+ (clan/filesystem
   "filesystem.ss"
-  (gerbil/core
+  (clan/base
+   clan/list
+   clan/path
+   gerbil/core
    gerbil/gambit/exceptions
    gerbil/gambit/os
    gerbil/gambit/ports
    std/misc/list
    std/pregexp
    std/srfi/1
-   std/sugar
-   utils/base
-   utils/list
-   utils/path))
- (utils/path-config
+   std/sugar))
+ (clan/path-config
   "path-config.ss"
-  (gerbil/core utils/base utils/config utils/filesystem utils/path))
- (utils/t/test-support
+  (clan/base clan/config clan/filesystem clan/path gerbil/core))
+ (clan/t/test-support
   "t/test-support.ss"
-  (gerbil/core
+  (clan/exit
+   clan/filesystem
+   clan/multicall
+   clan/path
+   clan/path-config
+   clan/ports
+   clan/source
+   gerbil/core
    gerbil/expander
    std/format
    std/misc/process
    std/misc/repr
    std/sort
    std/sugar
-   std/test
-   utils/exit
-   utils/filesystem
-   utils/multicall
-   utils/path
-   utils/path-config
-   utils/ports
-   utils/source))
- (utils/logger
+   std/test))
+ (clan/logger
   "logger.ss"
-  (gerbil/core
+  (clan/base
+   clan/basic-parsers
+   clan/concurrency
+   clan/filesystem
+   clan/generator
+   clan/json
+   clan/list
+   clan/memo
+   clan/number
+   clan/path
+   clan/path-config
+   clan/timestamp
+   clan/versioning
+   gerbil/core
    gerbil/gambit/ports
    std/format
    std/logger
@@ -346,23 +356,19 @@
    std/misc/sync
    std/srfi/13
    std/sugar
-   std/text/json
-   utils/base
-   utils/basic-parsers
-   utils/concurrency
-   utils/filesystem
-   utils/generator
-   utils/json
-   utils/list
-   utils/memo
-   utils/number
-   utils/path
-   utils/path-config
-   utils/timestamp
-   utils/versioning))
- (utils/watch
+   std/text/json))
+ (clan/watch
   "watch.ss"
-  (gerbil/core
+  (clan/base
+   clan/basic-parsers
+   clan/ffi
+   clan/files
+   clan/json
+   clan/list
+   clan/logger
+   clan/path-config
+   clan/timestamp
+   gerbil/core
    gerbil/gambit/ports
    gerbil/gambit/threads
    std/actor
@@ -373,19 +379,15 @@
    std/misc/process
    std/pregexp
    std/srfi/13
-   std/sugar
-   utils/base
-   utils/basic-parsers
-   utils/ffi
-   utils/files
-   utils/json
-   utils/list
-   utils/logger
-   utils/path-config
-   utils/timestamp))
- (utils/call-limiter
+   std/sugar))
+ (clan/call-limiter
   "call-limiter.ss"
-  (gerbil/core
+  (clan/base
+   clan/concurrency
+   clan/multicall
+   clan/number
+   clan/timestamp
+   gerbil/core
    gerbil/gambit/threads
    std/actor
    std/format
@@ -395,113 +397,108 @@
    std/sort
    std/srfi/1
    std/srfi/19
-   std/sugar
-   utils/base
-   utils/concurrency
-   utils/multicall
-   utils/number
-   utils/timestamp))
- (utils/string "string.ss" (gerbil/core std/iter std/srfi/13 utils/number))
- (utils/decimal
+   std/sugar))
+ (clan/string "string.ss" (clan/number gerbil/core std/iter std/srfi/13))
+ (clan/decimal
   "decimal.ss"
-  (gerbil/core
+  (clan/basic-parsers
+   clan/basic-printers
+   clan/number
+   clan/string
+   gerbil/core
    gerbil/gambit/bits
    gerbil/gambit/exact
    scheme/base-impl
    std/error
    std/iter
-   std/sugar
-   utils/basic-parsers
-   utils/basic-printers
-   utils/number
-   utils/string))
- (utils/option "option.ss" (gerbil/core))
- (utils/maybe "maybe.ss" (gerbil/core utils/option))
- (utils/failure "failure.ss" (gerbil/core std/sugar utils/option))
- (utils/net/whois
+   std/sugar))
+ (clan/option "option.ss" (gerbil/core))
+ (clan/maybe "maybe.ss" (clan/option gerbil/core))
+ (clan/failure "failure.ss" (clan/option gerbil/core std/sugar))
+ (clan/net/whois
   "net/whois.ss"
-  (gerbil/core
+  (clan/assert
+   clan/base
+   clan/list
+   gerbil/core
    std/format
    std/misc/list
    std/misc/ports
    std/misc/process
    std/pregexp
    std/srfi/1
-   std/sugar
-   utils/assert
-   utils/base
-   utils/list))
- (utils/net/s3
+   std/sugar))
+ (clan/net/s3
   "net/s3.ss"
-  (gerbil/core
+  (clan/base
+   clan/basic-parsers
+   clan/timestamp
+   gerbil/core
    gerbil/gambit/ports
    std/misc/ports
-   std/misc/process
-   utils/base
-   utils/basic-parsers
-   utils/timestamp))
- (utils/net/websocket
+   std/misc/process))
+ (clan/net/websocket
   "net/websocket.ss"
-  (gerbil/core
+  (clan/base
+   gerbil/core
    gerbil/gambit/threads
    std/actor
    std/error
    std/logger
    std/net/websocket
    std/sugar
-   std/text/json
-   utils/base))
- (utils/net/simple-http-client
+   std/text/json))
+ (clan/net/simple-http-client
   "net/simple-http-client.ss"
-  (gerbil/core
+  (clan/base
+   gerbil/core
    gerbil/gambit/ports
    std/net/request
    std/sugar
-   std/text/json
-   utils/base))
- (utils/net/json-rpc
+   std/text/json))
+ (clan/net/json-rpc
   "net/json-rpc.ss"
-  (gerbil/core
+  (clan/base
+   clan/json
+   clan/maybe
+   clan/net/simple-http-client
+   gerbil/core
    gerbil/gambit/exceptions
    gerbil/gambit/ports
    std/error
    std/format
    std/net/request
    std/sugar
-   std/text/json
-   utils/base
-   utils/json
-   utils/maybe
-   utils/net/simple-http-client))
- (utils/pure/dict/assq "pure/dict/assq.ss" (gerbil/core))
- (utils/pure/dict/intdict-unwrapped
+   std/text/json))
+ (clan/pure/dict/assq "pure/dict/assq.ss" (gerbil/core))
+ (clan/pure/dict/intdict-unwrapped
   "pure/dict/intdict-unwrapped.ss"
   (gerbil/core std/iter std/misc/rbtree))
- (utils/pure/dict/dicteq-unwrapped
+ (clan/pure/dict/dicteq-unwrapped
   "pure/dict/dicteq-unwrapped.ss"
-  (gerbil/core
+  (clan/pure/dict/assq
+   clan/pure/dict/intdict-unwrapped
+   gerbil/core
    std/iter
    std/misc/rbtree
-   std/srfi/1
-   utils/pure/dict/assq
-   utils/pure/dict/intdict-unwrapped))
- (utils/pure/dict/dicteq
+   std/srfi/1))
+ (clan/pure/dict/dicteq
   "pure/dict/dicteq.ss"
-  (gerbil/core std/iter std/misc/repr utils/pure/dict/dicteq-unwrapped))
- (utils/pure/dict/intdict
+  (clan/pure/dict/dicteq-unwrapped gerbil/core std/iter std/misc/repr))
+ (clan/pure/dict/intdict
   "pure/dict/intdict.ss"
-  (gerbil/core std/iter std/misc/repr utils/pure/dict/intdict-unwrapped))
- (utils/pure/dict/symdict-unwrapped
+  (clan/pure/dict/intdict-unwrapped gerbil/core std/iter std/misc/repr))
+ (clan/pure/dict/symdict-unwrapped
   "pure/dict/symdict-unwrapped.ss"
   (gerbil/core std/iter std/misc/rbtree))
- (utils/pure/dict/symdict
+ (clan/pure/dict/symdict
   "pure/dict/symdict.ss"
-  (gerbil/core std/iter std/misc/repr utils/pure/dict/symdict-unwrapped))
- (utils/pure/dict
+  (clan/pure/dict/symdict-unwrapped gerbil/core std/iter std/misc/repr))
+ (clan/pure/dict
   "pure/dict.ss"
-  (gerbil/core
-   utils/pure/dict/assq
-   utils/pure/dict/dicteq
-   utils/pure/dict/intdict
-   utils/pure/dict/symdict)))
+  (clan/pure/dict/assq
+   clan/pure/dict/dicteq
+   clan/pure/dict/intdict
+   clan/pure/dict/symdict
+   gerbil/core)))
 

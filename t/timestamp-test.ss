@@ -6,7 +6,7 @@
   ../base ../timestamp ../number)
 
 (def timestamp-test
-  (test-suite "test suite for utils/timestamp"
+  (test-suite "test suite for clan/timestamp"
     (test-case "Check unix-epoch-offset"
       (check-equal? unix-epoch-offset 0))
     (test-case "Check periodically"

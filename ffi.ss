@@ -40,7 +40,7 @@ END-C
   (define-c-lambda __errno () int
     "___return (errno);")
 
-  (namespace ("utils/ffi#"
+  (namespace ("clan/ffi#"
               __kill _kill getpid
               ))
 

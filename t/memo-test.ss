@@ -5,7 +5,7 @@
   ../base ../memo ../number)
 
 (def memo-test
-  (test-suite "test suite for utils/memo"
+  (test-suite "test suite for clan/memo"
     (test-case "Check define-memo-function"
       (def counter 0)
       (def (foo x) [x (pre-increment! counter)])

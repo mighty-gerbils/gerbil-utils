@@ -7,7 +7,7 @@
   ../option ../maybe)
 
 (def maybe-test
-  (test-suite "test suite for utils/maybe"
+  (test-suite "test suite for clan/maybe"
     (test-case "test null"
       (check-eqv? null (void)))
     (test-case "test Option<-Maybe, Maybe<-Option"

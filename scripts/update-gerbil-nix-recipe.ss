@@ -8,8 +8,8 @@
 (import
   :gerbil/gambit/ports
   :std/format :std/getopt :std/misc/list :std/misc/ports :std/srfi/13 :std/sugar :std/pregexp
-  :utils/base :utils/basic-parsers :utils/multicall
-  :utils/timestamp :utils/files)
+  :clan/base :clan/basic-parsers :clan/multicall
+  :clan/timestamp :clan/files)
 
 ;; Initialize paths from the environment
 (defonce (default-checkouts-dir)

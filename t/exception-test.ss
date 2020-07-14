@@ -14,7 +14,7 @@
 (def (inside3 x) (cons 3 (error 'inside4 x)))
 
 (def exception-test
-  (test-suite "test suite for utils/exception"
+  (test-suite "test suite for clan/exception"
 
     (test-case "catch and invoke cont"
       (check-equal?
@@ -35,9 +35,9 @@
                exn-in-ctx backtrace)
       (check
        exn-in-ctx ?
-       (lambda (x) (and (string-prefix? "*** ERROR IN utils/t/exception-test#" x)
+       (lambda (x) (and (string-prefix? "*** ERROR IN clan/t/exception-test#" x)
                    (string-suffix? "inside4 \"arg\"\n" x))))
       (check
        backtrace ?
-       (lambda (x) (string-prefix? "0  utils/t/exception-test#" x))))
+       (lambda (x) (string-prefix? "0  clan/t/exception-test#" x))))
     ))

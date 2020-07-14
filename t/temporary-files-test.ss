@@ -5,7 +5,7 @@
   ../base ../temporary-files)
 
 (def temporary-files-test
-  (test-suite "test suite for utils/temporary-files"
+  (test-suite "test suite for clan/temporary-files"
     (test-case "test use after initialization"
       (check-equal?
        (call-with-temporary-file

@@ -23,7 +23,7 @@
 
 
 (def generator-test
-  (test-suite "test suite for utils/generator"
+  (test-suite "test suite for clan/generator"
     (test-case "Check contents"
       (check-equal? (list<-generating (generating-stupid-list)) stupid-list)
       (check-equal? (vector<-generating (generating-stupid-vector)) stupid-vector)

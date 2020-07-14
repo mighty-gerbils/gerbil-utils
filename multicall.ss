@@ -36,7 +36,7 @@
 (def (multicall-meta)
   (displayln (string-join (sort (hash-keys entry-points) string<?) " ")))
 
-(register-entry-point "version" show-version help: "Print software version")
+(register-entry-point "version" (lambda () (show-version complete: #t)) help: "Print software version")
 (register-entry-point "help" multicall-help help: "Print help about available commands")
 (register-entry-point "meta" multicall-meta help: "Print meta-information for completion purposes")
 

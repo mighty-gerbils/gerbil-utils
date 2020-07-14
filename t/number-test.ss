@@ -10,7 +10,7 @@
     (λ (out) (display-integer/fit n width out))))
 
 (def number-test
-  (test-suite "test suite for utils/number"
+  (test-suite "test suite for clan/number"
     (test-case "display-integer/fit positive integer with extra width"
       (check-equal? (fit-to-string 5 5) "00005"))
     (test-case "display-integer/fit 0 with extra width"

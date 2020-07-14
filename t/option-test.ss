@@ -7,7 +7,7 @@
   ../option)
 
 (def option-test
-  (test-suite "test suite for utils/option"
+  (test-suite "test suite for clan/option"
     (test-case "test option-ref"
       (check-equal? (option-ref (some 1)) 1)
       (check-equal? (with-catch error-exception-message (cut option-ref #f)) "no value")

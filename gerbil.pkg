@@ -1,2 +1,2 @@
-;; Free software utilities by Fare + friends
-(package: utils)
+;; Collaborative free software utilities by Fare + friends
+(package: clan)

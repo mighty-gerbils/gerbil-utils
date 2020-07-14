@@ -25,7 +25,7 @@
 (def *al-5* (delete-duplicates (append *al-2* *al-3*) (comparing-key key: car)))
 
 (def stateful-avl-map-test
-  (test-suite "test suite for utils/stateful-avl-map"
+  (test-suite "test suite for clan/stateful-avl-map"
 
     (test-case "empty"
       (check-predicate (alist<- (make-empty-avl-map)) null?)

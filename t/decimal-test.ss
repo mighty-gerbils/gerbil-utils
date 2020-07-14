@@ -7,7 +7,7 @@
   ../base ../basic-parsers ../decimal)
 
 (def decimal-test
-  (test-suite "test suite for utils/decimal"
+  (test-suite "test suite for clan/decimal"
     (test-case "parse decimal"
       (for-each
         (match <> ([r . a] (check-equal? (apply decimal<-string a) r)))

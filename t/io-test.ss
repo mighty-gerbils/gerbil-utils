@@ -6,7 +6,7 @@
   ../io)
 
 (def io-test
-  (test-suite "test suite for utils/io"
+  (test-suite "test suite for clan/io"
     (test-case "read-uint16, write-uint16"
       (for-each (match <>
                   ([int hex]

@@ -195,7 +195,7 @@ END-C
            (##fx- (__errno))
            r))))
 
-  (namespace ("utils/temporary-files#"
+  (namespace ("clan/temporary-files#"
               __mkostemps _mkostemps
               __errno))
 

@@ -7,7 +7,7 @@
 (def (copy-list lst) (foldr cons '() lst))
 
 (def list-test
-  (test-suite "test suite for utils/list"
+  (test-suite "test suite for clan/list"
     (test-case "test extremum<-list"
       (check-equal?
        (extremum<-list < [20 12 05 08])
