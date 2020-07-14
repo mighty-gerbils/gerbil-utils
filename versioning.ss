@@ -69,7 +69,8 @@
 (def (update-version-from-git
       name: name
       repo: (repo #f)
-      path: (path "version.ss"))
+      path: (path "version.ss")
+      deps: (deps '()))
   (let* ((git-version
           (and (file-exists? (path-expand ".git" (or repo ".")))
                (process-output-line '("git" "describe" "--tags" "--always"))))
@@ -77,8 +78,9 @@
           (and git-version (process-output-line '("git" "log" "-1" "--pretty=%ad" "--date=short"))))
          (version-text
           (and git-version
-               (format "(import :utils/versioning)\n(register-software ~r ~r) ;; ~a\n"
-                       name git-version git-date)))
+               (format "~a\n~s ;; ~a\n"
+                       `(import :clan/versioning ,@(map (cut format ":~a/version" <>) deps))
+                       `(register-software ,name ,git-version) git-date)))
          (previous-version-text
           (and version-text ;; no need to compute it if no current version to replace it with
                (file-exists? path)
