@@ -289,6 +289,7 @@
    std/sort
    std/srfi/13
    utils/base
+   utils/exit
    utils/list
    utils/versioning))
  (utils/path
@@ -314,6 +315,9 @@
    utils/base
    utils/list
    utils/path))
+ (utils/path-config
+  "path-config.ss"
+  (gerbil/core utils/base utils/config utils/filesystem utils/path))
  (utils/t/test-support
   "t/test-support.ss"
   (gerbil/core
@@ -323,10 +327,11 @@
    std/sugar
    std/test
    utils/filesystem
-   utils/path))
- (utils/path-config
-  "path-config.ss"
-  (gerbil/core utils/base utils/config utils/filesystem utils/path))
+   utils/multicall
+   utils/path
+   utils/path-config
+   utils/ports
+   utils/source))
  (utils/logger
   "logger.ss"
   (gerbil/core

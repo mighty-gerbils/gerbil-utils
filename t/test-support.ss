@@ -10,7 +10,7 @@
 (import
   :gerbil/expander
   :std/sort :std/misc/repr :std/sugar :std/test
-  ../path ../filesystem)
+  ../filesystem ../multicall ../path ../path-config ../ports ../source)
 
 ;; Given a directory name (with no trailing /), is it a test directory named "t"?
 (def (test-dir? x)
@@ -57,3 +57,30 @@
   (apply run-tests! (map (cut find-file-test <> pkgdir package-prefix) test-files))
   (test-report-summary!)
   (eqv? 'OK (test-result)))
+
+(def (%set-test-environment! script-path add-load-path)
+  (set-current-ports-encoding-standard-unix!)
+  (def src (path-normalize (path-directory script-path)))
+  (current-directory src)
+  (add-load-path src)
+  (set! source-directory src)
+  (set! home-directory src))
+
+(defsyntax (init-test-environment! stx)
+  (syntax-case stx ()
+    ((ctx)
+     (with-syntax ((main (datum->syntax #'ctx 'main))
+                   (add-load-path (datum->syntax #'ctx 'add-load-path)))
+     #'(begin
+         (%set-test-environment! (this-source-file ctx) add-load-path)
+         (def main call-entry-point))))))
+
+(def (all) (run-tests "." test-files: (find-test-files ".")))
+(def (integration) (run-tests "." test-files: (find-test-files "." "-integrationtest.ss$")))
+(def (test . files) (run-tests "." test-files: files))
+
+(register-entry-point "all" all help: "Run all unit tests")
+(register-entry-point "integration" integration help: "Run all integration tests")
+(register-entry-point "test" test help: "Run specific tests")
+
+(set! multicall-default all)

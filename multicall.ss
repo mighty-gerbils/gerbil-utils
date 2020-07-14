@@ -4,11 +4,12 @@
 (export
   register-entry-point
   define-entry-point
-  call-entry-point)
+  call-entry-point
+  multicall-default)
 
 (import
   :std/format :std/misc/list :std/sort :std/srfi/13
-  ./base ./list ./versioning)
+  ./base ./list ./versioning ./exit)
 
 (def entry-points (make-hash-table))
 
@@ -32,14 +33,21 @@
            (string-pad-right name longest-name-length #\space)
            (list-ref (hash-get entry-points name) 1))))
 
+(def (multicall-meta)
+  (displayln (string-join (sort (hash-keys entry-points) string<?) " ")))
+
 (register-entry-point "version" show-version help: "Print software version")
 (register-entry-point "help" multicall-help help: "Print help about available commands")
+(register-entry-point "meta" multicall-meta help: "Print meta-information for completion purposes")
+
+(def multicall-default (values multicall-help))
 
 (def (call-entry-point . args)
-  (match args
-    ([] (multicall-help))
-    ([command . args]
-     (match (hash-get entry-points command)
-       ('#f (eprintf "Unknown command ~s. Try command help.\n" command)
-            (exit 2))
-       ([fun . _] (apply fun args))))))
+  (eval-print-exit
+   (match args
+     ([] (multicall-default))
+     ([command . args]
+      (match (hash-get entry-points command)
+        ('#f (eprintf "Unknown command ~s. Try command help.\n" command)
+             (exit 2))
+        ([fun . _] (apply fun args)))))))
