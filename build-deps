@@ -322,10 +322,13 @@
   "t/test-support.ss"
   (gerbil/core
    gerbil/expander
+   std/format
+   std/misc/process
    std/misc/repr
    std/sort
    std/sugar
    std/test
+   utils/exit
    utils/filesystem
    utils/multicall
    utils/path

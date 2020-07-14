@@ -9,8 +9,8 @@
 
 (import
   :gerbil/expander
-  :std/sort :std/misc/repr :std/sugar :std/test
-  ../filesystem ../multicall ../path ../path-config ../ports ../source)
+  :std/format :std/sort :std/misc/process :std/misc/repr :std/sugar :std/test
+  ../exit ../filesystem ../multicall ../path ../path-config ../ports ../source)
 
 ;; Given a directory name (with no trailing /), is it a test directory named "t"?
 (def (test-dir? x)
@@ -63,8 +63,8 @@
   (def src (path-normalize (path-directory script-path)))
   (current-directory src)
   (add-load-path src)
-  (set! source-directory src)
-  (set! home-directory src))
+  (set! source-directory (lambda () src))
+  (set! home-directory (lambda () src)))
 
 (defsyntax (init-test-environment! stx)
   (syntax-case stx ()
@@ -75,12 +75,37 @@
          (%set-test-environment! (this-source-file ctx) add-load-path)
          (def main call-entry-point))))))
 
-(def (all) (run-tests "." test-files: (find-test-files ".")))
-(def (integration) (run-tests "." test-files: (find-test-files "." "-integrationtest.ss$")))
-(def (test . files) (run-tests "." test-files: files))
+(def (all) (run-tests "." test-files: (find-test-files ".")) (silent-exit))
+(def (integration) (run-tests "." test-files: (find-test-files "." "-integrationtest.ss$")) (silent-exit))
+(def (test . files) (run-tests "." test-files: files) (silent-exit))
 
 (register-entry-point "all" all help: "Run all unit tests")
 (register-entry-point "integration" integration help: "Run all integration tests")
 (register-entry-point "test" test help: "Run specific tests")
 
 (set! multicall-default all)
+
+;; TODO: support doing it in another directory?
+(def (gerbil.pkg)
+  (with-catch false (lambda () (call-with-input-file "gerbil.pkg" read))))
+
+(def (git-origin-repo)
+  (or (pgetq repo: (gerbil.pkg)) "origin"))
+
+(def (git-origin-branch)
+  (or (pgetq branch: (gerbil.pkg)) "master"))
+
+(def (git-merge-base . commitishs)
+  (run-process ["git" "merge-base" . commitishs] coprocess: read-line))
+
+(def (check-git-up-to-date)
+  (def branch (git-origin-branch))
+  (run-process ["git" "fetch" "--depth" "1" (git-origin-repo) branch])
+  (def up-to-date? (equal? (git-merge-base "FETCH_HEAD" "FETCH_HEAD")
+                           (with-catch false (cut git-merge-base "HEAD" "FETCH_HEAD"))))
+  (printf "Checkout~a up-to-date with branch ~a\n" (if up-to-date? "" " not") branch)
+  up-to-date?)
+
+(register-entry-point
+ "check-git-up-to-date" check-git-up-to-date
+ help: "Check that this git checkout is up-to-date with its target branch")
