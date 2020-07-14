@@ -55,6 +55,9 @@
     (else
      [description 0 #f])))
 
+(def (process-output-line command)
+  (with-catch false (cut string-trim-eol (run-process command))))
+
 ;; Update the version file from git
 ;; name: name of the project, e.g. "GNU Hello" (mandatory)
 ;; repo: where is the git repository compared to the current ./build.ss directory?
@@ -69,11 +72,13 @@
       path: (path "version.ss"))
   (let* ((git-version
           (and (file-exists? (path-expand ".git" (or repo ".")))
-               (with-catch false
-                 (cut string-trim-eol (run-process '("git" "describe" "--tags" "--always"))))))
+               (process-output-line '("git" "describe" "--tags" "--always"))))
+         (git-date
+          (and git-version (process-output-line '("git" "log" "-1" "--pretty=%ad" "--date=short"))))
          (version-text
           (and git-version
-               (format "(import :utils/versioning)\n(register-software ~r ~r)\n" name git-version)))
+               (format "(import :utils/versioning)\n(register-software ~r ~r) ;; ~a\n"
+                       name git-version git-date)))
          (previous-version-text
           (and version-text ;; no need to compute it if no current version to replace it with
                (file-exists? path)

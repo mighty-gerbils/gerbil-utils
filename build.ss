@@ -6,6 +6,7 @@
   :std/make :std/misc/list :std/misc/ports :std/misc/process :std/pregexp :std/srfi/1
   "versioning")
 
+;; Redefine this here to avoid pulling in ./path, ./base., etc.
 (def (path-extension-is? path extension)
   (equal? (path-extension path) extension))
 
@@ -17,7 +18,7 @@
 (def (files)
   ["t/test-support.ss"
    ((cut lset-difference equal? <> '("build.ss" "unit-tests.ss"))
-    (filter (cut path-extension-is? <> ".ss") (directory-files "."))) ...
+    (filter (cut path-extension-is? <> ".ss") (directory-files ".")))...
    (append-map
     (lambda (dir)
       (filter-map
