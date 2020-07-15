@@ -5,17 +5,17 @@
 
 (import
   :gerbil/gambit/ports
-  :std/misc/ports :std/misc/rtd :std/sort :std/sugar :std/text/json
+  :std/misc/alist :std/misc/ports :std/misc/plist :std/misc/rtd :std/sort :std/sugar :std/text/json
   ./base ./list ./files ./subprocess)
 
 (def (trivial-json<-object object)
   (match (class->list object)
     ([type . plist]
      (list->hash-table
-      `(#|(__class . ,(symbol->string (type-name type)))|# ,@(alist<-plist plist))))))
+      `(#|(__class . ,(symbol->string (type-name type)))|# ,@(plist->alist plist))))))
 (def (trivial-object<-json klass json)
   (def (find-key s) (or (##find-interned-keyword s) (error "invalid json key for class" s klass)))
-  (apply make-class-instance klass (plist<-alist (map (cut map/car find-key <>) (hash->list json)))))
+  (apply make-class-instance klass (alist->plist (map (cut map/car find-key <>) (hash->list json)))))
 
 
 ;; Mixin for a trivial method that just lists all slots
