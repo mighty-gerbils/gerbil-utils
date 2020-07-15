@@ -10,7 +10,7 @@
   ./exit ./filesystem ./multicall ./path ./path-config ./ports ./source ./versioning)
 
 (def (all-ss-files)
-  ((cut lset-difference equal? <> '("build.ss" "unit-tests.ss"))
+  ((cut lset-difference equal? <> '("build.ss" "unit-tests.ss" "main.ss"))
    (find-files "" (cut path-extension-is? <> ".ss")
                recurse?: (lambda (x) (not (member (path-strip-directory x) '("t" ".git" "_darcs")))))))
 
