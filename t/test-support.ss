@@ -75,20 +75,17 @@
          (%set-test-environment! (this-source-file ctx) add-load-path)
          (def main call-entry-point))))))
 
+(define-entry-point (test . files)
+  "Run specific tests"
+  (silent-exit (run-tests "." test-files: files)))
+
 (define-entry-point (all)
   "Run all unit tests"
-  (run-tests "." test-files: (find-test-files "."))
-  (silent-exit))
+  (test (find-test-files ".")))
 
 (define-entry-point (integration)
   "Run all integration tests"
-  (run-tests "." test-files: (find-test-files "." "-integrationtest.ss$"))
-  (silent-exit))
-
-(define-entry-point (test . files)
-  "Run specific tests"
-  (run-tests "." test-files: files)
-  (silent-exit))
+  (test (find-test-files "." "-integrationtest.ss$")))
 
 (set-default-entry-point! "all")
 
@@ -105,14 +102,11 @@
 (def (git-merge-base . commitishs)
   (run-process ["git" "merge-base" . commitishs] coprocess: read-line))
 
-(def (check-git-up-to-date)
+(define-entry-point (check-git-up-to-date)
+  "Check that this git checkout is up-to-date with its target branch"
   (def branch (git-origin-branch))
   (run-process ["git" "fetch" "--depth" "1" (git-origin-repo) branch])
   (def up-to-date? (equal? (git-merge-base "FETCH_HEAD" "FETCH_HEAD")
                            (with-catch false (cut git-merge-base "HEAD" "FETCH_HEAD"))))
   (printf "Checkout~a up-to-date with branch ~a\n" (if up-to-date? "" " not") branch)
-  up-to-date?)
-
-(register-entry-point
- "check-git-up-to-date" check-git-up-to-date
- help: "Check that this git checkout is up-to-date with its target branch")
+  (silent-exit up-to-date?))

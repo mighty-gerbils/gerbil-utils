@@ -13,9 +13,12 @@
 
 (def entry-points (make-hash-table))
 
+;; TODO: allow registering a getopt structure and/or other command information,
+;; so we can show detailed help?
 (def (register-entry-point name function help: (help #f))
   (hash-put! entry-points name [function help]))
 
+;; TODO: syntax to specify not just help, but getopt, etc.
 (defrules define-entry-point ()
   ((_ (id . formals) help . body)
    (begin (def (id . formals) . body)
@@ -26,24 +29,27 @@
 (def (set-default-entry-point! x)
   (set! multicall-default x))
 
-(def (multicall-help)
-  (let ((id (software-identifier)))
-    (when id (printf "~a\n" id)))
+(define-entry-point (help)
+  "Print help about available commands"
+  (def id (software-identifier))
+  (when id (printf "~a\n" id))
   (printf "commands: (default: ~a)\n" multicall-default)
-  (nest
-   (let* ((names (sort (hash-keys entry-points) string<))
-          (longest-name-length (extremum<-list > (map string-length names)))))
-   (for-each! names) (λ (name))
-   (printf "~a   ~a\n"
-           (string-pad-right name longest-name-length #\space)
-           (cadr (hash-get entry-points name)))))
+  (def names (sort (hash-keys entry-points) string<))
+  (def longest-name-length (extremum<-list > (map string-length names)))
+  (for-each! names
+             (λ (name)
+               (printf "~a   ~a\n"
+                       (string-pad-right name longest-name-length #\space)
+                       (cadr (hash-get entry-points name))))))
 
-(def (multicall-meta)
+(define-entry-point (meta)
+  "Print meta-information for completion purposes"
   (displayln (string-join (sort (hash-keys entry-points) string<?) " ")))
 
-(register-entry-point "version" (lambda () (show-version complete: #t)) help: "Print software version")
-(register-entry-point "help" multicall-help help: "Print help about available commands")
-(register-entry-point "meta" multicall-meta help: "Print meta-information for completion purposes")
+;; TODO: add a flag for short?
+(define-entry-point (version)
+  "Print software version"
+  (show-version complete: #t))
 
 (def (call-entry-point . args)
   (eval-print-exit
@@ -51,6 +57,5 @@
      ([] ((car (hash-get entry-points multicall-default))))
      ([command . args]
       (match (hash-get entry-points command)
-        ('#f (eprintf "Unknown command ~s. Try command help.\n" command)
-             (exit 2))
+        ('#f (raise (format "Unknown command ~s. Try command help.\n" command)))
         ([fun . _] (apply fun args)))))))

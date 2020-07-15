@@ -119,8 +119,7 @@
   (def optimize? (not {no-optimize}))
   (when %name (create-version-file))
   (make (build-spec tcc: {tcc} optimize: optimize?)
-    srcdir: %srcdir verbose: {verbose} debug: (and {debug} 'env) optimize: optimize?)
-  (silent-exit))
+    srcdir: %srcdir verbose: {verbose} debug: (and {debug} 'env) optimize: optimize?))
 
 (define-entry-point (spec . opts)
   "Show the build specification"

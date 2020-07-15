@@ -5,7 +5,7 @@
 (import
   :gerbil/gambit/exceptions :gerbil/gambit/ports
   :std/getopt :std/misc/ports :std/misc/process :std/sugar
-  :clan/path :clan/files :clan/multicall :clan/source)
+  :clan/exit :clan/files :clan/multicall :clan/path :clan/source)
 
 ;; Initialize paths from the environment
 (def here (path-directory (path-normalize (this-source-file))))
@@ -49,7 +49,8 @@
    (let ((opt (getopt-parse gopt arguments)))
      (defrule {symbol} (hash-get opt 'symbol))
      (when {stable} (error "Stable not implemented yet"))
-     (build-image {nixpkgs}))
+     (build-image {nixpkgs})
+     (silent-exit))
    (catch (getopt-error? exn)
      (getopt-display-help exn "update-gerbil-nix-recipe" (current-error-port))
      (exit 2))

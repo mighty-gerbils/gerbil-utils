@@ -11,8 +11,10 @@
 (defrule (eval-print-exit body ...) (call-print-exit (λ () body ...)))
 
 ;; Return a magic value that will be not be printed but will return an error code.
+;; (void) is silent success, because it's what successful side-effecting functions return.
+;; (values) is failure, because it's the other naturally silent return thing, and it's abnormal enough.
 (def (silent-exit (bool #t))
-  (if bool (values) (void)))
+  (if bool (void) (values)))
 
 ;; Execute a function, print the result (if application), and exit with an according value.
 ;;
@@ -31,4 +33,4 @@
        (unless (equal? vs [(void)])
          (for-each prn vs))
        (force-output)
-       (exit (if (and (length=n? vs 1) (member (car vs) [#f (void)])) 1 0))))))
+       (exit (if (or (null? vs) (and (length=n? vs 1) (not (car vs)))) 1 0))))))
