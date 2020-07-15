@@ -81,11 +81,11 @@
 
 (define-entry-point (all)
   "Run all unit tests"
-  (test (find-test-files ".")))
+  (apply test (find-test-files ".")))
 
 (define-entry-point (integration)
   "Run all integration tests"
-  (test (find-test-files "." "-integrationtest.ss$")))
+  (apply test (find-test-files "." "-integrationtest.ss$")))
 
 (set-default-entry-point! "all")
 
