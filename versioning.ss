@@ -69,9 +69,10 @@
 (def (update-version-from-git
       name: name
       repo: (repo #f)
-      path: (path "version.ss")
+      path: (path_ #f)
       deps: (deps '()))
-  (let* ((git-version
+  (let* ((path (or path_ "version.ss"))
+         (git-version
           (and (file-exists? (path-expand ".git" (or repo ".")))
                (process-output-line '("git" "describe" "--tags" "--always"))))
          (git-date

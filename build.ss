@@ -2,45 +2,30 @@
 ;; -*- Gerbil -*-
 
 (import
-  :gerbil/gambit/misc
-  :std/make :std/misc/list :std/misc/ports :std/misc/process :std/pregexp :std/srfi/1
-  "versioning")
-
-;; Redefine this here to avoid pulling in ./path, ./base., etc.
-(def (path-extension-is? path extension)
-  (equal? (path-extension path) extension))
-
-(def verbose #f)
+  :gerbil/expander
+  :std/misc/process :std/srfi/1)
 
 (def srcdir (path-normalize (path-directory (this-source-file))))
 (current-directory srcdir)
+(add-load-path srcdir)
+
+(import-module ':clan/building #t #t)
 
 (def (files)
-  ["t/test-support.ss"
-   ((cut lset-difference equal? <> '("build.ss" "unit-tests.ss"))
-    (filter (cut path-extension-is? <> ".ss") (directory-files ".")))...
-   (append-map
-    (lambda (dir)
-      (filter-map
-       (lambda (filename)
-         (and (path-extension-is? filename ".ss")
-              (path-expand filename dir)))
-       (directory-files dir)))
-    ["net" "pure/dict" "pure"])...])
+  (cons "t/test-support.ss" (clan/building#all-ss-files)))
 
-(def (build)
-  (make (files) srcdir: srcdir verbose: verbose debug: 'env optimize: #t))
+;; In your build file, you can (import :clan/building) and use (init-build-environment! ...),
+;; and later use (define-entry-point ...).
+;; But in this build, file we have to bootstrap without imported macros.
+(clan/building#%set-build-environment!
+ srcdir add-load-path
+ name: "Gerbil-utils"
+ spec: files)
 
 (def (build-docker (tag #f))
   (run-process ["./scripts/make-docker-image.ss"]
                stdin-redirection: #f stdout-redirection: #f))
+(clan/multicall#register-entry-point
+ "docker" build-docker help: "build a Gerbil NixOS docker image")
 
-(def (main . args)
-  (when (match args ([] #t) (["compile" . _] #t) (_ #f))
-    (update-version-from-git name: "Gerbil-utils"))
-  (match args
-    (["meta"] (write '("spec" "compile" "docker")) (newline))
-    (["docker" . args] (displayln (apply build-docker args)))
-    (["spec"] (pretty-print (files)))
-    (["compile"] (build))
-    ([] (build))))
+(def main clan/multicall#call-entry-point)

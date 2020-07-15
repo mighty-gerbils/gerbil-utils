@@ -75,15 +75,22 @@
          (%set-test-environment! (this-source-file ctx) add-load-path)
          (def main call-entry-point))))))
 
-(def (all) (run-tests "." test-files: (find-test-files ".")) (silent-exit))
-(def (integration) (run-tests "." test-files: (find-test-files "." "-integrationtest.ss$")) (silent-exit))
-(def (test . files) (run-tests "." test-files: files) (silent-exit))
+(define-entry-point (all)
+  "Run all unit tests"
+  (run-tests "." test-files: (find-test-files "."))
+  (silent-exit))
 
-(register-entry-point "all" all help: "Run all unit tests")
-(register-entry-point "integration" integration help: "Run all integration tests")
-(register-entry-point "test" test help: "Run specific tests")
+(define-entry-point (integration)
+  "Run all integration tests"
+  (run-tests "." test-files: (find-test-files "." "-integrationtest.ss$"))
+  (silent-exit))
 
-(set! multicall-default all)
+(define-entry-point (test . files)
+  "Run specific tests"
+  (run-tests "." test-files: files)
+  (silent-exit))
+
+(set-default-entry-point! "all")
 
 ;; TODO: support doing it in another directory?
 (def (gerbil.pkg)

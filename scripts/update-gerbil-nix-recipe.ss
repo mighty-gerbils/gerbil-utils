@@ -6,10 +6,9 @@
 ;; and properly edit their messages, based on what was or wasn't already upstreamed.
 
 (import
-  :gerbil/gambit/ports
+  :gerbil/gambit/exceptions :gerbil/gambit/ports
   :std/format :std/getopt :std/misc/list :std/misc/ports :std/srfi/13 :std/sugar :std/pregexp
-  :clan/base :clan/basic-parsers :clan/multicall
-  :clan/timestamp :clan/files)
+  :clan/base :clan/basic-parsers :clan/files :clan/multicall :clan/source :clan/timestamp)
 
 ;; Initialize paths from the environment
 (defonce (default-checkouts-dir)

@@ -5,7 +5,7 @@
 (import
   :gerbil/gambit/exceptions :gerbil/gambit/ports
   :std/getopt :std/misc/ports :std/misc/process :std/sugar
-  :clan/path :clan/files :clan/multicall)
+  :clan/path :clan/files :clan/multicall :clan/source)
 
 ;; Initialize paths from the environment
 (def here (path-directory (path-normalize (this-source-file))))

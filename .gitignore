@@ -1,3 +1,4 @@
+build-deps
+version.ss
 scripts/result
 run/
-version.ss
