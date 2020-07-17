@@ -13,7 +13,7 @@
    data)   ;; (Maybe Bytes)
   transparent: #t constructor: :init!)
 (defmethod {:init! json-rpc-error}
-  (lambda (self code: code message: message data: (data null))
+  (lambda (self code: code message: message data: (data (void)))
     (class-instance-init! self code: code message: message data: data)))
 
 (def json-rpc-version "2.0")
@@ -22,7 +22,7 @@
   (jsonrpc   ;; String, must be the same as json-rpc-version ("2.0")
    method    ;; String
    params    ;; Json, array (arguments by position) or object (arguments by name)
-   id)       ;; Json, MUST be an number, a string, or Null. SHOULD be an integer if a number. Null if no response is required.
+   id)       ;; Json, MUST be an number, a string, or JSON null aka Scheme (void). SHOULD be an integer if a number. (void) if no response is required.
   transparent: #t)
 
 ;; Type of a successful JSON-RPC response.

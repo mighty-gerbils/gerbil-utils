@@ -23,7 +23,7 @@
       (def response-json
         (json<-string "{\"jsonrpc\": \"2.0\", \"id\": 15 , \"error\": { \"code\": -32602, \"message\": \"non-array args\"}}\n"))
       (check-equal? (with-catch identity (lambda () (decode-json-rpc-response 1+ 15 response-json) #f))
-                    (json-rpc-error code: -32602 message: "non-array args" data: null)))
+                    (json-rpc-error code: -32602 message: "non-array args" data: (void))))
     (test-case "decode malformed 1"
       (def response-json
         (json<-string
