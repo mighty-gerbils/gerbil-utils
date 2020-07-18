@@ -11,6 +11,8 @@
 (def alist<-plist plist->alist)
 (def plist<-alist alist->plist)
 
+(def (acons k v acc) [[k . v] . acc]) ;; TODO: move to std/misc/alist
+
 ;; Variant of map with arguments reversed, which nest-s nicer.
 ;; : (list Y) <- (list X) (Y <- X)
 (def (list-map list fun)
