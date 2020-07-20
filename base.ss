@@ -20,6 +20,8 @@
 (defrule (lambda-ematch clauses ...) (ematch <> clauses ...))
 (defalias λ-ematch lambda-ematch)
 
+(defrule (let-match (pattern form) body ...) (match form (pattern body ...)))
+
 ;; The anti-indentation macro: nest each form onto the end of the previous form.
 ;; This way, you can (nest (form1 ...) (form2 ...) ... (formN ...)) and
 ;; instead of it causing your code to be indented N to 2*N spaces or such
