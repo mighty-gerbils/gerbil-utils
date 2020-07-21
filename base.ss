@@ -2,7 +2,7 @@
 ;;;; Basic utilities
 
 (export #t)
-(import (only-in :std/sugar defrule))
+(import (only-in :std/sugar defrule) :std/error (for-syntax :std/misc/repr))
 
 ;;;; Basic syntax for control flow
 
@@ -191,14 +191,19 @@
 ;; NB: IF THIS IS EVER VISIBLE TO END-USERS during normal operation of an application,
 ;; this is an implementation error and YOU LOSE.
 ;; Any <- Any ...
-(def (undefined . args) (error "undefined function or method" args))
+(defstruct (Undefined exception) (args) transparent: #t)
+(def (undefined . args) (raise (Undefined args)))
+
+(defstruct (Invalid exception) (args) transparent: #t)
+(def (invalid . args) (raise (Invalid args)))
 
 
 ;; Use NIY when you need a TEMPORARY filler for code that MUST be implemented
 ;; BEFORE release, probably even before your branch is merged into production
 ;; code. IF THIS CODE APPEARS IN PRODUCTION, YOU LOSE.
 ;; Any <- Any ...
-(def (NIY . args) (error "Not Implemented Yet" args))
+(defstruct (NotImplementedYet exception) (args) transparent: #t)
+(def (NIY . args) (raise (NotImplementedYet args)))
 
 
 ;;;; Basic types
@@ -328,9 +333,9 @@
 (defrule (rec (name . formals) body ...)
   (let () (def (name . formals) body ...) name))
 
-;; In fun, the name is NOT bound in the body of the lambda
+;; In fun, the name is NOT bound in the body of the lambda -- and could be an arbitrary form
 (defsyntax (fun stx)
   (syntax-case stx ()
     ((_ (name . formals) body ...)
-     (with-syntax ((n (datum->syntax #'stx (string->uninterned-symbol (symbol->string (syntax-e #'name))))))
+     (with-syntax ((n (datum->syntax #'stx (string->uninterned-symbol (repr (syntax->datum #'name))))))
        #'(let () (def (n . formals) body ...) n)))))

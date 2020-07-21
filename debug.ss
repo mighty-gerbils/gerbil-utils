@@ -5,6 +5,7 @@
 (export pr prn repr) ;; reexport from std/misc/repr
 
 (import
+  (for-syntax ./syntax :std/misc/repr)
   :gerbil/gambit/ports :gerbil/gambit/threads
   :std/format :std/misc/repr :std/sugar
   ./base ./concurrency)
@@ -66,11 +67,9 @@
 (defrule (trace! f ...) (begin (ignore-errors (trace1 f)) ...))
 (defrule (untrace! f ...) (begin (ignore-errors (untrace1 f)) ...))
 
-(defrule (named-lambda (name . formals) body ...)
-  (let () (def (name . formals) body ...) name))
-
 (defrule (trace1 f more ...)
-  (trace-function! 'f f (let ((t (traced-function f 'f more ...))) (named-lambda (f . a) (apply t a))) (λ (v) (set! f v))))
+  (trace-function! 'f f (let ((t (traced-function f 'f more ...)))
+                          (fun (f . a) (apply t a))) (λ (v) (set! f v))))
 (defrule (untrace1 f) (untrace-function! 'f f (λ (v) (set! f v))))
 
 (def (traced-function f name (port (current-error-port)))

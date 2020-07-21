@@ -36,3 +36,9 @@
 
 (def (sum<-hash-values hash)
   (hash-fold (lambda (_ v acc) (+ v acc)) 0 hash))
+
+
+(def hash-get-set! hash-put!) ;; allow hash-get to be used as a place
+(def hash-ref-set! ;; allow hash-ref to be used as a place, accepting (ignored) optional default argument
+  (case-lambda ((h k v) (hash-put! h k v))
+          ((h k _d v) (hash-put! h k v))))
