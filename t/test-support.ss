@@ -8,9 +8,12 @@
 (export #t)
 
 (import
+  :gerbil/gambit/random
   :gerbil/expander
-  :std/format :std/sort :std/misc/process :std/misc/repr :std/sugar :std/test
-  ../exit ../filesystem ../multicall ../path ../path-config ../ports ../source)
+  :std/format :std/iter :std/misc/process :std/misc/repr
+  :std/sort :std/sugar :std/test :std/text/hex
+  ../base ../exit ../filesystem ../io ../multicall
+  ../path ../path-config ../ports ../source ../syntax)
 
 ;; Given a directory name (with no trailing /), is it a test directory named "t"?
 (def (test-dir? x)
@@ -27,22 +30,23 @@
 
 ;; Given a test file, return the name
 (def (test-symbol module-name)
-  (string->symbol (string-append module-name "#" (path-strip-directory module-name))))
+  (symbolify module-name "#" (path-strip-directory module-name)))
 
 (def (find-file-test test-file pkgdir package-prefix)
   (def module-name
-    (string-append package-prefix "/"
-                   (path-enough (path-strip-extension (path-simplify test-file)) pkgdir)))
-  (import-module (string->symbol (string-append ":" module-name)) #t #t)
+    (stringify package-prefix "/"
+               (path-enough (path-strip-extension (path-simplify test-file)) pkgdir)))
+  (import-module (symbolify ":" module-name) #t #t)
   (eval (test-symbol module-name)))
 
 ;; TODO: this was in std/make. Define and export it somewhere in std.
 (def (read-package-prefix pkgdir)
   (with-catch false
-              (lambda () (symbol->string
-                     (pgetq package:
-                            (call-with-input-file (path-expand "gerbil.pkg" pkgdir)
-                              read))))))
+              (cut !> pkgdir
+                   (cut path-expand "gerbil.pkg" <>)
+                   (cut call-with-input-file <> read)
+                   (cut pgetq package: <>)
+                   symbol->string)))
 
 ;; Create a test name (a string, as mandated by test-case) from a name object.
 ;; If name is already a string, itself, otherwise, the repr of the object.
@@ -110,3 +114,22 @@
                            (with-catch false (cut git-merge-base "HEAD" "FETCH_HEAD"))))
   (printf "Checkout~a up-to-date with branch ~a\n" (if up-to-date? "" " not") branch)
   (silent-exit up-to-date?))
+
+(def (0x<-random-source (rs default-random-source))
+  (def (bytes<-6u32 l)
+    (call-with-output-u8vector (lambda (port) (for-each (lambda (x) (write-integer-bytes x 4 port)) l))))
+  (!> rs random-source-state-ref vector->list bytes<-6u32 hex-encode))
+
+(def (random-source<-0x! 0x (rs default-random-source))
+  (def (6u32<-bytes b) (call-with-input-u8vector
+                        b (lambda (port) (for/collect (_ (in-range 6)) (read-integer-bytes 4 port)))))
+  (!> 0x hex-decode 6u32<-bytes list->vector (cut random-source-state-set! rs <>)))
+
+;; Call this function at the beginning of any test involving randomness.
+(def (init-test-random-source!)
+  (cond ((getenv "GERBIL_TEST_RANDOM_SOURCE" #f) => random-source<-0x!)
+        (else (random-source-randomize! default-random-source)))
+  (displayln "To reproduce the random pattern in the following tests, "
+             "set the random seed as follows:\n"
+             "export GERBIL_TEST_RANDOM_SOURCE="
+             (0x<-random-source)))

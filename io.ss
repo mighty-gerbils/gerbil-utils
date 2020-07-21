@@ -56,12 +56,12 @@
   (lambda (port) (<-bytes (read-bytes* n port))))
 
 ;; : Nat <- In Nat+
-(def (read-integer-bytes l in)
-  (nat<-bytes (read-bytes* l in)))
+(def (read-integer-bytes length-in-bytes in)
+  (nat<-bytes (read-bytes* length-in-bytes in)))
 
 ;; : <- Int Nat+ Out
-(def (write-integer-bytes n l out)
-  (write-bytes (bytes<-nat n l) out))
+(def (write-integer-bytes x length-in-bytes out)
+  (write-bytes (bytes<-nat x length-in-bytes) out))
 
 ;; Encoding and decoding integers into self-delimited byte streams, preserving lexicographic order
 ;; supposing the first byte is compared signed and the rest unsigned.
