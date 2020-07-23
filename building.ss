@@ -1,25 +1,25 @@
-;; -*- Gerbil -*-
 ;;;; Support for simpler ./build.ss scripts
 (export #t)
 
 (import
-  :gerbil/gambit/system :gerbil/gambit/misc :gerbil/gambit/os
+  :gerbil/gambit/misc :gerbil/gambit/os :gerbil/gambit/system
   :std/format :std/getopt :std/iter :std/make
   :std/misc/list :std/misc/ports :std/misc/string :std/misc/process
   :std/pregexp :std/srfi/1 :std/srfi/13 :std/sugar
   ./exit ./filesystem ./multicall ./path ./path-config ./ports ./source ./versioning)
 
-(def (all-ss-files)
-  ((cut lset-difference equal? <> '("build.ss" "unit-tests.ss" "main.ss"))
-   (find-files "" (cut path-extension-is? <> ".ss")
-               recurse?: (lambda (x) (not (member (path-strip-directory x) '("t" ".git" "_darcs")))))))
+(def (all-gerbil-modules exclude: (exclude '("main.ss"))
+                         exclude-dirs: (exclude-dirs '("t" ".git" "_darcs")))
+  ((cut lset-difference equal? <> exclude)
+   (find-files "" (lambda (x) (and (path-extension-is? x ".ss") (not (path-is-script? x))))
+               recurse?: (lambda (x) (not (member (path-strip-directory x) exclude-dirs))))))
 
 (def %name #f)
 (def %repo #f)
 (def %version-path #f)
 (def %deps '())
 (def %srcdir #f)
-(def %spec all-ss-files)
+(def %spec all-gerbil-modules)
 (def %pkg-config-libs #f)
 (def %nix-deps #f)
 

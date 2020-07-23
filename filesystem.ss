@@ -4,7 +4,7 @@
 (export #t)
 
 (import
-  :gerbil/gambit/exceptions :gerbil/gambit/os :gerbil/gambit/ports
+  :gerbil/gambit/bits :gerbil/gambit/bytes :gerbil/gambit/exceptions :gerbil/gambit/os :gerbil/gambit/ports
   :std/misc/list :std/pregexp :std/srfi/1 :std/sugar
   ./base ./list ./path)
 
@@ -22,6 +22,16 @@
 
 (def (path-is-directory? path (follow-symlinks? #f))
   (eq? 'directory (file-info-type (file-info path follow-symlinks?))))
+
+(def (path-is-executable-file? x)
+  (ignore-errors
+   (def i (file-info x))
+   (and (eq? 'regular (file-info-type i))
+        (not (zero? (bitwise-and #o111 (file-info-mode i)))))))
+
+(def (path-is-script? x)
+  (and (path-is-executable-file? x)
+  (ignore-errors (equal? #u8(35 33) #| #! |# (call-with-input-file x (cut read-bytes 2 <>))))))
 
 ;; Given a path to a file that exists on the filesystem, return
 ;; a normalized absolute or relative path to it, whichever is shortest

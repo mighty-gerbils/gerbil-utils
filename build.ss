@@ -12,7 +12,7 @@
 (import-module ':clan/building #t #t)
 
 (def (files)
-  (cons "t/test-support.ss" (clan/building#all-ss-files)))
+  (cons "t/test-support.ss" (clan/building#all-gerbil-modules)))
 
 ;; In your build file, you can (import :clan/building) and use (init-build-environment! ...),
 ;; and later use (define-entry-point ...).
