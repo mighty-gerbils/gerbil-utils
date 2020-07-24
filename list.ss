@@ -46,3 +46,5 @@
 (def (first-and-only x)
   (assert! (and (pair? x) (null? (cdr x))))
   (car x))
+
+(defrule (pop! x) (let (v x) (and (pair? v) (begin0 (car v) (set! x (cdr v))))))

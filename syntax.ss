@@ -1,5 +1,7 @@
-(export #t)
-(import <expander-runtime> :std/sugar)
+(export #t (for-syntax #t))
+(import
+  (for-syntax :std/srfi/1)
+  <expander-runtime> :gerbil/expander :std/sugar)
 
 ;;; Allowing for keywords in macros
 (def (stx-separate-keyword-arguments args (positionals-only? #f)) ;; see std/misc/list#separate-keyword-arguments
@@ -47,3 +49,39 @@
 (def (keywordify . x) (string->keyword (stringify x)))
 (def (maybe-symbolify . x) (maybe-intern-symbol (stringify x)))
 (def (maybe-keywordify . x) (maybe-intern-keyword (stringify x)))
+(def (identifierify stx . x) (datum->syntax stx (apply symbolify x)))
+
+(begin-syntax
+;; Return (1) the identifier, (2) what the keyword argument is if any,
+;; (3) whether it is optional, (4) what the default value is if it is optional,
+;; and (5) whether it is rest argument.
+(def (parse-formal f)
+  (syntax-case f ()
+    (_ (identifier? f) [f #f #f #f #f])
+    ((v d) (identifier? #'v) [#'v #f #t #'d #f])
+    (_ (error "Invalid formal parameter" f))))
+
+(def (parse-formals formals)
+  (let loop ((rvars [])
+             (formals formals))
+    (syntax-case formals ()
+      (r (identifier? #'r) (reverse (cons [#'r #f #t '() #t] rvars)))
+      (() (reverse rvars))
+      ((k v . more) (stx-keyword? #'k)
+       (match (parse-formal #'v)
+         ([id _ opt? default _] (loop (cons [id #'k opt? default #f] rvars) #'more))))
+      ((v . rest) (loop (cons (parse-formal #'v) rvars) #'rest))
+      (_ (error "Invalid formals" formals)))))
+
+(def (call<-parsed-formal parsed-formal)
+  (match parsed-formal ([id kw opt? default _] (if kw [kw id] [id]))))
+
+(def (call<-parsed-formals prefix parsed-formals)
+  (def rest? (and (not (null? parsed-formals)) (fifth (last parsed-formals))))
+  (with-syntax ((((call ...) ...) (map call<-parsed-formal parsed-formals))
+                ((prefix ...) prefix)
+                ((ap ...) (if rest? #'(apply) [])))
+    #'(ap ... prefix ... call ... ...)))
+
+(def (call<-formals prefix formals)
+  (call<-parsed-formals prefix (parse-formals formals))))

@@ -68,7 +68,8 @@
   (def nix-hack? (and (gerbil-is-nix?) (which? "nix-shell")))
   (def ($$ command)
     ($ (if nix-hack?
-         (string-append "nix-shell '<nixpkgs>' -p pkg-config " (string-join nix-deps " ") " --run '" command "'")
+         (string-append "nix-shell '<nixpkgs>' -p pkg-config " (string-join nix-deps " ")
+                        " --run '" command "'")
          command)))
   (when nix-hack? ($$ "echo ok")) ;; do a first run to ensure all dependencies are loaded
   (def ($pkg-config options)

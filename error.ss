@@ -17,3 +17,4 @@
   (apply eprintf msg args)
   (exit code))
 
+(def current-error-context (make-parameter '()))
