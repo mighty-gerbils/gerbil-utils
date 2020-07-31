@@ -51,23 +51,6 @@
 (def (maybe-keywordify . x) (maybe-intern-keyword (stringify x)))
 (def (identifierify stx . x) (datum->syntax stx (apply symbolify x)))
 
-;; Written with the precious help of Alex Knauth
-(defsyntax (with-id stx)
-  (syntax-case stx ()
-    ((wi ((id ct-expr ...) ...) body ...)
-     (stx-andmap identifier? #'(id ...))
-     #'(wi wi ((id ct-expr ...) ...) body ...))
-    ((wi ctx ((id ct-expr ...) ...) body body1 body+ ...)
-     (and (identifier? #'ctx) (stx-andmap identifier? #'(id ...)))
-     #'(wi ctx ((id ct-expr ...) ...) (begin body body1 body+ ...)))
-    ((_ ctx ((id ct-expr ...) ...) template)
-     (and (identifier? #'ctx) (stx-andmap identifier? #'(id ...)))
-     #'(begin
-         (defsyntax (m stx2)
-           (with-syntax ((id (identifierify (quote-syntax ctx) ct-expr ...)) ...)
-             (... #'(... template))))
-         (m)))))
-
 (begin-syntax
 ;; Return (1) the identifier, (2) what the keyword argument is if any,
 ;; (3) whether it is optional, (4) what the default value is if it is optional,

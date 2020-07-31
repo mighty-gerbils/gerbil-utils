@@ -13,7 +13,7 @@
   :std/format :std/iter :std/misc/process :std/misc/repr
   :std/sort :std/sugar :std/test :std/text/hex
   ../base ../exit ../filesystem ../io ../multicall
-  ../path ../path-config ../ports ../source ../syntax)
+  ../path ../path-config ../ports ../source ../syntax ../with-id)
 
 ;; Given a directory name (with no trailing /), is it a test directory named "t"?
 (def (test-dir? x)
@@ -63,6 +63,7 @@
   (eqv? 'OK (test-result)))
 
 (def (%set-test-environment! script-path add-load-path)
+  (write [script-path: script-path add-load-path: add-load-path])(newline)
   (set-current-ports-encoding-standard-unix!)
   (def src (path-normalize (path-directory script-path)))
   (current-directory src)
@@ -70,14 +71,14 @@
   (set! source-directory (lambda () src))
   (set! home-directory (lambda () src)))
 
-(defsyntax (init-test-environment! stx)
-  (syntax-case stx ()
-    ((ctx)
-     (with-syntax ((main (datum->syntax #'ctx 'main))
-                   (add-load-path (datum->syntax #'ctx 'add-load-path)))
-     #'(begin
-         (%set-test-environment! (this-source-file ctx) add-load-path)
-         (def main call-entry-point))))))
+(defrules init-test-environment! ()
+  ((x) (x x))
+  ((_ ctx)
+   (begin
+     (def here (this-source-file ctx))
+     (with-id ctx (add-load-path main)
+       (%set-test-environment! here add-load-path)
+       (def main call-entry-point)))))
 
 (define-entry-point (test . files)
   "Run specific tests"

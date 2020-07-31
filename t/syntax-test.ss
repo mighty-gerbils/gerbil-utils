@@ -4,7 +4,7 @@
   :gerbil/gambit/exceptions
   :std/misc/string :std/srfi/13
   :std/test
-  ../base ../number ../syntax)
+  ../base ../number ../syntax ../with-id)
 
 (defrules defrule ()
   ((_ (name args ...) body ...)

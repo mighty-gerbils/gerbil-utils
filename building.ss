@@ -46,14 +46,15 @@
   (set! %pkg-config-libs pkg-config-libs)
   (set! %nix-deps nix-deps))
 
-(defsyntax (init-build-environment! stx)
-  (syntax-case stx ()
-    ((ctx args ...)
-     (with-syntax ((main (datum->syntax #'ctx 'main))
-                   (add-load-path (datum->syntax #'ctx 'add-load-path)))
-     #'(begin
-         (%set-build-environment! (this-source-file ctx) add-load-path args ...)
-         (def main call-entry-point))))))
+(defrule (%init-build-environment! ctx args ...)
+  (begin
+    (def here (this-source-file ctx))
+    (with-id ctx (main add-loadpath)
+      (%set-build-environment! here add-load-path args ...)
+      (def main call-entry-point))))
+
+(defrules init-build-environment! ()
+  ((ctx args ...) (%init-build-environment! ctx args ...)))
 
 (def ($ cmd)
   (match (shell-command cmd #t)
