@@ -63,7 +63,7 @@
   (eqv? 'OK (test-result)))
 
 (def (%set-test-environment! script-path add-load-path)
-  (write [script-path: script-path add-load-path: add-load-path])(newline)
+  ;;(write [script-path: script-path add-load-path: add-load-path])(newline)
   (set-current-ports-encoding-standard-unix!)
   (def src (path-normalize (path-directory script-path)))
   (current-directory src)
@@ -71,14 +71,17 @@
   (set! source-directory (lambda () src))
   (set! home-directory (lambda () src)))
 
-(defrules init-test-environment! ()
-  ((x) (x x))
-  ((_ ctx)
+(defrule (%init-test-environment! ctx)
    (begin
      (def here (this-source-file ctx))
      (with-id ctx (add-load-path main)
        (%set-test-environment! here add-load-path)
-       (def main call-entry-point)))))
+       (def main call-entry-point))))
+
+(defsyntax (init-test-environment! stx)
+  (syntax-case stx ()
+    ((ctx) #'(%init-test-environment! ctx))
+    ((_ ctx) #'(%init-test-environment! ctx))))
 
 (define-entry-point (test . files)
   "Run specific tests"

@@ -3,6 +3,5 @@
 ;; You can even run tests without first building with ./build.ss !
 
 (import :clan/t/test-support)
-(def a 1)
-(begin (init-test-environment! a))
+(init-test-environment!)
 (import :clan/version)

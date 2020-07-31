@@ -6,7 +6,7 @@
   :std/format :std/getopt :std/iter :std/make
   :std/misc/list :std/misc/ports :std/misc/string :std/misc/process
   :std/pregexp :std/srfi/1 :std/srfi/13 :std/sugar
-  ./exit ./filesystem ./multicall ./path ./path-config ./ports ./source ./versioning)
+  ./exit ./filesystem ./multicall ./path ./path-config ./ports ./source ./versioning ./with-id)
 
 (def (all-gerbil-modules exclude: (exclude '("main.ss"))
                          exclude-dirs: (exclude-dirs '("t" ".git" "_darcs")))
@@ -53,8 +53,12 @@
       (%set-build-environment! here add-load-path args ...)
       (def main call-entry-point))))
 
-(defrules init-build-environment! ()
-  ((ctx args ...) (%init-build-environment! ctx args ...)))
+;;;; This somehow does not work:
+;;(defrules init-build-environment! () ((ctx args ...) (%init-build-environment ctx args ...)))
+
+(defsyntax (init-build-environment! stx)
+  (syntax-case stx ()
+    ((ctx args ...) #'(%init-build-environment! ctx args ...))))
 
 (def ($ cmd)
   (match (shell-command cmd #t)
