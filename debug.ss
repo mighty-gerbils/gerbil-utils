@@ -68,14 +68,14 @@
 (defrule (untrace! f ...) (begin (ignore-errors (untrace1 f)) ...))
 
 (defrule (trace1 f more ...)
-  (trace-function! 'f f (let ((t (traced-function f 'f more ...)))
+  (trace-function! 'f f (let ((t (traced-function 'f f more ...)))
                           (fun (f . a) (apply t a))) (λ (v) (set! f v))))
 (defrule (untrace1 f) (untrace-function! 'f f (λ (v) (set! f v))))
 
-(def (traced-function f name (port (current-error-port)))
-  (λ args (apply-tracing f name port args)))
+(def (traced-function name f (port (current-error-port)))
+  (λ args (apply-tracing name f port args)))
 
-(def (apply-tracing f name port args)
+(def (apply-tracing name f port args)
   (def counter (trace-counter))
   (parameterize ((trace-counter (+ 1 counter)))
     (display-separated
