@@ -1,8 +1,8 @@
 (export memo-test)
 
 (import
-  :std/test
-  ../base ../memo ../number)
+  :std/misc/number :std/test
+  ../base ../memo)
 
 (def memo-test
   (test-suite "test suite for clan/memo"

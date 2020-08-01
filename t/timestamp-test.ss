@@ -2,8 +2,8 @@
 
 (import
   :gerbil/gambit/exceptions
-  :std/test
-  ../base ../timestamp ../number)
+  :std/misc/number :std/test
+  ../base ../timestamp)
 
 (def timestamp-test
   (test-suite "test suite for clan/timestamp"

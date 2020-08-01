@@ -61,25 +61,6 @@
       (fun i)
       (loop (+ i 1)))))
 
-(defrules increment! ()
-  ((_ place) (increment! place 1))
-  ((_ place increment ...) (set! place (+ place increment ...))))
-(defrules pre-increment! ()
-  ((_ place increment ...) (begin (increment! place increment ...) place)))
-(defrules post-increment! ()
-  ((_ place increment ...) (begin0 place (increment! place increment ...))))
-
-(defrules decrement! ()
-  ((_ place) (decrement! place 1))
-  ((_ place decrement ...) (set! place (- place decrement ...))))
-(defrules pre-decrement! ()
-  ((_ place decrement ...) (begin (decrement! place decrement ...) place)))
-(defrules post-decrement! ()
-  ((_ place decrement ...) (begin0 place (decrement! place decrement ...))))
-
-(def (make-counter (n 0))
-  (λ () (post-increment! n)))
-
 ;;; Binary search in interval [start, end) to find the least integer for which pred? holds,
 ;;; assuming pred? is "increasing", i.e. if true for some integer, true for all larger integers.
 ;;; If no integer in the interval satisfies pred?, return end. If all do, return start.
@@ -123,6 +104,7 @@
     (display (make-string padding #\0) out)
     (display digits out)))
 
+;; TODO: make it so we round towards the closest even number when right in the middle
 (def (round/ x y)
   (cond
    ((zero? y) (/ x 0))

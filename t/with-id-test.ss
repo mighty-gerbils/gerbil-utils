@@ -1,16 +1,12 @@
-(export syntax-test)
+(export with-id-test)
 
 (import
   :gerbil/gambit/exceptions
-  :std/misc/string :std/srfi/13
+  :std/misc/string :std/misc/number :std/srfi/13 :std/sugar
   :std/test
-  ../base ../number ../syntax ../with-id)
+  ../base ../syntax ../with-id)
 
-(defrules defrule ()
-  ((_ (name args ...) body ...)
-   (defrules name () ((name args ...) body ...))))
-
-(def syntax-test
+(def with-id-test
   (test-suite "test suite for clan/syntax"
     (test-case "with-id, defining variables"
       (def mem (make-vector 5 0))

@@ -7,10 +7,10 @@
 
 (import
   :gerbil/gambit/ports
-  :std/format :std/misc/list :std/logger :std/misc/process :std/misc/sync
+  :std/format :std/misc/list :std/logger :std/misc/number :std/misc/process :std/misc/sync
   :std/srfi/13 :std/sugar :std/text/json
   ./base ./basic-parsers ./concurrency ./timestamp ./filesystem ./generator
-  ./json ./list ./memo ./number ./path ./path-config ./versioning)
+  ./json ./list ./memo ./path ./path-config ./versioning)
 
 ;;; Logging text to a series of log files.
 ;; Start a new logger, with given name (optional) and a hook to call when switching files.

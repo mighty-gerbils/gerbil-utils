@@ -11,8 +11,6 @@
 (def alist<-plist plist->alist)
 (def plist<-alist alist->plist)
 
-(def (acons k v acc) [[k . v] . acc]) ;; TODO: move to std/misc/alist
-
 ;; Variant of map with arguments reversed, which nest-s nicer.
 ;; : (list Y) <- (list X) (Y <- X)
 (def (list-map list fun)
@@ -43,8 +41,3 @@
 
 (def list<-cons (λ-match ([x . y] [x y])))
 
-(def (first-and-only x)
-  (assert! (and (pair? x) (null? (cdr x))))
-  (car x))
-
-(defrule (pop! x) (let (v x) (and (pair? v) (begin0 (car v) (set! x (cdr v))))))

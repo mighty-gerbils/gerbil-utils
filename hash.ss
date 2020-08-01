@@ -7,38 +7,11 @@
 (export #t)
 
 (import
-  :std/iter)
-
-(def (hash-key-value-map h kf vf)
-  (def hf (make-hash-table))
-  (hash-for-each (lambda (k v) (hash-put! hf (kf k) (vf v))) h)
-  hf)
-
-;; TODO: modify std/misc/hash#invert-hash<-vector
-(def (invert-hash<-vector*
-      from start: (start 0) end: (end (vector-length from))
-      to: (to (make-hash-table)) key: (key identity))
-  (for (i (in-range start end)) (hash-put! to (key (vector-ref from i)) i))
-  to)
-
-;; TODO: modify std/misc/hash#invert-hash<-vector/fold
-(def (invert-hash<-vector/fold*
-      from start: (start 0) end: (end (vector-length from))
-      to: (to (make-hash-table)) nil: (nil '()) cons: (cons cons) key: (key identity))
-  (for (i (in-range start end))
-    (def val (vector-ref from i))
-    (hash-put! to (key val) (cons i (hash-ref to val nil))))
-  to)
+  :std/misc/hash)
 
 (def (count-hash<-vector
       from start: (start 0) end: (end (vector-length from)) to: (to (make-hash-table)))
-  (invert-hash<-vector/fold* from start: start end: end to: to nil: 0 cons: 1+))
+  (invert-hash<-vector/fold from start: start end: end to: to nil: 0 cons: 1+))
 
 (def (sum<-hash-values hash)
   (hash-fold (lambda (_ v acc) (+ v acc)) 0 hash))
-
-
-(def hash-get-set! hash-put!) ;; allow hash-get to be used as a place
-(def hash-ref-set! ;; allow hash-ref to be used as a place, accepting (ignored) optional default argument
-  (case-lambda ((h k v) (hash-put! h k v))
-          ((h k _d v) (hash-put! h k v))))

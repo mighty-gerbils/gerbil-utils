@@ -3,7 +3,7 @@
 (import
   :gerbil/gambit/bits :gerbil/gambit/exact
   :scheme/base-impl
-  :std/error :std/iter :std/sugar
+  :std/error :std/iter :std/misc/number :std/sugar
   ./basic-parsers ./basic-printers ./number ./string)
 
 ;; : (Parameter Char)
