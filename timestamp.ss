@@ -555,3 +555,18 @@
         (on-beat-skip)
         (set! target-timestamp (ceiling-align (current-timestamp) period-in-nanoseconds)))
       (sleep-until target-timestamp sleep: sleep_ current-timestamp: current-timestamp))))
+
+(def (call-with-timing thunk)
+  (def start-timestamp (current-tai-timestamp))
+  (def result (thunk))
+  (def end-timestamp (current-tai-timestamp))
+  (values (- end-timestamp start-timestamp) result))
+
+(defrules with-timing ()
+  ((_ () body ...) (with-timing '(timing: body ...) body ...))
+  ((_ desc body ...)
+   (let (d desc)
+     (printf ">>>> ~s\n" d)
+     (let-values (((t r) (call-with-timing (lambda () body ...))))
+       (printf "<<<< ~s at ~d ns (~a s)\n" d t (* t 1e-9))
+       r))))
