@@ -53,12 +53,8 @@
       (%set-build-environment! here add-load-path args ...)
       (def main call-entry-point))))
 
-;;;; This somehow does not work:
-;;(defrules init-build-environment! () ((ctx args ...) (%init-build-environment ctx args ...)))
-
 (defsyntax (init-build-environment! stx)
-  (syntax-case stx ()
-    ((ctx args ...) #'(%init-build-environment! ctx args ...))))
+  (syntax-case stx () ((ctx args ...) #'(%init-build-environment! ctx args ...))))
 
 (def ($ cmd)
   (match (shell-command cmd #t)

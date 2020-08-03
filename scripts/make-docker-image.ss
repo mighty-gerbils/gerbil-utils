@@ -27,7 +27,7 @@
     (with-catch false (cut run-process '("git" "describe" "--tags" "--always") directory: nixpkgs)))
   (def version-file (path-expand "git-description" nixpkgs))
   (clobber-file version-file version)
-  (run-process ["nix-build" "gerbil-docker-layered.nix"]
+  (run-process ["nix-build" "gerbil-docker-staged.nix"]
                directory: here stdin-redirection: #f stdout-redirection: #f)
   (delete-file version-file)
   (run-process ["docker" "load" "-i" "./result"]

@@ -1,6 +1,6 @@
-let usageComment = ''
+{ pkgs ? import <nixpkgs> {} }: let usageComment = ''
 # Build a docker image with:
-    nix-build gerbil-docker-layered.nix && \
+    nix-build gerbil-docker-staged.nix && \
     docker load < ./result |& tee docker.log && \
     IMG=$(tail -1 docker.log | cut -d' ' -f3)
 
@@ -9,23 +9,35 @@ let usageComment = ''
     docker run -t -i $IMG env TERM=xterm zsh -i
 
 # If/when satisfied, pick a tag you can write to, and publish with:
-    TAG=gerbil/gerbil-nix # or TAG=fahree/gerbil-nix
+    TAG=gerbil/gerbil-nix # or TAG=fahree/gerbil-nix-staged
     docker tag $IMG $TAG && \
     docker push $TAG
 '';
-all-gerbils = pkgs:
-  builtins.filter pkgs.lib.attrsets.isDerivation
-    (builtins.attrValues pkgs.gerbilPackages-unstable); in
 
-# gerbils: Gerbil libraries included in the image
-{ pkgs ? import <nixpkgs> {}, gerbils ? all-gerbils pkgs }:
+inherit (pkgs) lib dockerTools;
+inherit (dockerTools) buildImage;
 
-let inherit (pkgs) lib;
+isNotGambit = x: x != pkgs.gambit-unstable && x != pkgs.gambit-support.gambit-bootstrap;
 
-  # From http://ix.io/2knJ/nix
-  buildLayeredImageWithNixDb = (
-    args@{ contents, extraCommands ? "", ... }: (
-      pkgs.dockerTools.buildLayeredImage (
+allDeps = with pkgs;[
+    # For a basic Nix environment:
+    nix bashInteractive cacert coreutils gnutar gzip
+    # Basic survivable interaction environment:
+    zsh su screen less git openssh rsync passwd
+    # Basic development environment for gerbil:
+    gcc binutils gnused gnugrep
+  ] ++ pkgs.gambit-unstable.buildInputs
+    ++ (builtins.filter isNotGambit pkgs.gerbil-unstable.buildInputs);
+
+allGerbils = builtins.filter pkgs.lib.attrsets.isDerivation
+               (builtins.attrValues pkgs.gerbilPackages-unstable);
+
+allContents = allDeps ++ allGerbils ++ (with pkgs;[gambit-unstable gerbil-unstable]);
+
+buildImageWithNixDb = (
+    allContents:
+    args@{ contents ? null, extraCommands ? "", ... }: (
+      buildImage (
         args // {
           extraCommands = ''
             echo "Generating the nix database..."
@@ -37,11 +49,11 @@ let inherit (pkgs) lib;
             # A user is required by nix
             # https://github.com/NixOS/nix/blob/9348f9291e5d9e4ba3c4347ea1b235640f54fd79/src/libutil/util.cc#L478
             export USER=nobody
-            ${pkgs.nix}/bin/nix-store --load-db < ${pkgs.closureInfo {rootPaths = contents;}}/registration
+            ${pkgs.nix}/bin/nix-store --load-db < ${pkgs.closureInfo {rootPaths = allContents;}}/registration
 
             mkdir -p nix/var/nix/gcroots/docker/ ;
             ls -l nix/var/nix/gcroots/docker/ ;
-            ln -s ${lib.concatStringsSep " " (lib.unique contents)} nix/var/nix/gcroots/docker/
+            ln -s ${lib.concatStringsSep " " (lib.unique allContents)} nix/var/nix/gcroots/docker/
 
             mkdir -p usr/bin
             ln -s ../../bin/env usr/bin
@@ -124,45 +136,54 @@ let inherit (pkgs) lib;
     echo "" >> $out/etc/shadow
   '';
 
-  entrypoint = pkgs.writeScript "entrypoint.sh" ''
-    #!${pkgs.stdenv.shell}
-    #set -e
-    # allow the container to be started with `--user`
-    if [ "$1" = "fahree/gerbil-nix" -a "$(${pkgs.coreutils}/bin/id -u)" = "0" ]; then
-      chown -R user /home
-      exec ${pkgs.su}/bin/su user "$BASH_SOURCE" "$@"
-    fi
-    exec "$@"
-  '';
+#  entrypoint = pkgs.writeScript "entrypoint.sh" ''
+#    #!${pkgs.stdenv.shell}
+#    #set -e
+#    # allow the container to be started with `--user`
+#    if [ "$1" = "fahree/gerbil-nix" -a "$(${pkgs.coreutils}/bin/id -u)" = "0" ]; then
+#      chown -R user /home
+#      exec ${pkgs.su}/bin/su gerbil "$BASH_SOURCE" "$@"
+#    fi
+#    exec "$@"
+#  '';
 
-  loadpath = pkgs.gerbil-support.gerbilLoadPath gerbils;
-
-in buildLayeredImageWithNixDb {
-
+depsImage = buildImage {
+  name = "fahree/gerbil-nix-deps";
+  tag = "latest";
+  contents = allDeps;
+};
+gambitImage = buildImage {
+  name = "fahree/gerbil-nix-gambit";
+  tag = "latest";
+  fromImage = depsImage;
+  contents = pkgs.gambit-unstable;
+};
+gerbilImage = buildImage {
+  name = "fahree/gerbil-nix-gerbil";
+  tag = "latest";
+  fromImage = gambitImage;
+  contents = pkgs.gerbil-unstable;
+};
+allImage = buildImage {
+  name = "fahree/gerbil-nix-all";
+  tag = "latest";
+  fromImage = gerbilImage;
+  contents = allGerbils;
+}; in
+buildImageWithNixDb allContents {
   name = "fahree/gerbil-nix";
   tag = "latest";
-
-  contents = with pkgs;[
-    # For a basic Nix environment:
-    nix bashInteractive cacert coreutils gnutar gzip
-    # Basic survivable interaction environment:
-    zsh su screen less git openssh xz
-    # Basic development environment for gerbil:
-    gerbil-unstable gambit-unstable gcc binutils gnused gnugrep
-  ] ++ pkgs.gerbil-unstable.buildInputs ++ gerbils ++ [
-    passwd
-  ];
-
+  fromImage = allImage;
+  contents = [];
   extraCommands = ''
     # The user may have to chown / chmod these in a future Dockerfile pass
     # and/or in the entrypoint
-    mkdir -p home && \
+    mkdir home
     echo "#" > home/.zshrc
   '';
-
   config = {
-    #Entrypoint = [ entrypoint ];
-    #Cmd = [ "gxi" ];
+    Cmd = [ "gxi" ];
+#    Entrypoint = [ entrypoint ];
     Env = [
       "SSL_CERT_FILE=${pkgs.cacert.out}/etc/ssl/certs/ca-bundle.crt"
       "USER=root"
@@ -170,8 +191,7 @@ in buildLayeredImageWithNixDb {
       "GIT_SSL_CAINFO=${pkgs.cacert.out}/etc/ssl/certs/ca-bundle.crt"
       "NIX_SSL_CERT_FILE==${pkgs.cacert.out}/etc/ssl/certs/ca-bundle.crt"
       "NIX_PATH=nixpkgs=${pkgs.path}"
-      "GERBIL_LOADPATH=${loadpath}"
-      ];
+    ];
 #    ExposedPorts = {
 #      "7777/tcp" = {};
 #    };
@@ -202,3 +222,7 @@ in buildLayeredImageWithNixDb {
 #  https://github.com/NixOS/docker/blob/master/Dockerfile
 #  https://github.com/input-output-hk/cardano-explorer/blob/master/docker/default.nix#L312-L325
 #  http://lethalman.blogspot.com/2016/04/cheap-docker-images-with-nix_15.html
+
+# TODO: it looks like /bin/gxi and /nix/store/*-gerbil-unstable-*/bin/gxi are different files.
+# Is everything duplicated between / and /nix/store ? Is tar called in a way that fails to preserve
+# some symlinks or hardlinks? Fix that.
