@@ -15,7 +15,7 @@
         :std/misc/rbtree
         :std/srfi/1
         ./assq
-        ./intdict-unwrapped)
+        ./rationaldict-unwrapped)
 
 
 
@@ -25,17 +25,17 @@
 ;; where the keys should be compared by `eq?`,
 ;; and there are no duplicate keys
 
-;; A [DictEqof K V] is an [Intdictof [Assqof K V]]
+;; A [DictEqof K V] is an [Rationaldictof [Assqof K V]]
 
 ;; empty-dicteq : [DictEqof K V]
-(def empty-dicteq empty-intdict)
+(def empty-dicteq empty-rationaldict)
 
 ;; dicteq-empty? : [DictEqof K V] -> Bool
-(def dicteq-empty? intdict-empty?)
+(def dicteq-empty? rationaldict-empty?)
 
-;; dicteq-ref : [DictEqof K V] K -> V
-(def (dicteq-ref d k)
-  (def a (intdict-ref d (eq?-hash k)))
+;; dicteq-ref : [DictEqof K V] K ?[-> V] -> V
+(def (dicteq-ref d k (default (cut error "No value associated with key" d k)))
+  (def a (rationaldict-ref d (eq?-hash k)))
   (def e (assq k a))
   (cond (e (cdr e))
         (else (error 'dicteq-ref))))
@@ -59,12 +59,12 @@
 ;; dicteq-remove : [DictEqof K V] K -> [DictEqof K V]
 (def (dicteq-remove d k)
   (def kh (eq?-hash k))
-  (def a (assq-remove (intdict-ref d kh []) k))
-  (if (null? a) (intdict-remove d kh) (intdict-put d kh a)))
+  (def a (assq-remove (rationaldict-ref d kh (cut list)) k))
+  (if (null? a) (rationaldict-remove d kh) (rationaldict-put d kh a)))
 
 ;; dicteq-has-key? : [DictEqof K V] K -> Bool
 (def (dicteq-has-key? d k)
-  (assq-has-key? (intdict-ref d (eq?-hash k) []) k))
+  (assq-has-key? (rationaldict-ref d (eq?-hash k) (cut list)) k))
 
 ;; dicteq-keys : [DictEqof K V] -> [Listof K]
 (def (dicteq-keys d)
@@ -86,6 +86,4 @@
 
 ;; dicteq=? : [DictEqof Any Any] [DictEqof Any Any] -> Bool
 (def (dicteq=? a b (v=? equal?))
-  (intdict=? a b
-             (lambda (a1 b1)
-               (assq=? a1 b1 v=?))))
+  (rationaldict=? a b (cut assq=? <> <> v=?)))

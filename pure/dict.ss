@@ -1,10 +1,10 @@
 (export (import:
          ./dict/assq
          ./dict/dicteq
-         ./dict/intdict
+         ./dict/rationaldict
          ./dict/symdict))
 
 (import ./dict/assq
         ./dict/dicteq
-        ./dict/intdict
+        ./dict/rationaldict
         ./dict/symdict)

@@ -24,8 +24,9 @@
 ;; dicteq-empty? : [DictEqof K V] -> Bool
 (def (dicteq-empty? d) (bare-dicteq-empty? (dicteq-unwrapped d)))
 
-;; dicteq-ref : [DictEqof K V] K -> V
-(def (dicteq-ref d k) (bare-dicteq-ref (dicteq-unwrapped d) k))
+;; dicteq-ref : [DictEqof K V] K ?[-> V] -> V
+(def (dicteq-ref d k (default (cut error "No value associated with key" d k)))
+  (bare-dicteq-ref (dicteq-unwrapped d) k default))
 
 ;; dicteq-put : [DictEqof K V] K V -> [DictEqof K V]
 (def (dicteq-put d k v) (dicteq (bare-dicteq-put (dicteq-unwrapped d) k v)))
