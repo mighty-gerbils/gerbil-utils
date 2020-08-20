@@ -134,7 +134,8 @@
     ((f x y z . t) (apply f x y z t))))
 
 ;; A bit like CL:CONSTANTLY, except it accepts multiple values.
-(def (constantly . x) (lambda _ (apply values x)))
+(def constantly
+  (case-lambda (() void) ((x) (lambda _ x)) (v (lambda _ (apply values v)))))
 
 ;; Like ALEXANDRIA:CURRY in CL
 ;; (Z <- YY) <- (Z <- XX YY) XX

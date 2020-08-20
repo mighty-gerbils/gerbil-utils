@@ -34,91 +34,55 @@ allGerbils = builtins.filter pkgs.lib.attrsets.isDerivation
 
 allContents = allDeps ++ allGerbils ++ (with pkgs;[gambit-unstable gerbil-unstable]);
 
-buildImageWithNixDb = (
-    allContents:
-    args@{ contents ? null, extraCommands ? "", ... }: (
-      buildImage (
-        args // {
-          extraCommands = ''
-            echo "Generating the nix database..."
-            echo "Warning: only the database of the deepest Nix layer is loaded."
-            echo "         If you want to use nix commands in the container, it would"
-            echo "         be better to only have one layer that contains a nix store."
-
-            export NIX_REMOTE=local?root=$PWD
-            # A user is required by nix
-            # https://github.com/NixOS/nix/blob/9348f9291e5d9e4ba3c4347ea1b235640f54fd79/src/libutil/util.cc#L478
-            export USER=nobody
-            ${pkgs.nix}/bin/nix-store --load-db < ${pkgs.closureInfo {rootPaths = allContents;}}/registration
-
-            mkdir -p nix/var/nix/gcroots/docker/ ;
-            ls -l nix/var/nix/gcroots/docker/ ;
-            ln -s ${lib.concatStringsSep " " (lib.unique allContents)} nix/var/nix/gcroots/docker/
-
-            mkdir -p usr/bin
-            ln -s ../../bin/env usr/bin
-          '' + extraCommands;
-        }
-      )
-    )
-  );
-
-  users = {
-
-    root = {
-      uid = 0;
-      shell = "/bin/bash";
-      home = "/root";
-      gid = 0;
-    };
-
-    user = {
-      uid = 1000;
-      shell = "/bin/bash";
-      home = "/home";
-      gid = 1000;
-    };
-
-  } // lib.listToAttrs (
+users = {
+  root = {
+    uid = 0;
+    shell = "/bin/bash";
+    home = "/root";
+    gid = 0;
+  };
+  user = {
+    uid = 1000;
+    shell = "/bin/bash";
+    home = "/home";
+    gid = 1000;
+  };
+} // lib.listToAttrs (
     map (n: { name = "nixbld${toString n}"; value = {
       uid = 30000 + n;
       gid = 30000;
       groups = [ "nixbld" ];
       description = "Nix build user ${toString n}";
     }; }) (lib.lists.range 1 1));
-
-  groups = {
-    root.gid = 0;
-    user.gid = 1000;
-    nixbld.gid = 30000;
-  };
-
-  userToPasswd = k:
-    { uid, gid ? 65534, home ? "/var/empty"
-    , description ? ""
-    , shell ? "${pkgs.coreutils}/bin/false", groups ? [ ] }:
-    "${k}:x:${toString uid}:${toString gid}:${description}:${home}:${shell}";
-  userToShadow = k: { ... }: "${k}:!:1::::::";
-  userToUseradd = k:
-    { uid, gid ? 65534, groups ? [ ], ... }:
-    "useradd --uid=${toString uid} --gid=${toString gid} ${
-      lib.optionalString (groups != [ ]) "-G ${lib.concatStringsSep "," groups}"
-    } ${k}";
-  passwdContents = lib.concatStringsSep "\n"
-    (lib.attrValues (lib.mapAttrs userToPasswd users));
-  shadowContents = lib.concatStringsSep "\n"
-    (lib.attrValues (lib.mapAttrs userToShadow users));
-  createAllUsers = lib.concatStringsSep "\n"
-    (lib.attrValues (lib.mapAttrs userToUseradd users));
-
-  groupToGroup = k: { gid }: "${k}:x:${toString gid}:";
-  groupToGroupadd = k: { gid }: "groupadd --gid=${toString gid} ${k}";
-  createAllGroups = lib.concatStringsSep "\n"
-    (lib.attrValues (lib.mapAttrs groupToGroupadd groups));
-  groupContents = lib.concatStringsSep "\n"
-    (lib.attrValues (lib.mapAttrs groupToGroup groups));
-
-  passwd = pkgs.runCommand "passwd" {
+groups = {
+  root.gid = 0;
+  user.gid = 1000;
+  nixbld.gid = 30000;
+};
+userToPasswd = k:
+  { uid, gid ? 65534, home ? "/var/empty"
+  , description ? ""
+  , shell ? "${pkgs.coreutils}/bin/false", groups ? [ ] }:
+  "${k}:x:${toString uid}:${toString gid}:${description}:${home}:${shell}";
+userToShadow = k: { ... }: "${k}:!:1::::::";
+userToUseradd = k:
+  { uid, gid ? 65534, groups ? [ ], ... }:
+  "useradd --uid=${toString uid} --gid=${toString gid} ${
+    lib.optionalString (groups != [ ]) "-G ${lib.concatStringsSep "," groups}"
+  } ${k}";
+passwdContents = lib.concatStringsSep "\n"
+  (lib.attrValues (lib.mapAttrs userToPasswd users));
+shadowContents = lib.concatStringsSep "\n"
+  (lib.attrValues (lib.mapAttrs userToShadow users));
+createAllUsers = lib.concatStringsSep "\n"
+  (lib.attrValues (lib.mapAttrs userToUseradd users));
+groupToGroup = k: { gid }: "${k}:x:${toString gid}:";
+groupToGroupadd = k: { gid }: "groupadd --gid=${toString gid} ${k}";
+createAllGroups = lib.concatStringsSep "\n"
+  (lib.attrValues (lib.mapAttrs groupToGroupadd groups));
+groupContents = lib.concatStringsSep "\n"
+  (lib.attrValues (lib.mapAttrs groupToGroup groups));
+passwd = pkgs.runCommand "passwd" {
     inherit passwdContents groupContents shadowContents;
     passAsFile = [ "passwdContents" "groupContents" "shadowContents" ];
     allowSubstitutes = false;
@@ -151,31 +115,37 @@ depsImage = buildImage {
   name = "fahree/gerbil-nix-deps";
   tag = "latest";
   contents = allDeps;
+  keepContentsDirlinks = true;
 };
 gambitImage = buildImage {
   name = "fahree/gerbil-nix-gambit";
   tag = "latest";
   fromImage = depsImage;
   contents = pkgs.gambit-unstable;
+  keepContentsDirlinks = true;
 };
 gerbilImage = buildImage {
   name = "fahree/gerbil-nix-gerbil";
   tag = "latest";
-  fromImage = gambitImage;
+  #fromImage = gambitImage;
   contents = pkgs.gerbil-unstable;
+  keepContentsDirlinks = true;
 };
 allImage = buildImage {
   name = "fahree/gerbil-nix-all";
   tag = "latest";
   fromImage = gerbilImage;
   contents = allGerbils;
-}; in
-buildImageWithNixDb allContents {
+  keepContentsDirlinks = true;
+};
+nixImage = buildImage {
   name = "fahree/gerbil-nix";
   tag = "latest";
   fromImage = allImage;
   contents = [];
+  keepContentsDirlinks = true;
   extraCommands = ''
+    ${dockerTools.mkDbExtraCommand allContents}
     # The user may have to chown / chmod these in a future Dockerfile pass
     # and/or in the entrypoint
     mkdir home
@@ -192,6 +162,7 @@ buildImageWithNixDb allContents {
       "NIX_SSL_CERT_FILE==${pkgs.cacert.out}/etc/ssl/certs/ca-bundle.crt"
       "NIX_PATH=nixpkgs=${pkgs.path}"
     ];
+
 #    ExposedPorts = {
 #      "7777/tcp" = {};
 #    };
@@ -200,7 +171,9 @@ buildImageWithNixDb allContents {
 #      "/home" = {};
 #    };
   };
-}
+}; in
+#{ inherit nixImage; }
+{ inherit gerbilImage; }
 
 ## Note that I originally tried to use a Dockerfile as follows,
 ## but the process is *way* too slow, as in addition to the emulation slowdown,
