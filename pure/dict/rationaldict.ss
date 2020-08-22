@@ -27,8 +27,9 @@
 ;; rationaldict-empty? : [Rationaldictof V] -> Bool
 (def (rationaldict-empty? d) (bare-rationaldict-empty? (rationaldict-unwrapped d)))
 
-;; rationaldict-ref : [Rationaldictof V] Int -> V
-(def (rationaldict-ref d k) (bare-rationaldict-ref (rationaldict-unwrapped d) k))
+;; rationaldict-ref : [Rationaldictof V] Int [-> V] -> V
+(def (rationaldict-ref d k (default (cut error "No value associated with key" d k)))
+  (bare-rationaldict-ref (rationaldict-unwrapped d) k default))
 
 ;; rationaldict-put : [Rationaldictof V] Int V -> [Rationaldictof V]
 (def (rationaldict-put d k v) (rationaldict (bare-rationaldict-put (rationaldict-unwrapped d) k v)))
