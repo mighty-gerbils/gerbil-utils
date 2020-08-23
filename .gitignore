@@ -1,4 +1,6 @@
 build-deps
 version.ss
-scripts/result
 run/
+
+result
+foo
