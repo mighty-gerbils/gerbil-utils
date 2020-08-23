@@ -58,9 +58,12 @@
                 regex: (regex "-test.ss$")
                 test-files: (test-files (find-test-files pkgdir regex)))
   (def package-prefix (read-package-prefix pkgdir))
-  (apply run-tests! (map (cut find-file-test <> pkgdir package-prefix) test-files))
-  (test-report-summary!)
-  (eqv? 'OK (test-result)))
+  (def tests (map (cut find-file-test <> pkgdir package-prefix) test-files))
+  (cond
+   ((null? tests) (displayln "No tests found"))
+   (else (apply run-tests! tests)
+         (test-report-summary!)
+         (eqv? 'OK (test-result)))))
 
 (def (%set-test-environment! script-path add-load-path)
   ;;(write [script-path: script-path add-load-path: add-load-path])(newline)
