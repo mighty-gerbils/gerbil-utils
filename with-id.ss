@@ -1,6 +1,12 @@
 (export #t)
 
-(import ./syntax (for-syntax ./syntax))
+(import ./syntax (for-syntax ./base ./syntax))
+
+(defrules defsyntax/unhygienic ()
+  ((_ (m-id stx) body ...)
+   (defsyntax m-id (compose syntax-local-introduce (lambda (stx) body ...) syntax-local-introduce)))
+  ((_ m-id f-expr) (identifier? #'m-id)
+   (defsyntax m-id (compose syntax-local-introduce f-expr syntax-local-introduce))))
 
 ;; Written with the precious help of Alex Knauth
 (defsyntax (with-id stx)
@@ -19,9 +25,7 @@
                                          (id (identifier? #'id) #'(id 'id))))
                              #'(id-spec ...))))
        #'(begin
-           (defsyntax (m stx2)
-             (def stx3 (syntax-local-introduce stx2))
-             (with-syntax (;;(ctx (stx-car (stx-cdr stx2))) ;; not needed thanks to syntax-local-introduce
-                           (id (identifierify (stx-car (stx-cdr stx3)) expr)) ...)
-               (syntax-local-introduce (... #'(... template)))))
+           (defsyntax/unhygienic (m stx2)
+             (with-syntax ((id (identifierify (stx-car (stx-cdr stx2)) expr)) ...)
+               (... #'(... template))))
            (m ctx))))))
