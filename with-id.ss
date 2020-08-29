@@ -20,6 +20,8 @@
                              #'(id-spec ...))))
        #'(begin
            (defsyntax (m stx2)
-             (with-syntax ((id (identifierify (quote-syntax ctx) expr)) ...)
-               (... #'(... template))))
-           (m))))))
+             (def stx3 (syntax-local-introduce stx2))
+             (with-syntax (;;(ctx (stx-car (stx-cdr stx2))) ;; not needed thanks to syntax-local-introduce
+                           (id (identifierify (stx-car (stx-cdr stx3)) expr)) ...)
+               (syntax-local-introduce (... #'(... template)))))
+           (m ctx))))))
