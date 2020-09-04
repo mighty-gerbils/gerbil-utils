@@ -122,3 +122,7 @@
       (let-values (((q r) (round/ (- x) (- y))))
         (values q (- r)))))
    ((zero? x) (values 0 0))))
+
+;; TODO: accelerate that!
+(def (expt-mod x e n)
+  (modulo (expt x e) n))
