@@ -261,3 +261,27 @@
   (def c (make-completion))
   (completion-post! c val)
   c)
+
+;; internal all-thread-parameters : [Parameterof [Listof Parameter]]
+(def all-thread-parameters (make-parameter []))
+;; call-with-re-parameterize : [Listof Parameter] [-> Any] -> Any
+(def (call-with-re-parameterize ps f)
+  (match ps
+    ([] (f))
+    ([p . rst] (parameterize ((p (p))) (call-with-re-parameterize rst f)))))
+
+;; make-thread-parameter : A -> [Parameterof A]
+;; Creates a parameter that is local to threads created by spawn/name/params
+(def (make-thread-parameter v)
+  (def p (make-parameter v))
+  (all-thread-parameters (cons p (all-thread-parameters)))
+  p)
+;; spawn/name/params : Symbol [-> Any] port: OutputPort -> Thread
+;; includes logged
+;; Spawns a thread that makes sure thread-parameters are local to it
+(def (spawn/name/params name function port: (port (current-error-port)))
+  (spawn/name/logged
+   name
+   (lambda ()
+     (call-with-re-parameterize (all-thread-parameters) function))
+   port: port))
