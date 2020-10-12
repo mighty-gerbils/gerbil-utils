@@ -1,14 +1,16 @@
 ;; -*- Gerbil -*-
 ;;;; Utilities to generate diceware phrases
+;; Usage: Have DICEWARE_FILE point to the path of your favorite diceware word list:
+;; https://theworld.com/~reinhold/diceware.html
+;; https://github.com/ulif/diceware/blob/master/docs/wordlists.rst
+;; https://github.com/bitcoin/bips/blob/master/bip-0039/bip-0039-wordlists.md
 
-(export
-  #t)
+(export #t)
 
 (import
   :gerbil/gambit/random
   :std/format :std/iter :std/misc/list :std/misc/ports :std/pregexp :std/srfi/13 :std/sugar
   ./base ./basic-parsers ./basic-printers ./basic-parsers ./number ./random)
-
 
 (def diceware-file (getenv "DICEWARE_FILE" #f))
 
@@ -89,6 +91,6 @@
          (i (or index (random-integer len))))
     (vector-ref words i)))
 
-;; 20 words of 5 dice is just over 258 bits.
+;; 20 words of 5 dice is just over 258 bits. Half of that is probably more than needed.
 (def (diceware-phrase (n-words 20))
   (string-join (with-list-builder (c _) (for (_ (in-iota n-words)) (c (diceware-word)))) " "))
