@@ -7,7 +7,7 @@
   :gerbil/gambit/bits :gerbil/gambit/bytes :gerbil/gambit/exact
   :scheme/base
   :std/misc/bytes :std/sugar
-  ./base)
+  ./base ./ports)
 
 ;;;; Numbers
 (def (integer-part real)
@@ -95,14 +95,15 @@
 (def (R<= x y) (not (R< y x)))
 
 (def (display-integer/fit n width out)
-  (assert! (exact-integer? n))
-  (assert! (nat? n))
-  (assert! (plus? width))
-  (let* ((digits (number->string n))
-         (padding (- width (string-length digits))))
-    (assert! (nat? padding))
-    (display (make-string padding #\0) out)
-    (display digits out)))
+  (with-output (out)
+    (assert! (exact-integer? n))
+    (assert! (nat? n))
+    (assert! (plus? width))
+    (let* ((digits (number->string n))
+           (padding (- width (string-length digits))))
+      (assert! (nat? padding))
+      (display (make-string padding #\0) out)
+      (display digits out))))
 
 ;; TODO: make it so we round towards the closest even number when right in the middle
 (def (round/ x y)
