@@ -41,3 +41,6 @@
 
 (def list<-cons (λ-match ([x . y] [x y])))
 
+;; index-of : [Listof Any] Any -> (Or Nat #f)
+(def (index-of lst e)
+  (list-index (cut equal? e <>) lst))
