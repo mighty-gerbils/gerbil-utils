@@ -17,6 +17,8 @@
                   5)
     (check-equal? (dicteq-ref (list->dicteq '((red . 5) (blue . 4) (black . 1))) 'black)
                   1)
+    (check-equal? (dicteq-ref (list->dicteq '((red . 5) (blue . 4) (black . 1))) 'green (lambda () 'go-fish))
+                  'go-fish)
 
     (check dicteq=?
            (dicteq-put empty-dicteq 'red [255 0 0])
