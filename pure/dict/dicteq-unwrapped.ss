@@ -35,10 +35,10 @@
 
 ;; dicteq-ref : [DictEqof K V] K ?[-> V] -> V
 (def (dicteq-ref d k (default (cut error "No value associated with key" d k)))
-  (def a (rationaldict-ref d (eq?-hash k)))
+  (def a (rationaldict-ref d (eq?-hash k) (cut list)))
   (def e (assq k a))
   (cond (e (cdr e))
-        (else (error 'dicteq-ref))))
+        (else (default))))
 
 ;; dicteq-put : [DictEqof K V] K V -> [DictEqof K V]
 (def (dicteq-put d k v)
