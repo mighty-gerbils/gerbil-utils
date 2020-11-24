@@ -30,10 +30,13 @@
         (values string #f)))
     (values #f #f)))
 
-(def (parse-github-argument arg)
-  (defvalues (owner/repo branch) (separate-string-suffix #\@ arg))
-  (defvalues (owner repo) (separate-string-prefix #\/ owner/repo))
-  (values owner repo branch))
+(def (parse-repo-argument arg)
+  (match (pregexp-match "^(?:(github|gitlab)(?:.com)?/)?([-_.a-zA-Z0-9]+)/([-_.a-zA-Z0-9]+)(?:@([-_.a-zA-Z0-9]+))?$" arg)
+    ([_ site_ owner repo-name branch]
+     (let (site (or site_ "github"))
+       (values (format "https://~a.com/~a/~a" site owner repo-name) site owner repo-name branch)))
+    (#f
+     (error "Can't parse repo" arg))))
 
 (def (pregexp-string-replacer prefix old suffix new)
   (cut pregexp-replace
@@ -45,7 +48,7 @@
 
 (def (update-recipe
       name: name
-      github: github
+      repo: repo
       recipe-path: recipe-path
       checkouts-dir: (checkouts-dir #f)
       source-dir: (source-dir_ #f)
@@ -56,8 +59,7 @@
     (path-expand (or dir reponame) (or checkouts-dir (default-checkouts-dir))))
   (def source-dir (defaultize source-dir_ name))
   (def nixpkgs-dir (defaultize nixpkgs-dir_ "nixpkgs"))
-  (defvalues (gh-owner gh-repo git-tree) (parse-github-argument github))
-  (def repo-url (format "https://github.com/~a/~a" gh-owner gh-repo))
+  (defvalues (repo-url site owner repo-name git-tree) (parse-repo-argument repo))
   (def recipe-file (path-expand recipe-path nixpkgs-dir))
 
   ;; Update source directory via git fetch
@@ -109,8 +111,8 @@
         [(pregexp-string-replacer "  version = \"" "[-.0-9A-Za-z]+" "\";" package-version)
          (pregexp-string-replacer " git-version = \"" "[-.0-9A-Za-z]+" "\";" git-version)
          (pregexp-string-replacer "    rev = \"" "[0-9a-f]+" "\";" latest-commit-hash)])...
-      (pregexp-string-replacer "    owner = \"" "[-.0-9A-Za-z]+" "\";" gh-owner)
-      (pregexp-string-replacer "    repo = \"" "[-.0-9A-Za-z]+" "\";" gh-repo)
+      (pregexp-string-replacer "    owner = \"" "[-.0-9A-Za-z]+" "\";" owner)
+      (pregexp-string-replacer "    repo = \"" "[-.0-9A-Za-z]+" "\";" repo-name)
       (pregexp-string-replacer "    sha256 = \"" "[0-9a-z]+" "\";" nix-source-hash)])))
 
 (def (recipe-path lang file)
@@ -141,14 +143,16 @@
      (option 'gerbil-dir "-Y" "--gerbil-crypto-dir" default: #f
              help: "git checkout directory for gerbil-crypto")
      (option 'gerbil-dir "-E" "--gerbil-ethereum-dir" default: #f
-             help: "git checkout directory for gerbil-ethereum")))
+             help: "git checkout directory for gerbil-ethereum")
+     (option 'gerbil-dir "-p" "--gerbil-libp2p-dir" default: #f
+             help: "git checkout directory for gerbil-libp2p")))
   (try
    (let ((opt (getopt-parse gopt arguments)))
      (defrule {symbol} (hash-get opt 'symbol))
      (unless {gambit-off}
        (update-recipe
         name: "gambit"
-        github: (or {gambit-github} "feeley/gambit")
+        repo: (or {gambit-github} "feeley/gambit")
         recipe-path: (recipe-path "gambit" (if {stable} "default" "unstable"))
         checkouts-dir: {checkouts-dir}
         source-dir: {gambit-dir}
@@ -157,7 +161,7 @@
      (unless {gerbil-off}
        (update-recipe
         name: "gerbil"
-        github: (or {gerbil-github} "vyzo/gerbil")
+        repo: (or {gerbil-github} "vyzo/gerbil")
         recipe-path: (recipe-path "gerbil" (if {stable} "default" "unstable"))
         checkouts-dir: {checkouts-dir}
         source-dir: {gerbil-dir}
@@ -166,7 +170,7 @@
      (unless (or {gerbil-off} {stable})
        (update-recipe
         name: "gerbil-utils"
-        github: "fare/gerbil-utils"
+        repo: "fare/gerbil-utils"
         recipe-path: (recipe-path "gerbil" "gerbil-utils")
         checkouts-dir: {checkouts-dir}
         source-dir: {gerbil-utils-dir}
@@ -175,7 +179,7 @@
      (unless (or {gerbil-off} {stable})
        (update-recipe
         name: "gerbil-crypto"
-        github: "fare/gerbil-crypto"
+        repo: "fare/gerbil-crypto"
         recipe-path: (recipe-path "gerbil" "gerbil-crypto")
         checkouts-dir: {checkouts-dir}
         source-dir: {gerbil-crypto-dir}
@@ -184,7 +188,7 @@
      (unless (or {gerbil-off} {stable})
        (update-recipe
         name: "gerbil-poo"
-        github: "fare/gerbil-poo"
+        repo: "fare/gerbil-poo"
         recipe-path: (recipe-path "gerbil" "gerbil-poo")
         checkouts-dir: {checkouts-dir}
         source-dir: {gerbil-crypto-dir}
@@ -193,7 +197,7 @@
      (unless (or {gerbil-off} {stable})
        (update-recipe
         name: "gerbil-persist"
-        github: "fare/gerbil-persist"
+        repo: "fare/gerbil-persist"
         recipe-path: (recipe-path "gerbil" "gerbil-persist")
         checkouts-dir: {checkouts-dir}
         source-dir: {gerbil-crypto-dir}
@@ -202,10 +206,19 @@
      (unless (or {gerbil-off} {stable})
        (update-recipe
         name: "gerbil-ethereum"
-        github: "fare/gerbil-ethereum"
+        repo: "fare/gerbil-ethereum"
         recipe-path: (recipe-path "gerbil" "gerbil-ethereum")
         checkouts-dir: {checkouts-dir}
         source-dir: {gerbil-ethereum-dir}
+        nixpkgs-dir: {nixpkgs-dir}
+        stable: {stable}))
+     (unless (or {gerbil-off} {stable})
+       (update-recipe
+        name: "gerbil-libp2p"
+        repo: "github/vyzo/gerbil-libp2p"
+        recipe-path: (recipe-path "gerbil" "gerbil-libp2p")
+        checkouts-dir: {checkouts-dir}
+        source-dir: {gerbil-libp2p-dir}
         nixpkgs-dir: {nixpkgs-dir}
         stable: {stable})))
    (catch (getopt-error? exn)
