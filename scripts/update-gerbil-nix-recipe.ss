@@ -220,6 +220,15 @@
         checkouts-dir: {checkouts-dir}
         source-dir: {gerbil-libp2p-dir}
         nixpkgs-dir: {nixpkgs-dir}
+        stable: {stable}))
+     (unless (or {gerbil-off} {stable})
+       (update-recipe
+        name: "glow"
+        repo: "gitlab/mukn/glow"
+        recipe-path: (recipe-path "gerbil" "glow")
+        checkouts-dir: {checkouts-dir}
+        source-dir: {glow-dir}
+        nixpkgs-dir: {nixpkgs-dir}
         stable: {stable})))
    (catch (getopt-error? exn)
      (getopt-display-help exn "update-gerbil-nix-recipe" (current-error-port))
