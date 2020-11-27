@@ -5,7 +5,9 @@
 
 (import
   :gerbil/gambit/ports
-  :std/misc/alist :std/misc/ports :std/misc/plist :std/misc/rtd :std/sort :std/sugar :std/text/json
+  :std/iter :std/misc/alist :std/misc/hash :std/misc/list-builder
+  :std/misc/ports :std/misc/plist :std/misc/rtd
+  :std/sort :std/srfi/43 :std/sugar :std/text/json
   ./base ./list ./files ./subprocess)
 
 (def (trivial-json<-object object)
@@ -17,6 +19,45 @@
   (def (find-key s) (or (##find-interned-keyword s) (error "invalid json key for class" s klass)))
   (apply make-class-instance klass (alist->plist (map (cut map/car find-key <>) (hash->list json)))))
 
+(def (trivial-json<-struct struct)
+  (defvalues (strukt fields) (cons->values (struct->list struct)))
+  (def names (cdr (assoc fields: (type-descriptor-plist strukt))))
+  (def json (make-hash-table))
+  (def f (if (json-symbolic-keys) identity symbol->string))
+  (for ((name names) (v fields)) (hash-put! json (f name) v))
+  json)
+
+(def (trivial-struct<-json strukt json (defaults #f))
+  (unless defaults (set! defaults (hash)))
+  (def names (list->vector (cdr (assoc fields: (type-descriptor-plist strukt)))))
+  (def positions (invert-hash<-vector names))
+  (def (pos<-field f)
+    (def s (cond
+            ((symbol? f) f)
+            ((string? f) (##find-interned-symbol f))
+            (else #f)))
+    (or (hash-get positions s)
+        (error "invalid json key for struct" f strukt json)))
+  (def n (vector-length names))
+  (def fields (make-vector n #f))
+  (def bound? (make-vector n #f))
+  (for (((values k v) (in-hash json)))
+    (let (p (pos<-field k))
+      (when (vector-ref bound? p) (error "field multiply defined" k strukt json))
+      (vector-set! bound? p #t)
+      (vector-set! fields p v)))
+  (def unbounds
+    (with-list-builder (c)
+     (for ((i (in-naturals))
+           (b? bound?)
+           (name names))
+       (cond
+        (b? (void))
+        ((hash-key? defaults name) (vector-set! fields i (hash-ref defaults name)))
+        (else (c name))))))
+  (unless (null? unbounds)
+    (error "unbound fields" unbounds strukt json))
+  (apply make-struct-instance strukt (vector->list fields)))
 
 ;; Mixin for a trivial method that just lists all slots
 (defclass jsonable ())

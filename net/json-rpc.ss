@@ -7,7 +7,7 @@
   :std/error :std/format :std/net/request :std/text/json :std/sugar
   ../base ../json ../maybe ./simple-http-client)
 
-(defclass (json-rpc-error jsonable)
+(defclass (json-rpc-error jsonable exception)
   (code    ;; SInt16
    message ;; String
    data)   ;; (Maybe Bytes)
@@ -15,6 +15,8 @@
 (defmethod {:init! json-rpc-error}
   (lambda (self code: code message: message data: (data (void)))
     (class-instance-init! self code: code message: message data: data)))
+(def (json-rpc-error<-json json)
+  (trivial-object<-json json-rpc-error::t json))
 
 (def json-rpc-version "2.0")
 
@@ -103,7 +105,7 @@
       (match error-response-json
         ((error-response jsonrpc: jsonrpc error: error-json id: id)
          (let (error-json (checking jsonrpc error-json id))
-           (raise (with-catch mal (cut trivial-object<-json json-rpc-error::t error-json)))))))))
+           (raise (with-catch mal (cut json-rpc-error<-json error-json)))))))))
 
 (def (string<-request method params id)
   (try (string<-json (json-rpc-request jsonrpc: json-rpc-version method: method params: params id: id))

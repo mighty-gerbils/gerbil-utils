@@ -2,7 +2,7 @@
 
 (import
   :std/misc/repr :std/sugar :std/test :std/text/json
-  ../../json ../../maybe
+  :clan/base :clan/json :clan/maybe
   ../json-rpc)
 
 (def json-rpc-test
@@ -14,16 +14,23 @@
       (check-equal? (decode-json-rpc-response
                      1+ 69 (json<-string "{\"jsonrpc\": \"2.0\", \"result\": 1776, \"id\": 69}"))
                     1777))
+    (test-case "error equality"
+      (check equal-object?
+             (json-rpc-error code: -151 message: "foo" data: [1])
+             (json-rpc-error code: -151 message: "foo" data: [1]))
+      (check equal-object?
+             (json-rpc-error code: -151 message: "foo")
+             (json-rpc-error code: -151 message: "foo" data: (void))))
     (test-case "decode error 1"
       (def response-json
         (json<-string "{\"jsonrpc\": \"2.0\", \"error\": { \"code\": -151, \"message\": \"foo\", \"data\": [1] }, \"id\": 42 }"))
-      (check-equal? (with-catch identity (lambda () (decode-json-rpc-response 1+ 42 response-json) #f))
-                    (json-rpc-error code: -151 message: "foo" data: [1])))
+      (check-exception (decode-json-rpc-response 1+ 42 response-json)
+                       (cut equal-object? <> (json-rpc-error code: -151 message: "foo" data: [1]))))
     (test-case "decode error 2"
       (def response-json
         (json<-string "{\"jsonrpc\": \"2.0\", \"id\": 15 , \"error\": { \"code\": -32602, \"message\": \"non-array args\"}}\n"))
-      (check-equal? (with-catch identity (lambda () (decode-json-rpc-response 1+ 15 response-json) #f))
-                    (json-rpc-error code: -32602 message: "non-array args" data: (void))))
+      (check-exception (decode-json-rpc-response 1+ 15 response-json)
+                       (cut equal-object? <> (json-rpc-error code: -32602 message: "non-array args"))))
     (test-case "decode malformed 1"
       (def response-json
         (json<-string

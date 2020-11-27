@@ -340,3 +340,10 @@
     ((_ (name . formals) body ...)
      (with-syntax ((n (datum->syntax #'stx (string->uninterned-symbol (repr (syntax->datum #'name))))))
        #'(let () (def (n . formals) body ...) n)))))
+
+;; Compare two struct's, when they are not equal: #t or transparent: #t, or have an ancestor that isn't.
+(def (equal-struct? e1 e2)
+  (equal? (struct->list e1) (struct->list e2)))
+;; Compare two object's, when they are not equal: #t or transparent: #t, or have an ancestor that isn't.
+(def (equal-object? e1 e2)
+  (equal? (class->list e1) (class->list e2))) ;; NB: order determined by two traversals of the same hash-table
