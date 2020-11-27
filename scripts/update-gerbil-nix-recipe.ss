@@ -225,7 +225,7 @@
        (update-recipe
         name: "glow"
         repo: "gitlab/mukn/glow"
-        recipe-path: (recipe-path "gerbil" "glow")
+        recipe-path: (recipe-path "gerbil" "glow-lang")
         checkouts-dir: {checkouts-dir}
         source-dir: {glow-dir}
         nixpkgs-dir: {nixpkgs-dir}
