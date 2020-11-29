@@ -41,7 +41,7 @@
   "Create a Docker image for Gerbil"
   (def gopt
     (getopt
-     (option 'nixpkgs "-N" "--nixpkgs" default: #f
+     (option 'nixpkgs "-f" "--nixpkgs" default: #f
              help: "nixpkgs directory (default: sibling to this checkout)")
      (option 'stable "-S" "--stable" default: #f
              help: "update stable recipes instead of unstable (default: unstable)")))

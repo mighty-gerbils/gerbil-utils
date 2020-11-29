@@ -3,7 +3,7 @@
 
 (import
   :gerbil/expander
-  :std/misc/process :std/srfi/1)
+  :std/misc/process :std/srfi/1 :std/sugar)
 
 (def srcdir (path-normalize (path-directory (this-source-file))))
 (current-directory srcdir)
@@ -24,10 +24,26 @@
  name: "Gerbil-utils"
  spec: files)
 
-(def (build-docker (tag #f))
-  (run-process ["./scripts/make-docker-image.ss"]
-               stdin-redirection: #f stdout-redirection: #f))
+(def (build-docker . opts)
+  (void (run-process ["./scripts/make-docker-image.ss"]
+                     stdin-redirection: #f stdout-redirection: #f)))
 (clan/multicall#register-entry-point
  "docker" build-docker help: "build a Gerbil NixOS docker image")
+
+(def (build-nixpkgs . opts)
+  (void (run-process ["nix-env" "--show-trace" opts ... "-iA" "gerbilPackages-unstable"])))
+(clan/multicall#register-entry-point
+ "nixpkgs" build-nixpkgs help: "build all gerbil packages and their dependencies")
+
+(def (publish-nixpkgs . opts)
+  (clan/base#!>
+   (run-process ["nix" "path-info" opts ... "-r" "gerbilPackages-unstable"])
+   (cut string-split <> #\newline)
+   (cut cons* "cachix" "push" "mukn" <>)
+   (cut run-process <> stdin-redirection: #f stdout-redirection: #f)
+   void))
+
+(clan/multicall#register-entry-point
+ "publish" publish-nixpkgs help: "publish all gerbil packages and their dependencies to cachix")
 
 (def main clan/multicall#call-entry-point)
