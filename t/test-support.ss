@@ -19,9 +19,14 @@
 (def (test-dir? x)
   (equal? "t" (path-strip-directory x)))
 
+;; Given a directory name (with no trailing /), is it a dependency directory named "dep"?
+(def (dep-dir? x)
+  (equal? "dep" (path-strip-directory x)))
+
 ;; Given a package directory, find all test directories (named "t") under it.
 (def (find-test-directories pkgdir)
-  (map shorten-path (find-files pkgdir test-dir? recurse?: (lambda (x) (not (test-dir? x))))))
+  (map shorten-path (find-files pkgdir test-dir?
+                                recurse?: (lambda (x) (not (or (test-dir? x) (dep-dir? x)))))))
 
 ;; Given a package directory, find all test files (with name ending in "-test.ss")
 ;; in all test directories (named "t") under it.
