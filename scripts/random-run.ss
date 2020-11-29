@@ -53,3 +53,5 @@
    (catch (uncaught-exception? exn)
      (display-exception (uncaught-exception-reason exn) (current-error-port))
      (exit 1))))
+
+(def main random-run)
