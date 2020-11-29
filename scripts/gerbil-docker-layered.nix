@@ -144,7 +144,7 @@ in buildLayeredImageWithNixDb {
 
   contents = with pkgs;[
     # For a basic Nix environment:
-    nix bashInteractive cacert coreutils gnutar gzip
+    nix bashInteractive cacert coreutils gnutar gzip cachix
     # Basic survivable interaction environment:
     zsh su screen less git openssh xz
     # Basic development environment for gerbil:
@@ -156,8 +156,10 @@ in buildLayeredImageWithNixDb {
   extraCommands = ''
     # The user may have to chown / chmod these in a future Dockerfile pass
     # and/or in the entrypoint
-    mkdir -p home && \
+    mkdir -p home &&
     echo "#" > home/.zshrc
+    # Remember a list of all package paths
+    nix path-info --all > /tmp/store-path-pre-build
   '';
 
   config = {
