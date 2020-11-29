@@ -141,6 +141,7 @@ in buildLayeredImageWithNixDb {
 
   name = "fahree/gerbil-nix";
   tag = "latest";
+  maxLayers = 2;
 
   contents = with pkgs;[
     # For a basic Nix environment:
@@ -158,8 +159,8 @@ in buildLayeredImageWithNixDb {
     # and/or in the entrypoint
     mkdir -p home &&
     echo "#" > home/.zshrc
-    # Remember a list of all package paths
-    nix path-info --all > /tmp/store-path-pre-build
+    ## Remember a list of all package paths:
+    #### nix path-info --all > /tmp/store-path-pre-build
   '';
 
   config = {
