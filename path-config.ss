@@ -4,6 +4,7 @@
 (export #t)
 
 (import
+  :std/sugar
   ./base ./config ./filesystem ./path)
 
 ;; These paths should be defined or redefined somewhere in your application,
@@ -20,6 +21,15 @@
 (def data-directory (values (λ () (path-expand "data" (home-directory))))) ;; static data
 (def run-directory (values (λ () (path-expand "run" (home-directory))))) ;; transient state
 (def log-directory (values (λ () (path-expand "log" (run-directory))))) ;; logs
+
+;; TODO: maybe have a notion of "first to post, then immutable" variable,
+;; and of "if not defined yet, try this, then some default, or some default, then this".
+;; Then have the API to our configuration values be a function that before/after such defaults,
+;; or registers them for future evaluation?
+(def (home-directory-default! thunk)
+  (try (home-directory) (catch (_) (let (home (thunk)) (set! home-directory (lambda () home))))))
+(def (source-directory-default! thunk)
+  (try (source-directory) (catch (_) (let (source (thunk)) (set! source-directory (lambda () source))))))
 
 (def (bin-path . x) (apply subpath (bin-directory) x))
 (def (cache-path . x) (apply subpath (cache-directory) x))
