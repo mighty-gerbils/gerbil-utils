@@ -92,7 +92,7 @@
 (def (normalize-spec x gsc-options)
   (match x
     ((? string?) [gxc: x . gsc-options])
-    ([(? (cut member <> '(gxc: gsc: exe:))) . _] (append x gsc-options))))
+    ([(? (cut member <> '(gxc: gsc: exe: static-exe:))) . _] (append x gsc-options))))
 
 (def (build-spec tcc: (tcc #f) optimize: (optimize #f))
   (def gsc-options (make-gsc-options tcc: tcc optimize: optimize

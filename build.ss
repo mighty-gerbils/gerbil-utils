@@ -24,6 +24,13 @@
  name: "Gerbil-utils"
  spec: files)
 
+(def (build-nix . opts)
+  (clan/building#create-version-file)
+  (run-process ["nix-build" opts ...])
+  (void))
+(clan/multicall#register-entry-point
+ "nix" build-nix help: "build using nix-build")
+
 (def (build-docker . opts)
   (void (run-process ["./scripts/make-docker-image.ss"]
                      stdin-redirection: #f stdout-redirection: #f)))

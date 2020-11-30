@@ -91,4 +91,4 @@
         (cut display version-text <>)))))
 
 ;; TODO: use FFI for that -- except it differs on Linux, BSD (mac?), Windows.
-(def machine-name (let (d (delay (string-trim-eol (run-process ["hostname"])))) (cut force d)))
+(def machine-name (let (d (delay (##os-host-name))) (cut force d)))
