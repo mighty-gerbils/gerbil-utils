@@ -5,7 +5,7 @@
 (import
   :gerbil/gambit/exceptions :gerbil/gambit/ports
   :std/getopt :std/misc/ports :std/misc/process :std/sugar
-  :clan/exit :clan/files :clan/multicall :clan/path :clan/source)
+  :clan/base :clan/exit :clan/files :clan/multicall :clan/path :clan/source)
 
 ;; Initialize paths from the environment
 (def here (path-directory (path-normalize (this-source-file))))
@@ -21,7 +21,8 @@
   (run-process ["docker" "push" tag]
                stdin-redirection: #f stdout-redirection: #f))
 
-(def (build-image nixpkgs_)
+;; TODO: resurrect a more deterministic way to build the image, with Nix
+(def (build-image-layered nixpkgs_)
   (def nixpkgs (or nixpkgs_ (path-expand "nixpkgs" checkouts-dir)))
   (def version
     (with-catch false (cut run-process '("git" "describe" "--tags" "--always") directory: nixpkgs)))
@@ -36,6 +37,20 @@
                directory: (path-parent here) stdin-redirection: #f stdout-redirection: #f)
   (docker-push "fahree/gerbil-utils:latest")
   (docker-push "fahree/gerbil-nix:latest"))
+
+(def (build-image nixpkgs_) ;; TODO: don't ignore the argument?
+  (run-process ["nix-env" "-f" "https://github.com/fare-patches/nixpkgs/archive/fare.tar.gz" "-iA"
+                "gerbil-unstable" "gerbilPackages-unstable"]
+               directory: here stdin-redirection: #f stdout-redirection: #f)
+  (!>
+   (run-process ["nix" "path-info" "-f" "https://github.com/fare-patches/nixpkgs/archive/fare.tar.gz" "-r" "gerbilPackages-unstable"])
+   (cut string-split <> #\newline)
+   (cut cons* "cachix" "push" "mukn" <>)
+   (cut run-process <> stdin-redirection: #f stdout-redirection: #f))
+  (create-directory* (path-expand "run/empty" (path-parent here)))
+  (run-process ["docker" "build" "-t" "fahree/gerbil-utils" "-f" "scripts/Dockerfile.nixos" "run/empty"]
+               directory: (path-parent here) stdin-redirection: #f stdout-redirection: #f)
+  (docker-push "fahree/gerbil-utils:latest"))
 
 (define-entry-point (make-gerbil-docker-image . arguments)
   "Create a Docker image for Gerbil"

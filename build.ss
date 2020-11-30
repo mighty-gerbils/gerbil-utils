@@ -49,7 +49,6 @@
    (cut cons* "cachix" "push" "mukn" <>)
    (cut run-process <> stdin-redirection: #f stdout-redirection: #f)
    void))
-
 (clan/multicall#register-entry-point
  "publish" publish-nixpkgs help: "publish all gerbil packages and their dependencies to cachix")
 

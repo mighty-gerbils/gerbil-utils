@@ -17,7 +17,7 @@ RUN \
 
 USER user
 WORKDIR /home
-ENV GAMBOPT i8,t8
+ENV GAMBOPT t8,f8,-8,i8,dRr
 
 # gerbil-utils is now included in the nix-built image already!
 ##RUN cd /gerbil ; git clone --branch $TREE https://github.com/fare/gerbil-utils.git
