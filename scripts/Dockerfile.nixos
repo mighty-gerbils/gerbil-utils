@@ -1,11 +1,18 @@
 FROM nixos/nix:latest
 
-# The echo commands tell you where you're at, but also allow you
+# TODO: instead, have a Dockerfile for each layer, that takes a directory with a bunch of nar files
+# from e.g. nix path-info -f $nixpkgs -r gambit-unstable | grep -v gambit-unstable
+# for i in $nix_store_paths ; do nix-store --dump $i > $(basename $i).nar ; done
+# Then installs them with nix-store --restore and use nix-env -i to add them to the environment.
+# The first layer install the trivial installation script used by subsequent layers.
+
+# Below, echo commands tell you where you're at, but also allow you
 # to force a rebuild by changing the number displayed.
 
 RUN echo A2 ; nix-env -iA cachix -f https://cachix.org/api/v1/install && cachix use mukn
 
-#BUN echo B0 ; nix-env -f https://github.com/obsidiansystems/nix-thunk/archive/master.tar.gz -iA command
+## Don't do that until they slim it down
+#RUN echo B0 ; nix-env -f https://github.com/obsidiansystems/nix-thunk/archive/master.tar.gz -iA command
 
 RUN echo C2 ; \
   mkdir -p /root/.config/nix && \
@@ -13,11 +20,19 @@ RUN echo C2 ; \
   echo trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ= iohk.cachix.org-1:DpRUyj7h7V830dp/i6Nti+NEO2/nhblbov/8MW7Rqoo= hydra.goguen-ala-cardano.dev-mantis.iohkdev.io-1:wh2Nepc/RGAY2UMvY5ugsT8JOz84BKLIpFbn7beZ/mo= mukn.cachix.org-1:ujoZLZMpGNQMeZbLBxmOcO7aj+7E5XSnZxwFpuhhsqs= \
   ) > /root/.config/nix/nix.conf
 
-RUN echo D2 ; nix-env -f https://github.com/fare-patches/nixpkgs/archive/fare.tar.gz -iA go-ethereum solc racket zsh su screen less git openssh xz bashInteractive
+RUN echo D3 ; nix-env -f https://github.com/fare-patches/nixpkgs/archive/fare.tar.gz -iA \
+  zsh su screen less git openssh xz bashInteractive \
+  go-ethereum solc racket \
+  glibc binutils pcre gnugrep zlib coreutils attr openssl acl libunistring libidn2 bash
 
-RUN echo E2 ; nix-env -f https://github.com/fare-patches/nixpkgs/archive/fare.tar.gz -iA gerbil-unstable
+## ^ The last line above is manually cooked from this list of dependencies of gambit:
+## nix path-info -f $nixpkgs -r gambit-unstable | grep -v gambit-unstable | perl -npe 's,^[^-]*-(([a-z][^-]*-)*[a-z][^-]*)(-[0-9].*)?$,$1,'
+
+RUN echo E4 ; nix-env -f https://github.com/fare-patches/nixpkgs/archive/fare.tar.gz -iA gambit-unstable.
+
+RUN echo F6 ; nix-env -f https://github.com/fare-patches/nixpkgs/archive/fare.tar.gz -iA gerbil-unstable
 
 ENV GAMBOPT t8,f8,-8,i8,dRr
 ENV GERBIL_LOADPATH /root/.nix-profile/gerbil/lib
 
-RUN echo F2 ; nix-env -f https://github.com/fare-patches/nixpkgs/archive/fare.tar.gz -iA gerbilPackages-unstable
+RUN echo G1 ; nix-env -f https://github.com/fare-patches/nixpkgs/archive/fare.tar.gz -iA gerbilPackages-unstable
