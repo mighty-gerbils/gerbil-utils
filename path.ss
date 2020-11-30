@@ -70,3 +70,5 @@
 
 (def (path-extension-is? path extension)
   (equal? (path-extension path) extension))
+
+;; TODO: something inspired by UIOP:TRUENAMIZE

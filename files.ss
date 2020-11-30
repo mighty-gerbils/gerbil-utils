@@ -11,7 +11,7 @@
 
 ;; Atomically replace a file by one produced from the contents using output-contents
 (def (clobber-file file contents settings: (settings '()))
-  (let* ((target (path-normalize file))
+  (let* ((target (with-catch (lambda (_) file) (cut path-normalize file)))
          (directory (path-directory target)))
     (call-with-temporary-file
      directory: directory

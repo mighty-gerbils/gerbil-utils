@@ -25,8 +25,8 @@
 
 ;; Given a package directory, find all test directories (named "t") under it.
 (def (find-test-directories pkgdir)
-  (map shorten-path (find-files pkgdir test-dir?
-                                recurse?: (lambda (x) (not (or (test-dir? x) (dep-dir? x)))))))
+  (find-files pkgdir test-dir?
+              recurse?: (lambda (x) (not (or (test-dir? x) (dep-dir? x))))))
 
 ;; Given a package directory, find all test files (with name ending in "-test.ss")
 ;; in all test directories (named "t") under it.
