@@ -11,14 +11,12 @@ MAINTAINER fahree@gmail.com
 USER root
 RUN \
   chown -R user.user /home && \
-  chmod -R u+w /home
+  chmod -R u+w /home && \
+  cachix use mukn
 
 USER user
 WORKDIR /home
 ENV GAMBOPT i8,t8
-
-RUN \
-  cachix use mukn
 
 # gerbil-utils is now included in the nix-built image already!
 ##RUN cd /gerbil ; git clone --branch $TREE https://github.com/fare/gerbil-utils.git

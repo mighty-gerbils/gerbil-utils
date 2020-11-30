@@ -45,6 +45,9 @@ let inherit (pkgs) lib;
 
             mkdir -p usr/bin
             ln -s ../../bin/env usr/bin
+
+            mkdir -p tmp
+            chmod 4755 tmp
           '' + extraCommands;
         }
       )
@@ -73,7 +76,7 @@ let inherit (pkgs) lib;
       gid = 30000;
       groups = [ "nixbld" ];
       description = "Nix build user ${toString n}";
-    }; }) (lib.lists.range 1 1));
+    }; }) (lib.lists.range 1 32));
 
   groups = {
     root.gid = 0;
