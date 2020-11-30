@@ -12,6 +12,7 @@ USER root
 RUN \
   chown -R user.user /home && \
   chmod -R u+w /home && \
+  chmod 4755 /tmp && \
   cachix use mukn
 
 USER user

@@ -47,7 +47,7 @@ let inherit (pkgs) lib;
             ln -s ../../bin/env usr/bin
 
             mkdir -p tmp
-            chmod 4755 tmp
+            chmod 755 tmp
           '' + extraCommands;
         }
       )
