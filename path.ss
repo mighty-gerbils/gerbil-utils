@@ -65,6 +65,9 @@
 (def (path-simplify-directory path)
   (path-simplify (path-directory path)))
 
+(def (path-normalized-directory path)
+  (path-normalize (path-directory path)))
+
 (def (path-parent path)
   (path-simplify (path-expand ".." path)))
 
