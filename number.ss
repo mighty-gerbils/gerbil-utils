@@ -46,11 +46,13 @@
 
 (def (bytes<-nat n (n-bytes (integer-length-in-bytes n)))
   (def bytes (make-bytes n-bytes))
-  (u8vector-uint-set! bytes 0 n big n-bytes)
+  (when (positive? n-bytes)
+    (u8vector-uint-set! bytes 0 n big n-bytes))
   bytes)
 
 (def (nat<-bytes bytes)
-  (u8vector-uint-ref bytes 0 big (bytes-length bytes)))
+  (def n-bytes (bytes-length bytes))
+  (if (zero? n-bytes) 0 (u8vector-uint-ref bytes 0 big n-bytes)))
 
 ;; Iterate a function with an integer argument ranging from one value
 ;; increasing by one until it reaches another value (excluded)
