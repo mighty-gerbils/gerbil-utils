@@ -103,3 +103,6 @@
 
 (def (json-normalize x)
   (json<-string (string<-json x)))
+
+(def (write-json-ln x (port (current-output-port)))
+  (write-json x port) (newline port))
