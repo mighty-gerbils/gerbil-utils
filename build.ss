@@ -44,7 +44,7 @@
 
 (def (publish-nixpkgs . opts)
   (clan/base#!>
-   (run-process ["nix" "path-info" opts ... "-r" "gerbilPackages-unstable"])
+   (run-process ["nix" "path-info" opts ... "-r" "gerbil-unstable" "gerbilPackages-unstable"])
    (cut string-split <> #\newline)
    (cut cons* "cachix" "push" "mukn" <>)
    (cut run-process <> stdin-redirection: #f stdout-redirection: #f)

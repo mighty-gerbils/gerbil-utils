@@ -11,7 +11,7 @@ FROM nixos/nix:latest
 
 RUN echo A2 ; nix-env -iA cachix -f https://cachix.org/api/v1/install && cachix use mukn
 
-## Don't do that until they slim it down
+## Don't do that until they slim it down significantly (and we push the result to cachix)
 #RUN echo B0 ; nix-env -f https://github.com/obsidiansystems/nix-thunk/archive/master.tar.gz -iA command
 
 RUN echo C2 ; \
@@ -20,15 +20,19 @@ RUN echo C2 ; \
   echo trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ= iohk.cachix.org-1:DpRUyj7h7V830dp/i6Nti+NEO2/nhblbov/8MW7Rqoo= hydra.goguen-ala-cardano.dev-mantis.iohkdev.io-1:wh2Nepc/RGAY2UMvY5ugsT8JOz84BKLIpFbn7beZ/mo= mukn.cachix.org-1:ujoZLZMpGNQMeZbLBxmOcO7aj+7E5XSnZxwFpuhhsqs= \
   ) > /root/.config/nix/nix.conf
 
-RUN echo D3 ; nix-env -f https://github.com/fare-patches/nixpkgs/archive/fare.tar.gz -iA \
+RUN echo D4 ; nix-env -f https://github.com/fare-patches/nixpkgs/archive/fare.tar.gz -iA \
   zsh su screen less git openssh xz bashInteractive \
   go-ethereum solc racket \
-  glibc binutils pcre gnugrep zlib coreutils attr openssl acl libunistring libidn2 bash
+  glibc binutils pcre gnugrep zlib coreutils attr openssl acl libunistring libidn2 bash \
+  c-ares postgresql mariadb-connector-c nghttp2 snappy patch sqlite libossp_uuid \
+  lmdb gawk libxml2 leveldb stdenv systemd libev curl ncurses \
+  gnumake diffutils nghttp2 patchelf libkrb5 icu  \
+  findutils libssh2 ed nghttp2 libyaml
 
-## ^ The last line above is manually cooked from this list of dependencies of gambit:
+## ^ The list above was manually cooked from dependencies of gambit, then similarly gerbil
 ## nix path-info -f $nixpkgs -r gambit-unstable | grep -v gambit-unstable | perl -npe 's,^[^-]*-(([a-z][^-]*-)*[a-z][^-]*)(-[0-9].*)?$,$1,'
 
-RUN echo E4 ; nix-env -f https://github.com/fare-patches/nixpkgs/archive/fare.tar.gz -iA gambit-unstable.
+RUN echo E5 ; nix-env -f https://github.com/fare-patches/nixpkgs/archive/fare.tar.gz -iA gambit-unstable
 
 RUN echo F6 ; nix-env -f https://github.com/fare-patches/nixpkgs/archive/fare.tar.gz -iA gerbil-unstable
 
