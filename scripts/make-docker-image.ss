@@ -38,12 +38,14 @@
   (docker-push "fahree/gerbil-utils:latest")
   (docker-push "fahree/gerbil-nix:latest"))
 
+(def nixpkgs "http://github.com/muknio/nixpkgs/archive/alpha.tar.gz")
+
 (def (build-image nixpkgs_) ;; TODO: don't ignore the argument?
-  (run-process ["nix-env" "-f" "https://github.com/fare-patches/nixpkgs/archive/fare.tar.gz" "-iA"
+  (run-process ["nix-env" "-f" nixpkgs "-iA"
                 "gerbil-unstable" "gerbilPackages-unstable"]
                directory: here stdin-redirection: #f stdout-redirection: #f)
   (!>
-   (run-process ["nix" "path-info" "-f" "https://github.com/fare-patches/nixpkgs/archive/fare.tar.gz" "-r" "gerbilPackages-unstable"])
+   (run-process ["nix" "path-info" "-f" nixpkgs "-r" "gerbilPackages-unstable"])
    (cut string-split <> #\newline)
    (cut cons* "cachix" "push" "mukn" <>)
    (cut run-process <> stdin-redirection: #f stdout-redirection: #f))

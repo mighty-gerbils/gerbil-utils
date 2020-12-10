@@ -20,7 +20,11 @@ RUN echo C2 ; \
   echo trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ= iohk.cachix.org-1:DpRUyj7h7V830dp/i6Nti+NEO2/nhblbov/8MW7Rqoo= hydra.goguen-ala-cardano.dev-mantis.iohkdev.io-1:wh2Nepc/RGAY2UMvY5ugsT8JOz84BKLIpFbn7beZ/mo= mukn.cachix.org-1:ujoZLZMpGNQMeZbLBxmOcO7aj+7E5XSnZxwFpuhhsqs= \
   ) > /root/.config/nix/nix.conf
 
-RUN echo D4 ; nix-env -f https://github.com/fare-patches/nixpkgs/archive/fare.tar.gz -iA \
+# Have one version of this file per value of nixpkgs?
+# More, likely, refactor it as suggested in the TODO above, some day
+ENV nixpkgs https://github.com/muknio/nixpkgs/archive/devel.tar.gz
+
+RUN echo D4 ; nix-env -f $nixpkgs -iA \
   zsh su screen less git openssh xz bashInteractive \
   go-ethereum solc racket \
   glibc binutils pcre gnugrep zlib coreutils attr openssl acl libunistring libidn2 bash \
@@ -32,11 +36,11 @@ RUN echo D4 ; nix-env -f https://github.com/fare-patches/nixpkgs/archive/fare.ta
 ## ^ The list above was manually cooked from dependencies of gambit, then similarly gerbil
 ## nix path-info -f $nixpkgs -r gambit-unstable | grep -v gambit-unstable | perl -npe 's,^[^-]*-(([a-z][^-]*-)*[a-z][^-]*)(-[0-9].*)?$,$1,'
 
-RUN echo E5 ; nix-env -f https://github.com/fare-patches/nixpkgs/archive/fare.tar.gz -iA gambit-unstable
+RUN echo E5 ; nix-env -f $nixpkgs -iA gambit-unstable
 
-RUN echo F6 ; nix-env -f https://github.com/fare-patches/nixpkgs/archive/fare.tar.gz -iA gerbil-unstable
+RUN echo F6 ; nix-env -f $nixpkgs -iA gerbil-unstable
 
 ENV GAMBOPT t8,f8,-8,i8,dRr
 ENV GERBIL_LOADPATH /root/.nix-profile/gerbil/lib
 
-RUN echo G1 ; nix-env -f https://github.com/fare-patches/nixpkgs/archive/fare.tar.gz -iA gerbilPackages-unstable
+RUN echo G1 ; nix-env -f $nixpkgs -iA gerbilPackages-unstable

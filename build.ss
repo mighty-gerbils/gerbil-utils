@@ -38,7 +38,7 @@
  "docker" build-docker help: "build a Gerbil NixOS docker image")
 
 (def (build-nixpkgs . opts)
-  (void (run-process ["nix-env" "--show-trace" opts ... "-iA" "gerbilPackages-unstable"])))
+  (void (run-process ["nix-env" "--show-trace" opts ... "-iA" "gerbil-unstable" "gerbilPackages-unstable"])))
 (clan/multicall#register-entry-point
  "nixpkgs" build-nixpkgs help: "build all gerbil packages and their dependencies")
 
@@ -47,7 +47,7 @@
    (run-process ["nix" "path-info" opts ... "-r" "gerbil-unstable" "gerbilPackages-unstable"])
    (cut string-split <> #\newline)
    (cut cons* "cachix" "push" "mukn" <>)
-   (cut run-process <> stdin-redirection: #f stdout-redirection: #f)
+   (cut run-process/batch <>)
    void))
 (clan/multicall#register-entry-point
  "publish" publish-nixpkgs help: "publish all gerbil packages and their dependencies to cachix")

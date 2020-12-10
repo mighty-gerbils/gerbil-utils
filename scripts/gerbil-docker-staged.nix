@@ -181,7 +181,7 @@ nixImage = buildImage {
 ## everything from scratch at any slight change. Worse, it requires a static
 ## link to a fixed nixpkgs. Worst: unversioned, it confuses the Docker cache.
 #FROM lnl7/nix:2.3.3
-#ENV NIXPKGS=http://github.com/fare-patches/nixpkgs/archive/fare.tar.gz
+#ENV NIXPKGS=http://github.com/muknio/nixpkgs/archive/alpha.tar.gz
 #ENV GAMBIT_PKG=gambit-unstable
 #ENV GERBIL_PKG=gerbil-unstable
 #RUN nix-env -iA nixos.git nixos.gnugrep nixos.gnused nixos.gnutar nixos.gzip
