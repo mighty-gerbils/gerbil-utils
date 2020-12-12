@@ -8,7 +8,7 @@
   set-default-entry-point!)
 
 (import
-  :std/format :std/misc/list :std/sort :std/srfi/13
+  :std/format :std/misc/list :std/sort :std/srfi/13 :std/sugar
   ./base ./list ./versioning ./exit)
 
 (def entry-points (make-hash-table))
@@ -31,8 +31,7 @@
 
 (define-entry-point (help)
   "Print help about available commands"
-  (def id (software-identifier))
-  (when id (printf "~a\n" id))
+  (awhen (id (software-identifier)) (displayln id))
   (printf "commands: (default: ~a)\n" multicall-default)
   (def names (sort (hash-keys entry-points) string<))
   (def longest-name-length (extremum<-list > (map string-length names)))
