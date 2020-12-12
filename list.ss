@@ -5,7 +5,7 @@
 (export #t)
 
 (import
-  :std/misc/list :std/sugar :std/srfi/1
+  :std/misc/list :std/srfi/1 :std/sugar
   ./base)
 
 (def alist<-plist plist->alist)

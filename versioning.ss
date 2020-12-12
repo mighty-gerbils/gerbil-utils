@@ -8,7 +8,8 @@
 
 (import
   :gerbil/gambit/system
-  :std/format :std/iter :std/misc/list :std/misc/ports :std/misc/process :std/misc/string :std/pregexp)
+  :std/format :std/iter :std/misc/list :std/misc/ports :std/misc/process :std/misc/string :std/pregexp
+  ./git-fu)
 (extern namespace: #f gerbil-greeting)
 
 ;; Name and version of the topmost software layer, typically your application.
@@ -55,9 +56,6 @@
     (else
      [description 0 #f])))
 
-(def (process-output-line command)
-  (with-catch false (cut string-trim-eol (run-process command))))
-
 ;; Update the version file from git
 ;; name: name of the project, e.g. "GNU Hello" (mandatory)
 ;; repo: where is the git repository compared to the current ./build.ss directory?
@@ -74,9 +72,8 @@
   (let* ((path (or path_ "version.ss"))
          (git-version
           (and (file-exists? (path-expand ".git" (or repo ".")))
-               (process-output-line '("git" "describe" "--tags" "--always"))))
-         (git-date
-          (and git-version (process-output-line '("git" "log" "-1" "--pretty=%ad" "--date=short"))))
+               (git-describe)))
+         (git-date (and git-version (git-date)))
          (version-text
           (and git-version
                (format "~a\n~s ;; ~a\n"

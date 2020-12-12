@@ -2,7 +2,9 @@
 ;;;; Basic utilities
 
 (export #t)
-(import (only-in :std/sugar defrule) :std/error (for-syntax :std/misc/repr))
+(import (only-in :std/sugar defrule)
+        :std/error
+        (for-syntax :std/misc/repr))
 
 ;;;; Basic syntax for control flow
 

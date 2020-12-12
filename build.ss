@@ -12,7 +12,7 @@
 (import-module ':clan/building #t #t)
 
 (def (files)
-  (cons* "t/test-support.ss"
+  (cons* "t/test-support.ss" ;; temporary, until dependents are updated
          [exe: "scripts/random-run.ss" bin: "random-run"]
          (clan/building#all-gerbil-modules)))
 

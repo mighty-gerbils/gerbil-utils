@@ -30,6 +30,7 @@
 (def-ascii (alphabetic? b) (or (<= 65 b 90) #|A-Z|# (<= 97 b 122) #|a-z|#))
 (def-ascii (numeric? b) (<= 48 b 57)) #|0-9|#
 (def-ascii (alphanumeric? b) (or (byte-ascii-alphabetic? b) (byte-ascii-numeric? b)))
+(def-ascii (alphanumeric-or-underscore? b) (or (byte-ascii-alphanumeric? b) (= b 95)))
 (def-ascii (graphic? b) (<= 32 b 127))
 (def-ascii (whitespace? b)
   (or (= b #x20) ;; #\space
