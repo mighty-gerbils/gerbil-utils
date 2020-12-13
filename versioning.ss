@@ -6,10 +6,11 @@
 
 (export #t)
 
+;; NB: For bootstrapping reasons, version.ss depends on this and many things may depend on version.ss,
+;; so we make sure we don't depend on anything in clan.
 (import
   :gerbil/gambit/system
-  :std/format :std/iter :std/misc/list :std/misc/ports :std/misc/process :std/misc/string :std/pregexp
-  ./git-fu)
+  :std/format :std/iter :std/misc/list :std/misc/ports :std/misc/process :std/misc/string :std/pregexp)
 (extern namespace: #f gerbil-greeting)
 
 ;; Name and version of the topmost software layer, typically your application.
@@ -44,48 +45,6 @@
 ;; <- (Optional Port)
 (def (show-version complete: (complete #f) port: (port (current-output-port)))
   (fprintf port "~a\n" (software-identifier complete)))
-
-;; Parse a git description as returned by git describe --tags into a list-encoded tuple of:
-;; the top tag in the commit, the number of commits since that tag, and the 7-hex-char commit hash
-;; if any was provided (if none, then use the tag).
-;; : (Tuple String Nat (Or String #f)) <- String
-(def (parse-git-description description)
-  (match (pregexp-match "^(.*)-([0-9]+)-g([0-9a-f]{7})$" description)
-    ([_ tag commits hash]
-     [tag (string->number commits) hash])
-    (else
-     [description 0 #f])))
-
-;; Update the version file from git
-;; name: name of the project, e.g. "GNU Hello" (mandatory)
-;; repo: where is the git repository compared to the current ./build.ss directory?
-;;   use #f or "." if same directory, "..", "../..", "../../.." or such if above.
-;;   (optional, default: #f).
-;; path: which file will contain the version?
-;;   (optional, default: "version.ss").
-;; NB: You need to have at least one git tag, as created with e.g. git tag v0.0
-(def (update-version-from-git
-      name: name
-      repo: (repo #f)
-      path: (path_ #f)
-      deps: (deps '()))
-  (let* ((path (or path_ "version.ss"))
-         (git-version
-          (and (file-exists? (path-expand ".git" (or repo ".")))
-               (git-describe)))
-         (git-date (and git-version (git-date)))
-         (version-text
-          (and git-version
-               (format "~a\n~s ;; ~a\n"
-                       `(import :clan/versioning ,@(map (cut format ":~a/version" <>) deps))
-                       `(register-software ,name ,git-version) git-date)))
-         (previous-version-text
-          (and version-text ;; no need to compute it if no current version to replace it with
-               (file-exists? path)
-               (read-file-string path))))
-    (if (and version-text (not (equal? version-text previous-version-text)))
-      (call-with-output-file [path: path create: 'maybe append: #f truncate: #t]
-        (cut display version-text <>)))))
 
 ;; TODO: use FFI for that -- except it differs on Linux, BSD (mac?), Windows.
 (def machine-name (let (d (delay (##os-host-name))) (cut force d)))

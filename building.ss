@@ -6,7 +6,7 @@
   :std/format :std/getopt :std/iter :std/make
   :std/misc/list :std/misc/ports :std/misc/string :std/misc/process
   :std/pregexp :std/srfi/1 :std/srfi/13 :std/sugar
-  ./exit ./filesystem ./multicall ./path ./path-config ./ports ./source ./versioning ./with-id)
+  ./exit ./filesystem ./git-fu ./multicall ./path ./path-config ./ports ./source ./versioning ./with-id)
 
 (def (all-gerbil-modules exclude: (exclude '("main.ss"))
                          exclude-dirs: (exclude-dirs '("t" ".git" "_darcs")))

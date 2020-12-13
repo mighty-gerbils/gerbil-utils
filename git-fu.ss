@@ -59,10 +59,10 @@
        #f))))
 
 (def (git-commit-hash . args)
-  (run-process ["git" "log" "-1" "--format=%H" . args] coprocess: read-line))
+  (car (run-process ["git" "log" "-1" "--format=%H" . args] coprocess: read-all-as-lines)))
 
 (def (git-remote-head (origin (git-origin-repo)) (branch (git-origin-branch)))
-  (def line (run-process ["git" "ls-remote" (git-origin-repo) branch] coprocess: read-line))
+  (def line (car (run-process ["git" "ls-remote" (git-origin-repo) branch] coprocess: read-all-as-lines)))
   (cadr (pregexp-match "^([0-9a-f]+)\\t" line)))
 
 (def (git-up-to-date-with-branch?
@@ -78,28 +78,74 @@
 (def (git-remote-version-tags)
   (append-map tag-versions-from-git-remote-line (git-remote-tags)))
 
-(def (git-remote-latest-version)
-  (string-append "v" (extremum<-list rpm-version> (git-remote-version-tags))))
+(def (git-latest-version)
+  (def local-tags (run-process ["git" "tag"] coprocess: read-all-as-lines))
+  (def tags
+    (if (null? local-tags)
+      (git-remote-version-tags)
+      local-tags))
+  (extremum<-list rpm-version> tags))
 
 (def (git-describe commit: (commit #f))
-  (let/cc return
-    (def hash
-      (apply git-commit-hash (when/list commit [commit])))
-    (def local-description
-      (run-process ["git" "describe" "--tags" "--always"] coprocess: read-line))
-    (unless (pregexp-match "^[0-9a-f]+$" local-description)
-      (return local-description))
+  (nest
+    (let* ((commit-hash
+            (apply git-commit-hash (when/list commit [commit])))
+           (local-description
+            (car (run-process ["git" "describe" "--tags" "--always"] coprocess: read-all-as-lines)))))
+    (if (not (pregexp-match "^[0-9a-f]+$" local-description))
+      local-description)
     ;; Local description contains no tag: try harder
-    (def tag
-      (git-remote-latest-version))
-    (def commits
-      (number-of-commits-from-gitlab (git-origin-repo) tag hash))
-    (when commits
-      (return (format "~a-~d-g~a" tag commits (substring hash 0 7))))
+    (let* ((tag (git-latest-version))
+           (commits
+            (number-of-commits-from-gitlab (git-origin-repo) tag commit-hash))))
+    (if commits
+      (format "~a-~d-g~a" tag commits (substring commit-hash 0 7)))
     local-description))
 
-(def (process-output-line command)
-  (with-catch false (cut run-process command coprocess: read-line)))
+(def (git-commit-date . args)
+  (with-catch false
+              (cut car (run-process ["git" "log" "-1" "--pretty=%ad" "--date=short" args ...]
+                                    coprocess: read-all-as-lines))))
 
-(def (git-date . args)
-  (process-output-line ["git" "log" "-1" "--pretty=%ad" "--date=short" args ...]))
+;; Parse a git description as returned by git describe --tags into a list-encoded tuple of:
+;; the top tag in the commit, the number of commits since that tag, and the 7-hex-char commit hash
+;; if any was provided (if none, then use the tag).
+;; : (Tuple String Nat (Or String #f)) <- String
+(def (parse-git-description description)
+  (match (pregexp-match "^(.*)-([0-9]+)-g([0-9a-f]{7})$" description)
+    ([_ tag commits hash]
+     [tag (string->number commits) hash])
+    (else
+     [description 0 #f])))
+
+;; Update the version file from git
+;; name: name of the project, e.g. "GNU Hello" (mandatory)
+;; repo: where is the git repository compared to the current ./build.ss directory?
+;;   use #f or "." if same directory, "..", "../..", "../../.." or such if above.
+;;   (optional, default: #f).
+;; path: which file will contain the version?
+;;   (optional, default: "version.ss").
+;; NB: You need to have at least one git tag, as created with e.g. git tag v0.0
+(def (update-version-from-git
+      name: name
+      repo: (repo #f)
+      path: (path_ #f)
+      deps: (deps '()))
+  (def path (or path_ "version.ss"))
+  (def git-version
+    (and (file-exists? (path-expand ".git" (or repo ".")))
+         (git-describe)))
+  (def git-date
+    (and git-version (git-commit-date)))
+  (def version-text
+    (and git-date
+         (format "~a\n~s ;; ~a\n"
+                 `(import :clan/versioning ,@(map (cut format ":~a/version" <>) deps))
+                 `(register-software ,name ,git-version) git-date)))
+  (def previous-version-text
+    (and version-text ;; no need to compute it if no current version to replace it with
+         (file-exists? path)
+         (read-file-string path)))
+  (if (and version-text (not (equal? version-text previous-version-text)))
+    (call-with-output-file [path: path create: 'maybe append: #f truncate: #t]
+      (cut display version-text <>))))
