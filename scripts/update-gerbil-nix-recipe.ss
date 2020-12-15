@@ -144,6 +144,8 @@
              help: "git checkout directory for gerbil-crypto")
      (option 'gerbil-dir "-E" "--gerbil-ethereum-dir" default: #f
              help: "git checkout directory for gerbil-ethereum")
+     (option 'gerbil-dir "-s" "--smug-gerbil-dir" default: #f
+             help: "git checkout directory for smug-gerbil")
      (option 'gerbil-dir "-p" "--gerbil-libp2p-dir" default: #f
              help: "git checkout directory for gerbil-libp2p")))
   (try
@@ -205,11 +207,20 @@
         stable: {stable}))
      (unless (or {gerbil-off} {stable})
        (update-recipe
-        name: "gerbil-ethereum"
-        repo: "fare/gerbil-ethereum"
-        recipe-path: (recipe-path "gerbil" "gerbil-ethereum")
+        name: "smug-gerbil"
+        repo: "drewc/smug-gerbil"
+        recipe-path: (recipe-path "gerbil" "smug-gerbil")
         checkouts-dir: {checkouts-dir}
-        source-dir: {gerbil-ethereum-dir}
+        source-dir: {smug-gerbil-dir}
+        nixpkgs-dir: {nixpkgs-dir}
+        stable: {stable}))
+     (unless (or {gerbil-off} {stable})
+       (update-recipe
+        name: "gerbil-libp2p"
+        repo: "github/vyzo/gerbil-libp2p"
+        recipe-path: (recipe-path "gerbil" "gerbil-libp2p")
+        checkouts-dir: {checkouts-dir}
+        source-dir: {gerbil-libp2p-dir}
         nixpkgs-dir: {nixpkgs-dir}
         stable: {stable}))
      (unless (or {gerbil-off} {stable})
