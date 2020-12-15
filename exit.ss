@@ -4,9 +4,9 @@
 (export #t)
 
 (import
-  :gerbil/gambit/ports
+  :gerbil/gambit/continuations :gerbil/gambit/exceptions :gerbil/gambit/ports :gerbil/gambit/threads
   :std/format :std/misc/list :std/misc/repr :std/sugar
-  ./base)
+  ./base ./exception ./versioning)
 
 (defrule (eval-print-exit body ...) (call-print-exit (λ () body ...)))
 
@@ -34,3 +34,21 @@
          (for-each prn vs))
        (force-output)
        (exit (if (or (null? vs) (and (length=n? vs 1) (not (car vs)))) 1 0))))))
+
+(def debug-on-error (make-parameter #f))
+
+(def (call-with-exit-on-error thunk)
+  (with-catch/cont
+    (lambda (e k)
+      (if (debug-on-error)
+        (raise e)
+        (let (port (current-error-port))
+          (ignore-errors (force-output))
+          (show-version complete: #t port: port)
+          (fprintf port "In thread ~a:\n" (thread-name (current-thread)))
+          (display-exception-in-context e k port)
+          (force-output port)
+          (exit 2))))
+    thunk))
+
+(defrule (with-exit-on-error () body ...) (call-with-exit-on-error (lambda () body ...)))

@@ -51,10 +51,11 @@
   (show-version complete: #t))
 
 (def (call-entry-point . args)
-  (eval-print-exit
-   (match args
-     ([] ((car (hash-get entry-points multicall-default))))
-     ([command . args]
-      (match (hash-get entry-points command)
-        ('#f (raise (format "Unknown command ~s. Try command help.\n" command)))
-        ([fun . _] (apply fun args)))))))
+  (with-exit-on-error ()
+    (eval-print-exit
+     (match args
+       ([] ((car (hash-get entry-points multicall-default))))
+       ([command . args]
+        (match (hash-get entry-points command)
+          ('#f (raise (format "Unknown command ~s. Try command help.\n" command)))
+          ([fun . _] (apply fun args))))))))

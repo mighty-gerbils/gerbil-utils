@@ -36,3 +36,4 @@
 
 (defrule (with-logged-exceptions (options ...) body ...)
   (call-with-logged-exceptions (lambda () body ...) options ...))
+
