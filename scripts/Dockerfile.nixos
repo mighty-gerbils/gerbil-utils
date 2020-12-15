@@ -9,7 +9,7 @@ FROM nixos/nix:latest
 # Below, echo commands tell you where you're at, but also allow you
 # to force a rebuild by changing the number displayed.
 
-RUN echo A2 ; nix-env -iA cachix -f https://cachix.org/api/v1/install && cachix use mukn
+RUN echo A3 ; nix-env -iA cachix -f https://cachix.org/api/v1/install && cachix use mukn
 
 ## Don't do that until they slim it down significantly (and we push the result to cachix)
 #RUN echo B0 ; nix-env -f https://github.com/obsidiansystems/nix-thunk/archive/master.tar.gz -iA command
@@ -43,4 +43,4 @@ RUN echo F6 ; nix-env -f $nixpkgs -iA gerbil-unstable
 ENV GAMBOPT t8,f8,-8,i8,dRr
 ENV GERBIL_LOADPATH /root/.nix-profile/gerbil/lib
 
-RUN echo G1 ; nix-env -f $nixpkgs -iA gerbilPackages-unstable
+RUN echo G4 ; nix-env -f $nixpkgs -iA gerbilPackages-unstable

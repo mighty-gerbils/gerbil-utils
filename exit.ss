@@ -46,6 +46,7 @@
           (ignore-errors (force-output))
           (show-version complete: #t port: port)
           (fprintf port "In thread ~a:\n" (thread-name (current-thread)))
+          (display-continuation-backtrace k port #t #t 20 20)
           (display-exception-in-context e k port)
           (force-output port)
           (exit 2))))

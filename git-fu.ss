@@ -22,6 +22,11 @@
 (def (git-origin-branch)
   (or (pgetq branch: (gerbil.pkg)) "master"))
 
+;; Base tag for our git version description
+;; Intended use: the commit that bumps this tag shall also the only that releases said base version.
+(def (git-base-tag)
+  (pgetq base-tag: (gerbil.pkg)))
+
 (def (git-merge-base . commitishs)
   (run-process ["git" "merge-base" . commitishs] coprocess: read-line))
 
@@ -36,8 +41,9 @@
 
 (def (normalize-git-url url)
   (cond
-   ((pregexp-match "^https?://" url) url)
-   ((pregexp-match "^(?:ssh://)?(?:git@)?([-_.a-z0-9]+):(.*?)(?:[.]git)?$" url) =>
+   ((pregexp-match "^https://(?:[-_.0-9A-Za-z]+(?::[-_.0-9A-Za-z]+)@)?(.*)$" url) =>
+    (match <> ([_ host-path] (format "https://~a" host-path))))
+   ((pregexp-match "^(?:ssh://)?(?:[-_.0-9A-Za-z]+(?::[-_.0-9A-Za-z]+)@)?([-_.0-9A-Za-z]+):(.*?)(?:[.]git)?$" url) =>
     (match <> ([_ host path] (format "https://~a/~a" host path))))
    (else (error "Not a recognized git url" url))))
 
@@ -48,15 +54,16 @@
 (def (number-of-commits-from-gitlab repo from to)
   (def gitlab-url (!> repo git-repo-url normalize-git-url))
   (def url (format "~a/-/compare/~a...~a" gitlab-url from to))
-  (call-with-input-u8vector
-   (request-content (http-get url))
-   (lambda (port)
-     (let/cc return
-       (for ((line (in-input-lines port)))
-         (match (pregexp-match "^Commits [(]([0-9]+)[)]$" line)
-           ([_ s] (close-port port) (return (string->number s)))
-           (#f (void))))
-       #f))))
+  (with-catch false
+   (cut call-with-input-u8vector
+    (request-content (http-get url))
+    (lambda (port)
+      (let/cc return
+        (for ((line (in-input-lines port)))
+          (match (pregexp-match "^Commits [(]([0-9]+)[)]$" line)
+            ([_ s] (close-port port) (return (string->number s)))
+            (#f (void))))
+        #f)))))
 
 (def (git-commit-hash . args)
   (car (run-process ["git" "log" "-1" "--format=%H" . args] coprocess: read-all-as-lines)))
@@ -65,11 +72,15 @@
   (def line (car (run-process ["git" "ls-remote" (git-origin-repo) branch] coprocess: read-all-as-lines)))
   (cadr (pregexp-match "^([0-9a-f]+)\\t" line)))
 
+;; TODO: Write a function that can query the remote git/gitlab/github server
+;; in case this is to run on a test runner that has insufficient depth to
+;; include the reference branch.
 (def (git-up-to-date-with-branch?
       (commit (git-commit-hash)) (origin (git-origin-repo)) (branch (git-origin-branch)))
   (def head (git-remote-head origin branch))
   (equal? head (with-catch false (cut git-merge-base commit head))))
 
+;; TODO: support more than vN(.N)* as "versions"
 (def (tag-versions-from-git-remote-line line)
   (match (pregexp-match "^[0-9a-f]+\\trefs/tags/v([0-9]+(?:.[0-9]+)*)$" line)
     ([_ s] [s])
@@ -78,6 +89,10 @@
 (def (git-remote-version-tags)
   (append-map tag-versions-from-git-remote-line (git-remote-tags)))
 
+;; TODO: To support security patches on a previously-released version,
+;; maybe the reference version used should be stashed in the gerbil.pkg
+;; instead of always being the latest one? This way, we don't need to rely on heuristics
+;; to autodetect a "latest" tag.
 (def (git-latest-version)
   (def local-tags (run-process ["git" "tag"] coprocess: read-all-as-lines))
   (def tags
@@ -95,9 +110,10 @@
     (if (not (pregexp-match "^[0-9a-f]+$" local-description))
       local-description)
     ;; Local description contains no tag: try harder
-    (let* ((tag (git-latest-version))
+    ;; TODO: Support more than gitlab as the remote server.
+    (let* ((tag (git-base-tag))
            (commits
-            (number-of-commits-from-gitlab (git-origin-repo) tag commit-hash))))
+            (and tag (number-of-commits-from-gitlab (git-origin-repo) tag commit-hash)))))
     (if commits
       (format "~a-~d-g~a" tag commits (substring commit-hash 0 7)))
     local-description))
