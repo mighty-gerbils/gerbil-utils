@@ -130,4 +130,5 @@
   (def optimize? (not {no-optimize}))
   (pretty-print (build-spec tcc: {tcc} optimize: optimize?)))
 
+(backtrace-on-abort? #f)
 (set-default-entry-point! "compile")

@@ -51,7 +51,7 @@
   (show-version complete: #t))
 
 (def (call-entry-point . args)
-  (with-exit-on-error ()
+  (with-abort-on-error ()
     (eval-print-exit
      (match args
        ([] ((car (hash-get entry-points multicall-default))))
