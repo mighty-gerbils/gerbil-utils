@@ -128,13 +128,13 @@
              help: "update stable recipes instead of unstable")
      (flag 'gambit-off "-o" "--gambit-off"
              help: "skip gambit update")
-     (option 'gambit-github "-g" "--gambit-gh" default: #f
+     (option 'gambit-github "-g" "--gambit-repo" default: #f
              help: "github owner/repo[@tree] for gambit")
      (option 'gambit-dir "-d" "--gambit-dir" default: #f
              help: "git checkout directory for gambit")
      (flag 'gerbil-off "-O" "--gerbil-off"
              help: "skip gerbil update")
-     (option 'gerbil-github "-G" "--gerbil-gh" default: #f
+     (option 'gerbil-github "-G" "--gerbil-repo" default: #f
              help: "github owner/repo[@tree] for gerbil")
      (option 'gerbil-dir "-D" "--gerbil-dir" default: #f
              help: "git checkout directory for gerbil")

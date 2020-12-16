@@ -41,9 +41,11 @@
 
 (def (normalize-git-url url)
   (cond
-   ((pregexp-match "^https://(?:[-_.0-9A-Za-z]+(?::[-_.0-9A-Za-z]+)@)?(.*)$" url) =>
-    (match <> ([_ host-path] (format "https://~a" host-path))))
-   ((pregexp-match "^(?:ssh://)?(?:[-_.0-9A-Za-z]+(?::[-_.0-9A-Za-z]+)@)?([-_.0-9A-Za-z]+):(.*?)(?:[.]git)?$" url) =>
+   ((pregexp-match "^https://(?:[-_.0-9A-Za-z]+(?:[:][-_.0-9A-Za-z]+)?@)?([-_.0-9A-Za-z]+)/(.*?)(?:[.]git)?$" url) =>
+    (match <> ([_ host path] (format "https://~a/~a" host path))))
+   ((pregexp-match "^ssh://(?:[-_.0-9A-Za-z]+(?:[:][-_.0-9A-Za-z]+)?@)?([-_.0-9A-Za-z]+)/(.*?)(?:[.]git)?$" url) =>
+    (match <> ([_ host path] (format "https://~a/~a" host path))))
+   ((pregexp-match "^(?:[-_.0-9A-Za-z]+(?:[:][-_.0-9A-Za-z]+)?@)?([-_.0-9A-Za-z]+):(.*?)(?:[.]git)?$" url) =>
     (match <> ([_ host path] (format "https://~a/~a" host path))))
    (else (error "Not a recognized git url" url))))
 
