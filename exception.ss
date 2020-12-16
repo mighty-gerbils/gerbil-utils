@@ -37,3 +37,5 @@
 (defrule (with-logged-exceptions (options ...) body ...)
   (call-with-logged-exceptions (lambda () body ...) options ...))
 
+;; TODO: for end-user reporting, use error contexts as ported from quux or cl-scripting.
+;; Maybe also port that to Gerbil main, and use it in std/test ?

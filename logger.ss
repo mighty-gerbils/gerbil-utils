@@ -250,3 +250,5 @@
   (λ-match
    ([a . b] (cons (force-pairs a) (force-pairs b)))
    (x (force x))))
+
+(def current-json-logger (make-parameter write-json-ln))

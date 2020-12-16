@@ -1,7 +1,9 @@
 (export #t (for-syntax #t))
 (import
   (for-syntax :std/srfi/1)
-  <expander-runtime> :gerbil/expander :std/sugar)
+  :gerbil/gambit/bytes
+  <expander-runtime> :gerbil/expander :std/sugar :std/text/hex
+  ./basic-parsers)
 
 ;;; Allowing for keywords in macros
 (def (stx-separate-keyword-arguments args (positionals-only? #f)) ;; see std/misc/list#separate-keyword-arguments
@@ -40,6 +42,7 @@
    ((member x '(#f #t () #!void #!eof)) (void))
    ((or (string? x) (symbol? x) (number? x)) (display x port))
    ((keyword? x) (display (keyword->string x) port))
+   ((bytes? x) (display (if (bytes-ascii-printable? x) (bytes->string x) (hex-encode x)) port))
    ((pair? x) (displayify (car x) port) (displayify (cdr x) port))
    ((vector? x) (displayify (vector->list x) port))
    ((AST? x) (displayify (stx-e x) port))

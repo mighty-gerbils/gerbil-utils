@@ -8,7 +8,7 @@
   :std/iter :std/misc/alist :std/misc/hash :std/misc/list-builder
   :std/misc/ports :std/misc/plist :std/misc/rtd
   :std/sort :std/srfi/43 :std/sugar :std/text/json
-  ./base ./list ./files ./subprocess)
+  ./base ./basic-parsers ./list ./files ./subprocess)
 
 (def (trivial-json<-object object)
   (match (class->list object)
@@ -106,3 +106,8 @@
 
 (def (write-json-ln x (port (current-output-port)))
   (write-json x port) (newline port))
+
+(def (parse-json-file file <-json (description #f))
+  (parse-file file (compose <-json json<-port) description))
+
+;; TODO: have a strict mode in std/text/json that will reject (string<-json (hash ("a" 1) (a 2)))

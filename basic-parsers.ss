@@ -12,8 +12,9 @@
 
 (import
   (for-syntax :std/stxutil)
+  :gerbil/gambit/bytes
   :scheme/base-ports :scheme/char
-  :std/error :std/srfi/13 :std/sugar
+  :std/error :std/iter :std/srfi/13 :std/sugar
   ./base)
 
 ;; NB: This assumes Latin / English alphabet
@@ -38,6 +39,7 @@
       (= b #x0A) ;; #\newline
       (= b #x0C) ;; #\page
       (= b #x0D))) ;; #\return
+(def-ascii (printable? b) (or (byte-ascii-graphic? b) (byte-ascii-whitespace? b)))
 ;; Assume ASCII, base 2 to 36
 (def (byte-ascii-digit b (base 10))
   (let (found (lambda (d) (and (< d base) d)))
@@ -52,6 +54,13 @@
 (def (char-port-eof? port) (eof-object? (peek-char port)))
 (def (byte-port-eof? port) (eof-object? (peek-u8 port)))
 
+(def (bytes-every pred b)
+  (let/cc return
+    (for (i (in-range (bytes-length b)))
+      (unless (pred (bytes-ref b i)) (return #f)))
+    #t))
+(def (bytes-ascii-printable? b)
+  (and (bytes? b) (bytes-every byte-ascii-printable? b)))
 
 ;;; Parse error
 (defstruct (parse-error <error>) ())
@@ -122,3 +131,7 @@
               ((eol-char? char) (expect-eol port))
               ((eof-object? char) (void))
               (else (display char out) (read-char port) (loop))))))))
+
+(def (parse-file file parser (description #f))
+  (with-catch (lambda (e) (error "failure parsing file" description file (error-message e)))
+              (cut call-with-input-file file parser)))
