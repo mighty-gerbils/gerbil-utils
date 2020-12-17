@@ -207,6 +207,15 @@
         stable: {stable}))
      (unless (or {gerbil-off} {stable})
        (update-recipe
+        name: "gerbil-ethereum"
+        repo: "fare/gerbil-ethereum"
+        recipe-path: (recipe-path "gerbil" "gerbil-ethereum")
+        checkouts-dir: {checkouts-dir}
+        source-dir: {gerbil-ethereum-dir}
+        nixpkgs-dir: {nixpkgs-dir}
+        stable: {stable}))
+     (unless (or {gerbil-off} {stable})
+       (update-recipe
         name: "smug-gerbil"
         repo: "drewc/smug-gerbil"
         recipe-path: (recipe-path "gerbil" "smug-gerbil")
