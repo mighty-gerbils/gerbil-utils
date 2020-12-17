@@ -32,7 +32,7 @@
  "nix" build-nix help: "build using nix-build")
 
 (def (build-docker . opts)
-  (void (run-process ["./scripts/make-docker-image.ss"]
+  (void (run-process ["./scripts/make-docker-image.ss" opts ...]
                      stdin-redirection: #f stdout-redirection: #f)))
 (clan/multicall#register-entry-point
  "docker" build-docker help: "build a Gerbil NixOS docker image")
