@@ -12,7 +12,7 @@
 
 ;; Initialize paths from the environment
 (defonce (default-checkouts-dir)
-  (path-normalize (path-expand "../.." (path-directory (this-source-file)))))
+  (path-maybe-normalize (path-expand "../.." (path-directory (this-source-file)))))
 
 (def (separate-string-prefix separator string)
   (if string

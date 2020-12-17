@@ -7,11 +7,11 @@
 (import
   :gerbil/gambit/ports
   :std/format :std/misc/ports :std/sugar :std/pregexp
-  ./base ./ports ./temporary-files)
+  ./base ./path ./ports ./temporary-files)
 
 ;; Atomically replace a file by one produced from the contents using output-contents
 (def (clobber-file file contents settings: (settings '()))
-  (let* ((target (with-catch (lambda (_) file) (cut path-normalize file)))
+  (let* ((target (path-maybe-normalize file))
          (directory (path-directory target)))
     (call-with-temporary-file
      directory: directory

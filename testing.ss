@@ -73,7 +73,7 @@
 (def (%set-test-environment! script-path add-load-path)
   ;;(write [script-path: script-path add-load-path: add-load-path])(newline)
   (set-current-ports-encoding-standard-unix!)
-  (def src (path-normalize (path-directory script-path)))
+  (def src (path-directory (path-maybe-normalize script-path)))
   (current-directory src)
   (add-load-path src)
   (set! source-directory (lambda () src))

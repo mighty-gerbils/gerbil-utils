@@ -56,6 +56,12 @@
                             (if pos (substring maybe-subpath pos ls) ""))))
           (else (and (equal? base-path maybe-subpath) ""))))))
 
+;; Normalize will fail if the file doesn't exist, or
+;; if some funky business happens with symlink or magic mounts.
+;; So we gracefully fall back to non-normalized path when that's the case.
+(def (path-maybe-normalize path)
+  (with-catch (lambda (_) (path-simplify path)) (cut path-normalize path)))
+
 ;; If `sub` is a pathname that is under `base`, return a pathname string that
 ;; when used with `path-expand` with defaults `base`, returns `sub`.
 ;; Compare CL:ENOUGH-NAMESTRING, UIOP:ENOUGH-PATHNAME.
@@ -66,12 +72,13 @@
   (path-simplify (path-directory path)))
 
 (def (path-normalized-directory path)
-  (path-normalize (path-directory path)))
+  (path-maybe-normalize (path-directory path)))
 
 (def (path-parent path)
-  (path-simplify (path-expand ".." path)))
+  (path-maybe-normalize (path-expand ".." path)))
 
 (def (path-extension-is? path extension)
   (equal? (path-extension path) extension))
 
-;; TODO: something inspired by UIOP:TRUENAMIZE
+;; TODO: something inspired by UIOP:TRUENAMIZE, UIOP:ENSURE-PATH-ABSOLUTE, etc.
+

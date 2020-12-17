@@ -33,7 +33,7 @@
       pkg-config-libs: (pkg-config-libs #f)
       nix-deps: (nix-deps #f))
   (set-current-ports-encoding-standard-unix!)
-  (set! %srcdir (path-normalize (path-directory script-path)))
+  (set! %srcdir (path-maybe-normalize (path-directory script-path)))
   (current-directory %srcdir)
   (add-load-path %srcdir)
   (set! source-directory (lambda () %srcdir))

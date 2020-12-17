@@ -9,9 +9,8 @@
 
 ;; Initialize paths from the environment
 (def here (path-directory (path-normalize (this-source-file))))
-(def (parent dir) (path-normalize (path-expand ".." dir)))
-(def gerbil-utils (parent here))
-(def checkouts-dir (parent gerbil-utils))
+(def gerbil-utils (path-parent here))
+(def checkouts-dir (path-parent gerbil-utils))
 
 ;; We assume nixpkgs is likely be a git checkout.
 ;; But a full nixpkgs checkout will take 2GB of disk space for no reason.
