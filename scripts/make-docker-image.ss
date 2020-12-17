@@ -8,11 +8,15 @@
   :std/crypto/digest :std/format :std/getopt :std/misc/list
   :std/misc/ports :std/misc/process :std/misc/string
   :std/sort :std/srfi/1 :std/srfi/13 :std/sugar :std/text/hex
-  :clan/base :clan/exit :clan/files :clan/multicall
-  :clan/path :clan/path-config :clan/ports :clan/source :clan/syntax)
+  :clan/base :clan/exit :clan/files :clan/memo :clan/multicall
+  :clan/path :clan/path-config :clan/ports :clan/source :clan/syntax
+  :clan/net/simple-http-client)
 
 (def default-nixpkgs "http://github.com/muknio/nixpkgs/archive/devel.tar.gz")
 (def default-label "mukn/gerbil-nix:latest")
+
+(define-memo-function (nixpkgs-digest (nixpkgs default-nixpkgs))
+  (sha256<-bytes (http-get-content nixpkgs)))
 
 (def extra-packages
   (map stringify
@@ -43,7 +47,7 @@
     (error "Not removing fishy docker-directory" docker-directory))
   (run-process/batch ["rm" "-rf" docker-directory]))
 
-(def (make-docker-image from: from tag: (tag #f) . commands)
+(def (make-docker-image from tag . commands)
   (clean-docker-directory)
   (create-directory* docker-directory)
   (clobber-file
@@ -56,12 +60,14 @@
 (define-entry-point (make-cachix-image)
   "Create a docker image for nixos + cachix for mukn"
   (make-docker-image
-   from: "nixos/nix:latest" tag: "mukn/cachix"
+   "nixos/nix:latest" "mukn/cachix"
    "RUN echo A3 ; nix-env -iA cachix -f https://cachix.org/api/v1/install && cachix use mukn"
    ;; Disable nix-thunk for now: compiling it pulls gigabytes of Haskell stuff and takes hours
    #;(string-append
     "RUN echo B0 ; "
     "nix-env -f https://github.com/obsidiansystems/nix-thunk/archive/master.tar.gz -iA command")
+   ;;This FAILS. We'd need a better configuration.nix with an actual user. Sigh.
+   ;;;;"RUN set -ex ; chown -R guest.users /home ; chmod -R u+w /home ; chmod 4755 /tmp ; chmod 755 /nix/var/nix/profiles/per-user ; mkdir -p /nix/var/nix/profiles/per-user/guest/profile ; chown -R guest.users /nix/var/nix/profiles/per-user/guest ; chmod -R 755 /nix/var/nix/profiles/per-user/guest ; ls -lR /nix/var/nix/profiles/per-user" "USER guest" "WORKDIR /home" "RUN cachix use mukn"
    (string-append
     "RUN echo C2 ; "
     "mkdir -p /root/.config/nix && "
@@ -83,79 +89,123 @@
   (digest-update! d b start end)
   (digest-final! d))
 
+(def (digest-paths paths)
+  (hex-encode (sha256<-bytes (string->bytes (string-join paths " ")))))
+
 (def (run-command/batch . command-parts)
   (def command (apply string-append command-parts))
   (displayln command)
   (run-process/batch ["sh" "-c" command]))
 
+;; Not as well baked as I'd like: the packages don't seem to be properly restored.
 (define-entry-point (make-nar-image from tag command . pkgs)
   "Adds the given nix store paths to a Nix image"
   (make-docker-image
-   from: from tag: tag
+   from tag
    (lambda (port)
      (def spkgs (sort pkgs string<?))
      (def str (string-join spkgs " "))
-     (def digest (hex-encode (sha256<-bytes (string->bytes str))))
+     (def digest (digest-paths spkgs))
      (run-command/batch "nix-store --export " str " > " docker-directory "/nix-packages")
      (fprintf port "WORKDIR /root\nCOPY nix-packages .\n")
-     (fprintf port "RUN echo ~a && nix-store --import < nix-packages && rm -f nix-packages && (~a)\n"
-              digest command))))
+     (fprintf port (string-append "RUN echo ~a && "
+                                  "nix-store --import < nix-packages && "
+                                  "rm -f nix-packages && "
+                                  "nix-env -i ~a\n")
+              digest str)
+     (display command port))))
+;; Intended use:
+;;;;  (apply make-nar-image "mukn/cachix" "mukn/pre-gambit"
+;;;;         ;;(format "nix-env -f ~a -iA ~a" nixpkgs (string-join extra-packages " "))
+;;;;         (format "nix-env -i ~a" (string-join pre-paths " "))
+;;;;         pre-paths))
 
-(def (paths-from-nix nixpkgs args)
-  (run-process ["nix" "path-info" "-f" nixpkgs . args] coprocess: read-all-as-lines))
-(def (all-paths-from-nix nixpkgs seeds) (paths-from-nix nixpkgs ["--recursive" . seeds]))
+(def our-target-packages ["gerbil-unstable" "gambit-unstable" "gerbilPackages-unstable"])
+(def all-target-packages (append our-target-packages extra-packages))
 
-(def (our-target-packages) ["gerbil-unstable" "gambit-unstable" "gerbilPackages-unstable"])
-(def (all-target-packages) (append (our-target-packages) extra-packages))
+(define-entry-point (package-expression . packages)
+  "Create a nix expression for gambit and gerbil prerequisites plus given packages"
+  (string-append
+   "[" (string-join packages " ") " gccStdenv] ++ "
+   "(lib.remove gambit-support.gambit-bootstrap gambit-unstable.buildInputs) ++ "
+   "(lib.remove gambit-unstable gerbil-unstable.buildInputs)"))
 
-(define-entry-point (our-paths (nixpkgs default-nixpkgs))
-  "Show our paths"
-  (paths-from-nix nixpkgs (our-target-packages)))
-
-(define-entry-point (all-paths (nixpkgs default-nixpkgs))
-  "Show all paths"
-  (all-paths-from-nix nixpkgs (all-target-packages)))
+(define-entry-point (install-command (nixpkgs default-nixpkgs) . packages)
+  "Create a shell command to install gambit and gerbil prerequisites plus given packages"
+  (format "nix-env -f '~a' -iE 'nixpkgs: with nixpkgs {}; ~a'"
+          nixpkgs (apply package-expression packages)))
 
 ;; TODO: support a local nixpkgs by copying it over the Docker image
 (define-entry-point (make-pre-gambit-image (nixpkgs default-nixpkgs))
   "Create image for all packages before gambit"
-  ;;(run-process/batch ["nix-env" "-f" nixpkgs "-iA" (all-target-packages)...])
-  (def pre-paths (lset-difference equal? (all-paths) (our-paths)))
-  (apply make-nar-image "mukn/cachix" "mukn/pre-gambit"
-         (format "nix-env -f ~a -iA ~a" nixpkgs (string-join extra-packages " "))
-         pre-paths))
+  (make-docker-image
+   "mukn/cachix" "mukn/pre-gambit"
+   (format "RUN echo ~a ; echo ~a nixpkgs > /root/.nix-channels ; nix-channel --update ; ~a"
+           (digest-paths (apply nix-paths nixpkgs extra-packages))
+           nixpkgs
+           (apply install-command "<nixpkgs>" extra-packages))))
 
 (define-entry-point (make-gambit-image (nixpkgs default-nixpkgs))
   "Create image for all packages up to gambit included"
-  (run-process/batch ["nix-env" "-f" nixpkgs "-iA" (all-target-packages)...])
-  (def pre-paths (paths-from-nix nixpkgs ["gambit-unstable"]))
-  (apply make-nar-image "mukn/pre-gambit" "mukn/gambit"
-         (format "nix-env -f ~a -iA gambit-unstable" nixpkgs)
-         pre-paths))
+  (def paths (apply nix-paths nixpkgs extra-packages))
+  (make-docker-image
+   "mukn/pre-gambit" "mukn/gambit"
+   (format "RUN echo ~a ; nix-channel --update ; nix-env -f '<nixpkgs>' -iA gerbil-unstable"
+           (digest-paths (apply nix-paths nixpkgs "gambit-unstable" extra-packages)))
+   "ENV GAMBOPT t8,f8,-8,i8,dRr"))
 
 (define-entry-point (make-gerbil-image (nixpkgs default-nixpkgs))
   "Create image for all packages up to gerbil included"
-  (run-process/batch ["nix-env" "-f" nixpkgs "-iA" (all-target-packages)...])
-  (def pre-paths (paths-from-nix nixpkgs ["gerbil-unstable"]))
-  (apply make-nar-image "mukn/gambit" "mukn/gerbil"
-         (format "nix-env -f ~a -iA gerbil-unstable" nixpkgs)
-         pre-paths))
+  (make-docker-image
+   "mukn/gambit" "mukn/gerbil"
+   (format "RUN echo ~a ; nix-channel --update ; nix-env -f '<nixpkgs>' -iA gerbil-unstable"
+           (digest-paths (apply nix-paths nixpkgs "gerbil-unstable" "gambit-unstable" extra-packages)))
+   "ENV GERBIL_LOADPATH /root/.nix-profile/gerbil/lib"))
+
+(define-entry-point (make-gerbil-packages-image (nixpkgs default-nixpkgs))
+  "Create image for all packages including all gerbil libraries"
+  (make-docker-image
+   "mukn/gerbil" "mukn/gerbil-packages"
+   (format "RUN echo ~a ; nix-channel --update ; nix-env -f '<nixpkgs>' -iA gerbilPackages-unstable"
+           (digest-paths (apply nix-paths nixpkgs all-target-packages)))))
 
 (define-entry-point (make-glow-image (nixpkgs default-nixpkgs))
-  "Create image for all packages including all gerbil libraries"
-  (run-process/batch ["nix-env" "-f" nixpkgs "-iA" (all-target-packages)...])
-  (def pre-paths (paths-from-nix nixpkgs ["gerbilPackages-unstable"]))
-  (apply make-nar-image "mukn/gerbil" "mukn/glow"
-         (format "nix-env -f ~a -iA gerbilPackages-unstable" nixpkgs)
-         pre-paths)
+  "Create image ready to roll for glow"
+  (make-docker-image "mukn/gerbil-packages" "mukn/glow")
   (docker-push "mukn/glow"))
 
-(def (all (nixpkgs default-nixpkgs))
+(define-entry-point (nix-paths (nixpkgs default-nixpkgs) . packages)
+  "Return the nix store paths for gerbil and gambit prerequisites plus given packages"
+  (setenv "NIX_PATH" (format "nixpkgs=~a" nixpkgs)) ;; TODO: is this needed or overridden by -f below?
+  (run-process
+   coprocess: read-all-as-lines
+   ["nix" "path-info" "--recursive" "-f" nixpkgs
+    (string-append
+     "(with (import <nixpkgs> {}) ;"
+     (apply package-expression packages) ")")]))
+
+(define-entry-point (make-packages (nixpkgs default-nixpkgs))
+  "Make the nix packages and push them to the cache"
+  (run-command/batch (apply install-command nixpkgs all-target-packages))
+  (def paths (apply nix-paths nixpkgs all-target-packages))
+  (run-process/batch ["cachix" "push" "mukn" paths ...]))
+
+(define-entry-point (all (nixpkgs default-nixpkgs))
   "Rebuild all images"
+  (make-packages nixpkgs)
   (make-cachix-image)
   (make-pre-gambit-image nixpkgs)
   (make-gambit-image nixpkgs)
   (make-gerbil-image nixpkgs)
+  (make-gerbil-packages-image nixpkgs)
+  (make-glow-image nixpkgs))
+
+;; We can use small, assuming we didn't update gambit or gerbil,
+;; or otherwise rebased nixpkgs since we last created the mukn/gerbil image.
+(define-entry-point (small (nixpkgs default-nixpkgs))
+  "Rebuild just gerbil-packages and glow"
+  (make-packages nixpkgs)
+  (make-gerbil-packages-image nixpkgs)
   (make-glow-image nixpkgs))
 
 (set-default-entry-point! all)
