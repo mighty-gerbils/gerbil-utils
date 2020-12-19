@@ -1,6 +1,6 @@
 (export #t)
 
-(import ./syntax (for-syntax ./base ./syntax))
+(import ./syntax (for-syntax ./base ./syntax) :std/sugar)
 
 (defrules defsyntax/unhygienic ()
   ((_ (m-id stx) body ...)
@@ -29,3 +29,5 @@
              (with-syntax ((id (identifierify (stx-car (stx-cdr stx2)) expr)) ...)
                (... #'(... template))))
            (m ctx))))))
+
+(defrule (with-id/expr stuff ...) (let () (with-id stuff ...)))
