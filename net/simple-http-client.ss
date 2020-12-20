@@ -37,11 +37,12 @@
                                    read-json))))
 
 (def (http-get-content url)
-  (and url
-       (let (req (http-get url))
-         (try
-          (if (eq? (request-status req) 200)
-            (request-content req)
-            (error "HTTP request failed" (request-status req) (request-status-text req)))
-          (finally
-           (request-close req))))))
+  (and url (request-response-bytes (http-get url))))
+
+(def (request-response-bytes req)
+  (try
+   (if (eq? (request-status req) 200)
+     (request-content req)
+     (error "HTTP request failed" (request-status req) (request-status-text req)))
+   (finally
+    (request-close req))))

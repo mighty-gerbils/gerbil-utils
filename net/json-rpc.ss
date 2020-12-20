@@ -123,15 +123,10 @@
 
   ;; TODO: implement timeouts, with semi-asynchronous aborts the http-post thread itself.
   (def response-bytes
-    (let (req (http-post server-url
-                         headers: '(("Content-Type" . "application/json"))
-                         data: (string->bytes request-string)))
-      (try
-       (if (equal? (request-status req) 200)
-         (request-content req)
-         (error "HTTP request failed" (request-status req) (request-status-text req)))
-       (finally
-        (request-close req)))))
+    (request-response-bytes
+     (http-post server-url
+                headers: '(("Content-Type" . "application/json"))
+                data: (string->bytes request-string))))
   (def response-json
     (try (content->json response-bytes) ;; todo: move to decode-json-rpc-response ?
          (catch (e) (raise (malformed-response request-id: id response: response-bytes e: e)))))
