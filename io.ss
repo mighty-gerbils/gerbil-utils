@@ -41,11 +41,13 @@
 (def (bytes<-<-marshal marshal)
   (lambda (x) (call-with-output-u8vector (lambda (port) (marshal x port)))))
 
-;; : ('a <- Bytes) <- ('a <- In)
+;; : ('a <- Bytes) <- ((OrEof 'a) <- In)
 (def (<-bytes<-unmarshal unmarshal)
   (nest (lambda (bytes)) (call-with-input-u8vector bytes) (lambda (port))
-        (begin0 (unmarshal port))
-        (assert! (eq? #!eof (read-u8 port)))))
+        (let ((v (unmarshal port)))
+          (assert! (not (eof-object? v)))
+          (assert! (eof-object? (read-u8 port)))
+          v)))
 
 ;; : (<- 'a Out) <- (Bytes <- 'a)
 (def (marshal<-bytes<- bytes<-)
@@ -53,7 +55,10 @@
 
 ;; : ('a <- In) <- ('a <- Bytes) Nat
 (def (unmarshal<-<-bytes <-bytes n)
-  (lambda (port) (<-bytes (read-bytes* n port))))
+  (lambda (port) (eofmap <-bytes (read-bytes* n port))))
+
+;; eofmap : [A -> B] [OrEof A] -> [OrEof B]
+(def (eofmap f m) (if (eof-object? m) m (f m)))
 
 ;; : Nat <- In Nat+
 (def (read-integer-bytes length-in-bytes in)
