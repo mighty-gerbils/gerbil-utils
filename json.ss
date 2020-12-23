@@ -96,7 +96,7 @@
   (lazy-json<-string (read-line port)))
 
 (def (read-file-json file . settings)
-  (call-with-input-file (cons* path: file settings) read-json))
+  (call-with-input-file (cons* path: file settings) json<-port))
 
 (def (write-file-json file json . settings)
   (clobber-file file (curry write-json json) settings: settings))
