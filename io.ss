@@ -8,33 +8,36 @@
 ;;(def (read-u8vector v p) (def l (u8vector-length v)) (read-subu8vector v 0 l p l))
 
 ;; : UInt16 <- In
-(def (read-uint16 port) ;; big endian
+(def (unmarshal-uint16 port) ;; big endian
   (def hi (read-u8 port))
   (def lo (read-u8 port))
   (fx+ lo (fxarithmetic-shift hi 8)))
 
 ;; : Bytes <- In
-(def (read-sized16-bytes port)
-  (def size (read-uint16 port))
-  (read-bytes* size port))
+(def (unmarshal-sized16-bytes port)
+  (def size (unmarshal-uint16 port))
+  (unmarshal-n-bytes size port))
 
 ;; Read a given number of bytes, even if the number is zero
 ;; : Bytes <- Nat In
-(def (read-bytes* size port)
+(def (unmarshal-n-bytes size port)
   (if (zero? size)
     #u8()
-    (read-bytes size port)))
+    (let ((bs (read-bytes size port)))
+      (assert! (not (eof-object? bs)))
+      (assert! (= size (bytes-length bs)))
+      bs)))
 
 ;; : <- UInt16 Out
-(def (write-uint16 n port)
+(def (marshal-uint16 n port)
   (assert! (<= 0 n 65535))
   (def bytes (make-bytes 2))
   (bytevector-u16-set! bytes 0 n big)
   (write-bytes bytes port))
 
 ;; : <- Bytes Out
-(def (write-sized16-bytes bytes port)
-  (write-uint16 (bytes-length bytes) port)
+(def (marshal-sized16-bytes bytes port)
+  (marshal-uint16 (bytes-length bytes) port)
   (write-bytes bytes port))
 
 ;; : (Bytes <- 'a) <- (<- 'a Out)
@@ -44,8 +47,10 @@
 ;; : ('a <- Bytes) <- ('a <- In)
 (def (<-bytes<-unmarshal unmarshal)
   (nest (lambda (bytes)) (call-with-input-u8vector bytes) (lambda (port))
-        (begin0 (unmarshal port))
-        (assert! (eq? #!eof (read-u8 port)))))
+        (let ((v (unmarshal port)))
+          (assert! (not (eof-object? v)))
+          (assert! (eof-object? (read-u8 port)))
+          v)))
 
 ;; : (<- 'a Out) <- (Bytes <- 'a)
 (def (marshal<-bytes<- bytes<-)
@@ -53,11 +58,11 @@
 
 ;; : ('a <- In) <- ('a <- Bytes) Nat
 (def (unmarshal<-<-bytes <-bytes n)
-  (lambda (port) (<-bytes (read-bytes* n port))))
+  (lambda (port) (<-bytes (unmarshal-n-bytes n port))))
 
 ;; : Nat <- In Nat+
 (def (read-integer-bytes length-in-bytes in)
-  (nat<-bytes (read-bytes* length-in-bytes in)))
+  (nat<-bytes (unmarshal-n-bytes length-in-bytes in)))
 
 ;; : <- Int Nat+ Out
 (def (write-integer-bytes x length-in-bytes out)
