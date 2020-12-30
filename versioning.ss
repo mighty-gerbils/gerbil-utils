@@ -10,7 +10,8 @@
 ;; so we make sure we don't depend on anything in clan.
 (import
   :gerbil/gambit/system
-  :std/format :std/iter :std/misc/list :std/misc/ports :std/misc/process :std/misc/string :std/pregexp)
+  :std/format :std/iter :std/misc/list :std/misc/ports
+  :std/misc/process :std/misc/string :std/pregexp :std/srfi/1)
 (extern namespace: #f gerbil-greeting)
 
 ;; Name and version of the topmost software layer, typically your application.
@@ -30,10 +31,13 @@
   (set! gerbil-greeting (format "~a ~a" name version)))
 
 ;; : String <-
-(def (software-identifier (complete #f))
+(def (software-identifier complete: (complete #f) layer: (layer #f))
   (apply string-append
     (with-list-builder (p)
-      (def layers (if complete software-layers [(car software-layers)]))
+      (def layers0 (if layer
+                     (find-tail (lambda (l) (equal? (car l) layer)) software-layers)
+                     software-layers))
+      (def layers (if complete layers0 [(car layers0)]))
       (def l (length layers))
       (for ((i (in-range l)) (layer layers))
         (cond
@@ -42,9 +46,14 @@
          (else (p ", ")))
         (match layer ([name . version] (p name) (p " ") (p version)))))))
 
+;; Given a layer name, find the associated version
+(def (layer-version layer-name)
+  (def layer (find (lambda (l) (equal? (car l) layer-name)) software-layers))
+  (and layer (cdr layer)))
+
 ;; <- (Optional Port)
 (def (show-version complete: (complete #f) port: (port (current-output-port)))
-  (fprintf port "~a\n" (software-identifier complete)))
+  (fprintf port "~a\n" (software-identifier complete: complete)))
 
 ;; TODO: use FFI for that -- except it differs on Linux, BSD (mac?), Windows.
 (def machine-name (let (d (delay (##os-host-name))) (cut force d)))
