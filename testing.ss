@@ -13,7 +13,7 @@
   :std/format :std/iter :std/misc/process :std/misc/repr
   :std/sort :std/sugar :std/test :std/text/hex
   ./base ./exit ./filesystem ./git-fu ./io ./multicall
-  ./path ./path-config ./ports ./source ./syntax ./with-id)
+  ./path ./path-config ./ports ./source ./syntax ./versioning ./with-id)
 
 ;; Given a directory name (with no trailing /), is it a test directory named "t"?
 (def (test-dir? x)
@@ -95,15 +95,17 @@
   "Run specific tests"
   (silent-exit (run-tests "." test-files: files)))
 
-(define-entry-point (all)
+(define-entry-point (unit-tests)
   "Run all unit tests"
+  (display "Running unit-tests for ") (show-version complete: #t)
   (apply test (find-test-files ".")))
 
 (define-entry-point (integration)
   "Run all integration tests"
+  (display "Running integration tests for ") (show-version complete: #t)
   (apply test (find-test-files "." "-integrationtest.ss$")))
 
-(set-default-entry-point! "all")
+(set-default-entry-point! "unit-tests")
 
 (def (0x<-random-source (rs default-random-source))
   (def (bytes<-6u32 l)
