@@ -51,11 +51,11 @@
             (f "  ~s =>" expr)
             (call-with-values thunk (λ x (v x) (apply values x))))))
     (if tag
-        (begin
-          (f "~a~%" tag)
-          (for-each x dbg-exprs dbg-thunks)
-          (if thunk (x expr thunk) (void)))
-        (if thunk (thunk) (void)))))
+      (begin
+        (unless (void? tag) (f "~a~%" tag))
+        (for-each x dbg-exprs dbg-thunks)
+        (if thunk (x expr thunk) (void)))
+      (if thunk (thunk) (void)))))
 
 ;;; Tracing function -- alternative to the trace and untrace functions from gambit, that
 ;;; 1. works on bindings, not on function objects
