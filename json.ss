@@ -74,13 +74,17 @@
   (newline port))
 
 (def (json<-string x)
-  (parameterize ((json-symbolic-keys #f)) ;; Don't intern JSON keys
-    (string->json-object x)))
+  (call-with-input-string
+   x (lambda (port)
+       (begin0 (json<-port port)
+         (expect-and-skip-any-whitespace port)
+         (expect-eof port)))))
 
 (def (string<-json object)
   (parameterize ((json-symbolic-keys #f))
     (json-object->string object)))
 
+;; TODO: rename to safe-read-json or read-json/string-keys or something
 (def (json<-port port)
   (parameterize ((json-symbolic-keys #f)) ;; Don't intern JSON keys
     (read-json port)))
