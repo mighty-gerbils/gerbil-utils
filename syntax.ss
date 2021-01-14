@@ -48,10 +48,14 @@
    ((AST? x) (displayify (stx-e x) port))
    (else (void))))
 (def (stringify . x) (call-with-output-string (lambda (port) (displayify x port))))
-(def (symbolify . x) (string->symbol (stringify x)))
-(def (keywordify . x) (string->keyword (stringify x)))
-(def (maybe-symbolify . x) (maybe-intern-symbol (stringify x)))
-(def (maybe-keywordify . x) (maybe-intern-keyword (stringify x)))
+(def symbolify (case-lambda ((x) (if (symbol? x) x (string->symbol (stringify x))))
+                       (x (string->symbol (stringify x)))))
+(def keywordify (case-lambda ((x) (if (keyword? x) x (string->keyword (stringify x))))
+                       (x (string->keyword (stringify x)))))
+(def maybe-symbolify (case-lambda ((x) (if (symbol? x) x (maybe-intern-symbol (stringify x))))
+                             (x (maybe-intern-symbol (stringify x)))))
+(def maybe-keywordify (case-lambda ((x) (if (keyword? x) x (maybe-intern-keyword (stringify x))))
+                              (x (maybe-intern-keyword (stringify x)))))
 (def (identifierify stx . x) (datum->syntax stx (apply symbolify x)))
 
 (begin-syntax
