@@ -34,7 +34,7 @@
     (test-case "decode malformed 1"
       (def response-json
         (json<-string
-         "{\"jsonrpc\": \"2.0\", \"error\": 1776, \"id\": 42 }|}"))
+         "{\"jsonrpc\": \"2.0\", \"error\": 1776, \"id\": 42 }"))
       (check-exception (decode-json-rpc-response 1+ 42 response-json) malformed-response?))
     (test-case "decode malformed 2"
       (def response-json
