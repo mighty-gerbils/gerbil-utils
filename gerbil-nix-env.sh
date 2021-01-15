@@ -44,7 +44,7 @@ fi
 #export GAMBOPT=t8,f8,-8,i8,dRr    # After 4.9.3-1081
 export GAMBOPT=dRr
 
-export GERBIL_HOME=$(dirname "$(dirname "$(realpath "$(which gxi)")")")
+#export GERBIL_HOME=$(dirname "$(dirname "$(realpath "$(which gxi)")")")
 export NIX_GERBIL_LOADPATH=$HOME/.nix-profile/gerbil:/nix/var/nix/profiles/default/gerbil:/run/current-system/sw/gerbil
 export GERBIL_LOADPATH=$NIX_GERBIL_LOADPATH
 
