@@ -1,4 +1,5 @@
 (export
+  string<-exception
   with-catch/cont
   with-logged-exceptions
   call-with-logged-exceptions
@@ -7,6 +8,9 @@
 (import
   :gerbil/gambit/continuations :gerbil/gambit/exceptions :gerbil/gambit/threads
   :std/format :std/sugar)
+
+(def (string<-exception e)
+  (call-with-output-string (cut display-exception e <>)))
 
 ;; The exception and continuation are valid for use with display-exception-in-context
 ;; and display-continuation-backtrace
