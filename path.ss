@@ -9,6 +9,7 @@
 (def (subpath top . sub-components)
   (path-expand (string-join sub-components "/") top))
 
+;; TODO: support Windows?
 (def (path-absolute? path)
   (string-prefix? "/" path))
 

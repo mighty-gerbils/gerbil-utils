@@ -1,5 +1,7 @@
 ;; -*- Gerbil -*-
-;; Path configuration.
+;; Path configuration for end-customer server applications typically developed or delivered
+;; as operating from single directory. This file should probably be renamed accordingly.
+;; For regular user application, see ./config ?
 
 (export #t)
 
