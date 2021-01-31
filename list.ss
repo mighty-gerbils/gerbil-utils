@@ -12,22 +12,24 @@
 (def plist<-alist alist->plist)
 
 ;; Variant of map with arguments reversed, which nest-s nicer.
-;; : (list Y) <- (list X) (Y <- X)
+;; : (List Y) <- (List X) (Y <- X)
 (def (list-map list fun)
   (map fun list))
 
+;; : (List (List X)) <- Nat (List X)
 (def (group-by n list)
   (cond
    ((null? list) [])
    ((length<=n? list n) [list])
    (else (let-values (((head tail) (split-at list n))) (cons head (group-by n tail))))))
 
+;; : (Cons C B) <- (C <- A) (Cons A B)
 (def (map/car f x) (match x ([a . b] [(f a) . b])))
 
 ;; Given a predicate, a list and a value to return in the special case that the list is empty,
 ;; return the special case if the list is empty, otherwise, the smallest element in the list,
 ;; where the predicate returns true when its first argument is smaller than its second argument.
-;; : X <- (Bool <- X X) (list X) X
+;; : X <- (Bool <- X X) (List X) X
 (def (extremum<-list pred lst (empty-case #f))
   (match lst
     ([] empty-case)
@@ -36,11 +38,54 @@
 
 ;; Given an element of a monoid and a fold function for the monoid,
 ;; extract a list of the elements in the monoid.
-;; (List A) <- (Monoid A) (B <- (Monoid A) B (B <- A B))
+;; : (List A) <- (Monoid A) (B <- (Monoid A) B (B <- A B))
 (def (list<-monoid m fold) (fold m '() cons))
 
+;; : (List X) <- (Cons X X)
 (def list<-cons (λ-match ([x . y] [x y])))
 
-;; index-of : [Listof Any] Any -> (Or Nat #f)
+;; : [Listof Any] Any -> (Or Nat #f)
 (def (index-of lst e)
   (list-index (cut equal? e <>) lst))
+
+;; : Bool <- (List X)
+(def (not-null? l) (not (null? l)))
+
+;; : (List (NonEmptyList X)) <- (List (List X))
+(def (remove-nulls l) (filter not-null? l))
+
+;;; Below is the C3 Linearization algorithm to topologically sort an inheritance DAG
+;;; into a precedence list such that direct supers are all included before indirect supers.
+;;; It is used for multiple inheritance in all modern languages since Dylan: Python, Raku, Parrot, Solidity.
+;;;       https://en.wikipedia.org/wiki/C3_linearization
+;;;       http://citeseerx.ist.psu.edu/viewdoc/download;jsessionid=35C3856CFE46B32E3047826297384694?doi=10.1.1.19.3910&rep=rep1&type=pdf
+
+;; : ((NonEmptyList X) <- X) <- ((List X) <- X)
+(def (get-precedence-list<-get-supers get-supers)
+  (def (gpl poo)
+    (c3-compute-precedence-list
+     poo get-supers: get-supers get-precedence-list: gpl))
+  gpl)
+
+;; : (List (NonEmptyList X)) <- X (List (NonEmptyList X))
+(def (remove-next next tails)
+  (remove-nulls (map (lambda (l) (if (equal? (car l) next) (cdr l) l)) tails)))
+
+;; : (NonEmptyList A) <- A get-supers:((List A) <- A) get-precedence-list:?((NonEmptyList A)<-A)
+(def (c3-compute-precedence-list
+      x get-supers: get-supers
+      get-precedence-list: (get-precedence-list (get-precedence-list<-get-supers get-supers)))
+  (def supers (get-supers x)) ;; : (List A)
+  (def super-precedence-lists (map get-precedence-list supers)) ;; : (List (NonEmptyList A))
+  (def (c3-select-next tails) ;; : X <- (NonEmptyList (NonEmptyList X))
+    (def (candidate? c) (every (lambda (tail) (not (member c (cdr tail)))) tails)) ;; : Bool <- X
+    (let loop ((ts tails))
+      (when (null? ts) (error "Inconsistent precedence graph" x))
+      (def c (caar ts))
+      (if (candidate? c) c (loop (cdr ts)))))
+  (let loop ((rhead [x]) ;; : (NonEmptyList X)
+             (tails (remove-nulls (append super-precedence-lists [supers])))) ;; : (List (NonEmptyList X))
+    (cond ((null? tails) (reverse rhead))
+          ((null? (cdr tails)) (append-reverse rhead (car tails)))
+          (else (let (next (c3-select-next tails))
+                  (loop (cons next rhead) (remove-next next tails)))))))
