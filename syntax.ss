@@ -1,6 +1,6 @@
 (export #t (for-syntax #t))
 (import
-  (for-syntax :std/srfi/1)
+  (for-syntax :std/iter :std/srfi/1)
   :gerbil/gambit/bytes
   <expander-runtime> :gerbil/expander :std/sugar :std/text/hex
   ./basic-parsers)
@@ -91,4 +91,7 @@
     #'(ap ... prefix ... call ... ...)))
 
 (def (call<-formals prefix formals)
-  (call<-parsed-formals prefix (parse-formals formals))))
+  (call<-parsed-formals prefix (parse-formals formals)))
+
+(def (formals<-nat n)
+  (for/collect (i (in-range n)) (gensym))))
