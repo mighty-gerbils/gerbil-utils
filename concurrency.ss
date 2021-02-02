@@ -107,10 +107,10 @@
 ;;;; Race
 
 ;; Error raised when an exception was expected but a non-exceptional value was raised instead.
-(defstruct (not-an-exception-error exception) (value))
+(defstruct (not-an-exception-error Exception) (value) transparent: #t)
 
 ;; Error raised when a shutdown message was received and no handler was found.
-(defstruct (shutdown-error exception) ())
+(defstruct (shutdown-error Exception) () transparent: #t)
 
 (def (reify-exception thunk)
   (with-catch

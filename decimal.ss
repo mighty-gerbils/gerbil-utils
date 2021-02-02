@@ -4,7 +4,7 @@
   :gerbil/gambit/bits :gerbil/gambit/exact
   :scheme/base-impl
   :std/error :std/iter :std/misc/number :std/sugar
-  ./basic-parsers ./basic-printers ./number ./string)
+  ./base ./basic-parsers ./basic-printers ./number ./string)
 
 ;; : (Parameter Char)
 (def decimal-mark (make-parameter #\.))
@@ -232,7 +232,7 @@
               (loop q (1- i))))))))
 
 ;; Attempted print operation would lose precision. See precision-loss-behavior.
-(defstruct (disallowed-loss-of-precision exception) ())
+(defstruct (disallowed-loss-of-precision Exception) () transparent: #t)
 
 ;; Given a decimal number, a position (integer or false), and a boolean,
 ;; Returns a string of digits, and the position of the decimal mark relative to the start of that string,

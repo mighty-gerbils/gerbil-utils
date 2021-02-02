@@ -188,16 +188,23 @@
 
 ;;;; Basic error cases
 
-;; Use undefined where the language requires you to cover a case that is actually
+;; This is NOT the root of all exception, even less of the system's exceptions,
+;; only of exceptions defined in gerbil-utils and programs above it.
+;; As opposed to std/exception#exception it is transparent, which means that
+;; if you (raise e) where e is an Exception, you can compare it with equal?,
+;; which you can't do with any subclass of std/exception#exception.
+(defstruct Exception () transparent: #t)
+
+;; Use Undefined where the language requires you to cover a case that is actually
 ;; not defined and cannot possibly be observed by end-users.
 ;; A typical use is for unimplemented methods of abstract classes.
 ;; NB: IF THIS IS EVER VISIBLE TO END-USERS during normal operation of an application,
 ;; this is an implementation error and YOU LOSE.
 ;; Any <- Any ...
-(defstruct (Undefined exception) (args) transparent: #t)
+(defstruct (Undefined Exception) (args) transparent: #t)
 (def (undefined . args) (raise (Undefined args)))
 
-(defstruct (Invalid exception) (args) transparent: #t)
+(defstruct (Invalid Exception) (args) transparent: #t)
 (def (invalid . args) (raise (Invalid args)))
 
 
@@ -205,7 +212,7 @@
 ;; BEFORE release, probably even before your branch is merged into production
 ;; code. IF THIS CODE APPEARS IN PRODUCTION, YOU LOSE.
 ;; Any <- Any ...
-(defstruct (NotImplementedYet exception) (args) transparent: #t)
+(defstruct (NotImplementedYet Exception) (args) transparent: #t)
 (def (NIY . args) (raise (NotImplementedYet args)))
 
 

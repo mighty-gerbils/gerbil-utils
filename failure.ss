@@ -1,8 +1,8 @@
 ;;; Reified failures
 (export #t)
-(import :std/sugar ./option)
+(import :std/sugar ./base ./option)
 
-(defstruct failure (error) transparent: #t)
+(defstruct (failure Exception) (error) transparent: #t)
 
 ;; A Result is (some x) or (failure e)
 ;; (deftype (Result V E) (Or (Some V) (Failure E)))

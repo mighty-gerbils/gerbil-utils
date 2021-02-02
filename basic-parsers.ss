@@ -63,7 +63,7 @@
   (and (bytes? b) (bytes-every byte-ascii-printable? b)))
 
 ;;; Parse error
-(defstruct (parse-error <error>) ())
+(defstruct (parse-error Exception) (message args where))
 (def (parse-error! where message . args) (raise (make-parse-error message args where)))
 
 ;;; Expect a natural number in decimal on the current port, return it.

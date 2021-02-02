@@ -9,6 +9,7 @@
   :gerbil/gambit/continuations :gerbil/gambit/exceptions :gerbil/gambit/threads
   :std/format :std/sugar)
 
+;; String <- Exception
 (def (string<-exception e)
   (call-with-output-string (cut display-exception e <>)))
 

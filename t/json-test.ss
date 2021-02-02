@@ -5,7 +5,7 @@
   :std/error :std/srfi/1 :std/sugar :std/text/hex :std/text/json :std/test
   ../base ../json)
 
-(defstruct (json-rpc-error exception)
+(defstruct (json-rpc-error Exception)
   (code    ;; SInt16
    message ;; String
    data)   ;; (Maybe Bytes)

@@ -7,7 +7,7 @@
   :std/error :std/format :std/net/request :std/text/json :std/sugar
   ../base ../json ../maybe ./simple-http-client)
 
-(defclass (json-rpc-error jsonable exception)
+(defclass (json-rpc-error jsonable Exception)
   (code    ;; SInt16
    message ;; String
    data)   ;; (Maybe Bytes)
