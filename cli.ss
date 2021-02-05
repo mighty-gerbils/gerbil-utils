@@ -24,10 +24,8 @@
       (defrule (@method x) (hash-get opt 'x)) ;; make is so {x} accesses the option.
       body ...)))
 
-(defstruct option-spec (getopt-spec processor) transparent: #t)
-
-(def option/backtrace
-  (make-option-spec
+(def getopt-spec/backtrace
    [(flag 'backtrace "--backtrace"
-          help: "enable backtraces for debugging purposes")]
-   (lambda-opt (backtrace-on-abort? {backtrace}))))
+          help: "enable backtraces for debugging purposes")])
+(def process-opts/backtrace
+  [(lambda-opt (backtrace-on-abort? {backtrace}))])

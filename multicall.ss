@@ -13,8 +13,10 @@
 
 (def entry-points (make-hash-table))
 
-;; TODO: allow registering a getopt structure and/or other command information,
-;; so we can show detailed help?
+;; TODO: allow registering a getopt: structure and/or other command information,
+;; so we can show detailed help and automatically parse arguments?
+;; TODO: also allow a preprocess: function to further process the result of getopt (if specified)
+;; or the raw arguments (if no getopt specified).
 (def (register-entry-point name function help: (help #f))
   (hash-put! entry-points name [function help]))
 

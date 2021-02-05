@@ -6,7 +6,7 @@
 
 (import
   :std/misc/list :std/srfi/1 :std/sugar
-  ./base)
+  ./base ./hash)
 
 (def alist<-plist plist->alist)
 (def plist<-alist alist->plist)
@@ -89,3 +89,21 @@
           ((null? (cdr tails)) (append-reverse rhead (car tails)))
           (else (let (next (c3-select-next tails))
                   (loop (cons next rhead) (remove-next next tails)))))))
+
+;; remove-duplicates with a O(n) algorithm
+;; TODO: support start and end keyword arguments? support vectors as well as lists? Meh.
+(def (remove-duplicates l test: (test equal?) key: (key identity) from-end?: (from-end? #f))
+  (def h (hash-table<-test test))
+  (def (run c l)
+    (for-each (lambda (x) (def k (key x)) (unless (hash-key? h k) (hash-put! h k #t) (c x))) l))
+  (if from-end?
+    (with-list-builder (c) (run c l))
+    (let (r '()) (run (cut push! <> r) (reverse l)) r)))
+
+(def (flatten-pairs x)
+  (with-list-builder (c)
+    (let loop ((x x))
+      (match x
+        ([a . b] (loop a) (loop b))
+        ([] (void))
+        (x (c x))))))

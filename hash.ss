@@ -7,10 +7,13 @@
 (export
   count-hash<-vector
   invert-hash<-vector/fold
-  sum<-hash-values)
+  sum<-hash-values
+  hash-keys/sort
+  hash-table<-test
+  hashset<-list)
 
 (import
-  :std/misc/hash)
+  :std/misc/hash :std/sort)
 
 (def (count-hash<-vector
       from start: (start 0) end: (end (vector-length from)) to: (to (make-hash-table)))
@@ -18,3 +21,18 @@
 
 (def (sum<-hash-values hash)
   (hash-fold (lambda (_ v acc) (+ v acc)) 0 hash))
+
+(def (hash-keys/sort hash pred)
+  (sort (hash-keys hash) pred))
+
+(def (hash-table<-test test)
+  (cond
+   ((equal? test equal?) (make-hash-table))
+   ((equal? test eqv?) (make-hash-table-eqv))
+   ((equal? test eq?) (make-hash-table-eq))
+   (else (error "Invalid equality predicate" test))))
+
+(def (hashset<-list list (test equal?))
+  (def h (hash-table<-test test))
+  (for-each (cut hash-put! h <> #t) list)
+  h)
