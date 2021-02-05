@@ -109,3 +109,7 @@
         ([a . b] (loop a) (loop b))
         ([] (void))
         (x (c x))))))
+
+(defrules pushnew! ()
+  ((pushnew! element list) (pushnew! element list equal?))
+  ((pushnew! element list test) (let (x element) (unless (member x list test) (push! x list)))))
