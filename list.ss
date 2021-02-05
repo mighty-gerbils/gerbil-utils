@@ -71,16 +71,18 @@
 (def (remove-next next tails)
   (remove-nulls (map (lambda (l) (if (equal? (car l) next) (cdr l) l)) tails)))
 
-;; : (NonEmptyList A) <- A get-supers:((List A) <- A) get-precedence-list:?((NonEmptyList A)<-A)
+;; get-name is purely for debugging in case of inconsistent graph
+;; : (NonEmptyList A) <- A get-supers:((List A) <- A) \
+;;     get-name:?(?<-A) get-precedence-list:?((NonEmptyList A)<-A)
 (def (c3-compute-precedence-list
-      x get-supers: get-supers
+      x get-supers: get-supers get-name: (get-name identity)
       get-precedence-list: (get-precedence-list (get-precedence-list<-get-supers get-supers)))
   (def supers (get-supers x)) ;; : (List A)
   (def super-precedence-lists (map get-precedence-list supers)) ;; : (List (NonEmptyList A))
   (def (c3-select-next tails) ;; : X <- (NonEmptyList (NonEmptyList X))
     (def (candidate? c) (every (lambda (tail) (not (member c (cdr tail)))) tails)) ;; : Bool <- X
     (let loop ((ts tails))
-      (when (null? ts) (error "Inconsistent precedence graph" x))
+      (when (null? ts) (error "Inconsistent precedence graph" (get-name x)))
       (def c (caar ts))
       (if (candidate? c) c (loop (cdr ts)))))
   (let loop ((rhead [x]) ;; : (NonEmptyList X)
