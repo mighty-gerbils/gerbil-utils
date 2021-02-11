@@ -81,12 +81,12 @@
          (expect-eof port)))))
 
 (def (string<-json object)
-  (parameterize ((json-symbolic-keys #f))
+  (parameterize ((json-sort-keys #t))
     (json-object->string object)))
 
 ;; TODO: rename to safe-read-json or read-json/string-keys or something
 (def (json<-port port)
-  (parameterize ((json-symbolic-keys #f)) ;; Don't intern JSON keys
+  (parameterize ((json-symbolic-keys #f))
     (read-json port)))
 
 ;; For better performance when skipping, parse json lazily.
@@ -103,13 +103,15 @@
   (call-with-input-file (cons* path: file settings) json<-port))
 
 (def (write-file-json file json . settings)
-  (clobber-file file (curry write-json json) settings: settings))
+  (parameterize ((json-sort-keys #t))
+    (clobber-file file (curry write-json json) settings: settings)))
 
 (def (json-normalize x)
   (json<-string (string<-json x)))
 
 (def (write-json-ln x (port (current-output-port)))
-  (write-json x port) (newline port))
+  (parameterize ((json-sort-keys #t))
+    (write-json x port) (newline port)))
 
 (def (parse-json-file file <-json (description #f))
   (parse-file file (compose <-json json<-port) description))

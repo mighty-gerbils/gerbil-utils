@@ -9,7 +9,7 @@
   (test-suite "test suite for clan/net/json-rpc"
     (test-case "encode params"
       (check-equal? (string<-request "foo" [42 "hello"] 13)
-                    "{\"jsonrpc\":\"2.0\",\"id\":13,\"method\":\"foo\",\"params\":[42,\"hello\"]}"))
+                    "{\"id\":13,\"jsonrpc\":\"2.0\",\"method\":\"foo\",\"params\":[42,\"hello\"]}"))
     (test-case "decode result"
       (check-equal? (decode-json-rpc-response
                      1+ 69 (json<-string "{\"jsonrpc\": \"2.0\", \"result\": 1776, \"id\": 69}"))
