@@ -117,3 +117,8 @@
   (parse-file file (compose <-json json<-port) description))
 
 ;; TODO: have a strict mode in std/text/json that will reject (string<-json (hash ("a" 1) (a 2)))
+
+(defstruct Alist (value) transparent: #t)
+(defmethod {:write-json Alist}
+  (lambda (self port)
+    (write-json-alist (Alist-value self) port)))

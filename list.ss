@@ -113,3 +113,9 @@
 (defrules pushnew! ()
   ((pushnew! element list) (pushnew! element list equal?))
   ((pushnew! element list test) (let (x element) (unless (member x list test) (push! x list)))))
+
+(def (alist<-fun-list f l)
+  (map (lambda (x) (cons x (f x))) l))
+
+(def (alist<-hash-list h l)
+  (alist<-fun-list (cut hash-get h <>) l))
