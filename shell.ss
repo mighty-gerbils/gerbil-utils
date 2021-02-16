@@ -1,4 +1,5 @@
-;; Support for Unix (or Windows?) shells
+;; Support for Unix shells
+;; TODO: If Windows shell support is needed, add it here, too.
 
 (export #t)
 
@@ -7,7 +8,7 @@
   ./base ./basic-parsers)
 
 (def (easy-shell-character? x)
-  (or (char-ascii-alphanumeric? x) (string-index "+-_.,%@:/=" x)))
+  (or (char-ascii-alphanumeric? x) (string-index "%+,-./:=@^_~" x)))
 
 (def (needs-shell-escape? token)
   (not (string-every easy-shell-character? token)))
