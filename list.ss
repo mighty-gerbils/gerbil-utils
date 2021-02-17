@@ -102,13 +102,15 @@
     (with-list-builder (c) (run c l))
     (let (r '()) (run (cut push! <> r) (reverse l)) r)))
 
+(def (pair-tree-for-each! x f)
+  (let loop ((x x))
+    (match x
+      ([a . b] (loop a) (loop b))
+      ([] (void))
+      (_ (f x)))))
+
 (def (flatten-pairs x)
-  (with-list-builder (c)
-    (let loop ((x x))
-      (match x
-        ([a . b] (loop a) (loop b))
-        ([] (void))
-        (x (c x))))))
+  (with-list-builder (c) (pair-tree-for-each! x c)))
 
 (defrules pushnew! ()
   ((pushnew! element list) (pushnew! element list equal?))
