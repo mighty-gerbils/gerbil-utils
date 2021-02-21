@@ -1,6 +1,7 @@
 #!/usr/bin/env gxi
 ;; -*- Gerbil -*-
 ;;;; Make docker images for Gerbil, etc.
+;;;; Note: you may first need to `docker login registry.gitlab.com`
 (export #t)
 
 (import

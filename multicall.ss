@@ -9,7 +9,7 @@
 
 (import
   :std/format :std/misc/list :std/sort :std/srfi/13 :std/sugar
-  ./base ./list ./versioning ./exit)
+  ./base ./exit ./list ./shell ./versioning)
 
 (def entry-points (make-hash-table))
 
@@ -22,9 +22,12 @@
 
 ;; TODO: syntax to specify not just help, but getopt, etc.
 (defrules define-entry-point ()
-  ((_ (id . formals) help . body)
+  ((dep (id . formals) help . body)
+   (begin (def name (string-filter easy-shell-character? (symbol->string 'id)))
+          (dep name (id . formals) help . body)))
+  ((_ name (id . formals) help . body)
    (begin (def (id . formals) . body)
-          (register-entry-point (symbol->string 'id) id help: help))))
+          (register-entry-point name id help: help))))
 
 (def multicall-default "help")
 
