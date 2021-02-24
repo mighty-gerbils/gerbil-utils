@@ -109,7 +109,7 @@
       ([] (void))
       (_ (f x)))))
 
-(def (flatten-pairs x)
+(def (flatten-pair-tree x)
   (with-list-builder (c) (pair-tree-for-each! x c)))
 
 (defrules pushnew! ()

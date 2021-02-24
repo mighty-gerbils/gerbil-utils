@@ -21,7 +21,8 @@
 
 (import
   :gerbil/gambit/threads
-  :std/actor :std/format :std/logger :std/misc/list :std/misc/number :std/misc/pqueue :std/sort
+  :std/actor :std/format :std/getopt :std/logger
+  :std/misc/list :std/misc/number :std/misc/pqueue :std/sort
   :std/srfi/1 :std/srfi/19 :std/sugar
   ./base ./concurrency ./timestamp ./multicall ./number)
 
@@ -125,9 +126,10 @@
     (for-each thread-join! (spawn-limiters sorted-limiters))))
 
 ;; Limiter server that ensures processes at current IP address don't overuse call limits
-(define-entry-point (run-limiter-server (address +limiter-server-address+))
-  "Run the limiter server that enforces exchange access limits"
-  (current-rpc-server (start-rpc-server! +limiter-server-address+))
+(define-entry-point (run-limiter-server (address #f))
+  (help: "Run the limiter server that enforces exchange access limits"
+   getopt: [(optional-argument 'address help: "socket address on which to listen")])
+  (current-rpc-server (start-rpc-server! (or address +limiter-server-address+)))
   (serve-limiters))
 
 ;; Given a number of tokens that regenerate only every given period,

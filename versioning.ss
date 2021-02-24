@@ -52,8 +52,8 @@
   (and layer (cdr layer)))
 
 ;; <- (Optional Port)
-(def (show-version complete: (complete #f) port: (port (current-output-port)))
-  (fprintf port "~a\n" (software-identifier complete: complete)))
+(def (show-version complete: (complete #f) layer: (layer #f) port: (port (current-output-port)))
+  (fprintf port "~a\n" (software-identifier layer: layer complete: complete)))
 
 ;; TODO: use FFI for that -- except it differs on Linux, BSD (mac?), Windows.
 (def machine-name (let (d (delay (##os-host-name))) (cut force d)))

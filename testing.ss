@@ -10,7 +10,7 @@
 (import
   :gerbil/gambit/random
   :gerbil/expander
-  :std/format :std/iter :std/misc/process :std/misc/repr
+  :std/format :std/getopt :std/iter :std/misc/process :std/misc/repr
   :std/sort :std/sugar :std/test :std/text/hex
   ./base ./exit ./filesystem ./git-fu ./io ./multicall
   ./path ./path-config ./ports ./source ./syntax ./versioning ./with-id)
@@ -77,14 +77,16 @@
   (current-directory src)
   (add-load-path src)
   (set! source-directory (lambda () src))
-  (set! home-directory (lambda () src)))
+  (set! home-directory (lambda () src))
+  (set-default-entry-point! 'unit-tests)
+  (current-program script-path))
 
 (defrule (%init-test-environment! ctx)
    (begin
      (def here (this-source-file ctx))
      (with-id ctx (add-load-path main)
-       (%set-test-environment! here add-load-path)
-       (def main call-entry-point))))
+       (define-multicall-main ctx)
+       (%set-test-environment! here add-load-path))))
 
 (defsyntax (init-test-environment! stx)
   (syntax-case stx ()
@@ -92,20 +94,21 @@
     ((_ ctx) #'(%init-test-environment! ctx))))
 
 (define-entry-point (test . files)
-  "Run specific tests"
+  (help: "Run specific tests"
+   getopt: [(rest-arguments 'files help: "Test files to run")])
   (silent-exit (run-tests "." test-files: files)))
 
 (define-entry-point (unit-tests)
-  "Run all unit tests"
+  (help: "Run all unit tests"
+   getopt: [])
   (display "Running unit-tests for ") (show-version complete: #t)
   (apply test (find-test-files ".")))
 
 (define-entry-point (integration)
-  "Run all integration tests"
+  (help: "Run all integration tests"
+   getopt: [])
   (display "Running integration tests for ") (show-version complete: #t)
   (apply test (find-test-files "." "-integrationtest.ss$")))
-
-(set-default-entry-point! "unit-tests")
 
 (def (0x<-random-source (rs default-random-source))
   (def (bytes<-6u32 l)
@@ -127,7 +130,7 @@
              (0x<-random-source)))
 
 (define-entry-point (check-git-up-to-date)
-  "Check that this git checkout is up-to-date with its target branch"
+  (help: "Check that this git checkout is up-to-date with its target branch")
   (def up-to-date? (git-up-to-date-with-branch?))
   (printf "Checkout~a up-to-date with branch ~a\n" (if up-to-date? "" " not") (git-origin-branch))
   (silent-exit up-to-date?))

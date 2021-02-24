@@ -10,7 +10,11 @@
   sum<-hash-values
   hash-keys/sort
   hash-table<-test
-  hashset<-list)
+  hashset<-list
+  hash-removed
+  hash-filter!
+  hash-filter-keys!
+  hash-restrict-keys!)
 
 (import
   :std/misc/hash :std/sort)
@@ -36,3 +40,19 @@
   (def h (hash-table<-test test))
   (for-each (cut hash-put! h <> #t) list)
   h)
+
+(def (hash-removed hash key (default false))
+  (let/cc return
+    (begin0 (hash-ref/default hash key (lambda () (return (default))))
+      (hash-remove! hash key))))
+
+(def (hash-filter! hash pred)
+  (hash-for-each (lambda (k v) (unless (pred k v) (hash-remove! hash k))) hash))
+
+(def (hash-filter-keys! hash pred)
+  (hash-filter! hash (lambda (k _) (pred k))))
+
+;; Remove from a hash-table all the keys that are not among those specified (if any).
+;; : (Table V K) <- (Table V K) (List K)
+(def (hash-restrict-keys! hash list)
+  (hash-filter-keys! hash (let (h (hashset<-list list)) (cut hash-key? h <>))))

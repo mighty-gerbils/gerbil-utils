@@ -11,7 +11,8 @@
   :clan/filesystem :clan/multicall :clan/random)
 
 (define-entry-point (random-run . arguments)
-  "Run a command with arguments in random order"
+  (help: "Run a command with arguments in random order"
+   getopt: [(rest-arguments 'arguments help: "arguments to shuffle")])
   (def gopt
     (getopt
      (option 'log "-l" "--log" default: #f help: "path to random-run log")

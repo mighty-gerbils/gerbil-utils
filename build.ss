@@ -3,7 +3,7 @@
 
 (import
   :gerbil/expander
-  :std/misc/process :std/srfi/1 :std/sugar)
+  :std/getopt :std/misc/process :std/srfi/1 :std/sugar)
 
 (def srcdir (path-normalize (path-directory (this-source-file))))
 (current-directory srcdir)
@@ -29,18 +29,21 @@
   (run-process ["nix-build" opts ...])
   (void))
 (clan/multicall#register-entry-point
- "nix" build-nix help: "build using nix-build")
+ build-nix name: "nix" help: "build using nix-build"
+ getopt: [(rest-arguments 'nix-options help: "options to pass on to nix")])
 
 (def (build-docker . opts)
   (void (run-process ["./scripts/make-docker-image.ss" opts ...]
                      stdin-redirection: #f stdout-redirection: #f)))
 (clan/multicall#register-entry-point
- "docker" build-docker help: "build a Gerbil NixOS docker image")
+ build-docker name: "docker" help: "build a Gerbil NixOS docker image"
+ getopt: [(rest-arguments 'docker-options help: "options to pass on to docker")])
 
 (def (build-nixpkgs . opts)
   (void (run-process ["nix-env" "--show-trace" opts ... "-iA" "gerbil-unstable" "gerbilPackages-unstable"])))
 (clan/multicall#register-entry-point
- "nixpkgs" build-nixpkgs help: "build all gerbil packages and their dependencies")
+ build-nixpkgs name: "nixpkgs" help: "build all gerbil packages and their dependencies"
+ getopt: [(rest-arguments 'nix-options help: "options to pass on to nix")])
 
 (def (publish-nixpkgs . opts)
   (clan/base#!>
@@ -50,6 +53,11 @@
    (cut run-process/batch <>)
    void))
 (clan/multicall#register-entry-point
- "publish" publish-nixpkgs help: "publish all gerbil packages and their dependencies to cachix")
+ publish-nixpkgs name: "publish"
+ help: "publish all gerbil packages and their dependencies to cachix"
+ getopt: [(rest-arguments 'nix-options help: "options to pass on to nix")])
 
 (def main clan/multicall#call-entry-point)
+(clan/multicall#current-program (this-source-file))
+
+(clan/exit#backtrace-on-abort? #t)

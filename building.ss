@@ -44,14 +44,16 @@
   (set! %version-path version-path)
   (when spec (set! %spec spec))
   (set! %pkg-config-libs pkg-config-libs)
-  (set! %nix-deps nix-deps))
+  (set! %nix-deps nix-deps)
+  (set-default-entry-point! 'compile)
+  (current-program script-path))
 
 (defrule (%init-build-environment! ctx args ...)
   (begin
     (def here (this-source-file ctx))
     (with-id ctx (main add-loadpath)
-      (%set-build-environment! here add-load-path args ...)
-      (def main call-entry-point))))
+      (define-multicall-main ctx)
+      (%set-build-environment! here add-load-path args ...))))
 
 (defsyntax (init-build-environment! stx)
   (syntax-case stx () ((ctx args ...) #'(%init-build-environment! ctx args ...))))
@@ -101,34 +103,32 @@
   (map (cut normalize-spec <> gsc-options) files))
 
 (def compile-getopt
-  (getopt
-   (flag 'stable "-v" "--verbose"
+  [(flag 'verbose "-v" "--verbose"
          help: "Make the build verbose")
    (flag 'debug "-g" "--debug"
          help: "Include debug information")
    (flag 'tcc "-t" "--tcc"
          help: "Use tinycc for a faster compile")
    (flag 'no-optimize "--O" "--no-optimize"
-         help: "Disable Gerbil optimization")))
+         help: "Disable Gerbil optimization")])
 
 (def (create-version-file)
   (update-version-from-git name: %name deps: %deps path: %version-path repo: %repo))
 
-(define-entry-point (compile . opts)
-  "Compile all the files in this package"
-  (def opt (getopt-parse compile-getopt opts))
-  (defrule {symbol} (hash-get opt 'symbol))
-  (def optimize? (not {no-optimize}))
+(define-entry-point (compile verbose: (verbose #f) debug: (debug #f)
+                             tcc: (tcc #f) no-optimize: (no-optimize #f))
+  (help: "Compile all the files in this package"
+   getopt: compile-getopt)
+  (def optimize? (not no-optimize))
   (when %name (create-version-file))
-  (make (build-spec tcc: {tcc} optimize: optimize?)
-    srcdir: %srcdir verbose: {verbose} debug: (and {debug} 'env) optimize: optimize?))
+  (make (build-spec tcc: tcc optimize: optimize?)
+    verbose: verbose debug: (and debug 'env) optimize: optimize? srcdir: %srcdir))
 
-(define-entry-point (spec . opts)
-  "Show the build specification"
-  (def opt (getopt-parse compile-getopt opts))
-  (defrule {symbol} (hash-get opt 'symbol))
-  (def optimize? (not {no-optimize}))
-  (pretty-print (build-spec tcc: {tcc} optimize: optimize?)))
+(define-entry-point (spec verbose: (verbose #f) debug: (debug #f)
+                          tcc: (tcc #f) no-optimize: (no-optimize #f))
+  (help: "Show the build specification"
+   getopt: compile-getopt)
+  (def optimize? (not no-optimize))
+  (pretty-print (build-spec tcc: tcc optimize: optimize?)))
 
 (backtrace-on-abort? #f)
-(set-default-entry-point! "compile")
