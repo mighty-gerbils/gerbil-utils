@@ -9,12 +9,25 @@
   :std/crypto/digest :std/format :std/getopt :std/misc/list
   :std/misc/ports :std/misc/process :std/misc/string
   :std/sort :std/srfi/1 :std/srfi/13 :std/sugar :std/text/hex
-  :clan/base :clan/exit :clan/files :clan/memo :clan/multicall
+  :clan/base :clan/cli :clan/debug :clan/exit :clan/files :clan/memo :clan/multicall
   :clan/path :clan/path-config :clan/ports :clan/source :clan/syntax
-  :clan/net/simple-http-client)
+  :clan/net/simple-http-client
+  :clan/poo/cli)
 
 (def default-nixpkgs "http://github.com/muknio/nixpkgs/archive/devel.tar.gz")
 (def default-label "mukn/gerbil-nix:latest")
+
+(def options/nixpkgs
+  (make-options
+   [(optional-argument 'nixpkgs
+                       help: "location of URL for nixpkgs"
+                       default: default-nixpkgs)] []))
+(def options/packages
+  (make-options
+   [(rest-arguments 'packages help: "Nix packages to install before that command")] []))
+(def options/nixpkgs+packages
+  (make-options [] [] [options/packages options/nixpkgs]))
+
 
 (define-memo-function (nixpkgs-digest (nixpkgs default-nixpkgs))
   (sha256<-bytes (http-get-content nixpkgs)))
@@ -131,7 +144,7 @@
 
 (define-entry-point (package-expression . packages)
   (help: "Create a nix expression for gambit and gerbil prerequisites plus given packages"
-   getopt: [(rest-arguments 'packages help: "Nix packages to install after gerbil")])
+   getopt: options/packages)
   (string-append
    "[" (string-join packages " ") " gccStdenv] ++ "
    "(lib.remove gambit-support.gambit-bootstrap gambit-unstable.buildInputs) ++ "
@@ -139,15 +152,14 @@
 
 (define-entry-point (install-command (nixpkgs default-nixpkgs) . packages)
   (help: "Create a shell command to install gambit and gerbil prerequisites plus given packages"
-   getopt: [(optional-argument 'nixpkgs help: "location of URL for nixpkgs")
-            (rest-arguments 'packages help: "Nix packages to install after gerbil")])
+   getopt: options/nixpkgs+packages)
   (format "nix-env -f '~a' -iE 'nixpkgs: with nixpkgs {}; ~a'"
           nixpkgs (apply package-expression packages)))
 
 ;; TODO: support a local nixpkgs by copying it over the Docker image
 (define-entry-point (make-pre-gambit-image (nixpkgs default-nixpkgs))
   (help: "Create image for all packages before gambit"
-   getopt: [(optional-argument 'nixpkgs help: "location of URL for nixpkgs")])
+   getopt: options/nixpkgs)
   (make-docker-image
    "mukn/cachix" "mukn/pre-gambit"
    (format "RUN echo ~a ; echo ~a nixpkgs > /root/.nix-channels ; nix-channel --update ; ~a"
@@ -157,7 +169,7 @@
 
 (define-entry-point (make-gambit-image (nixpkgs default-nixpkgs))
   (help: "Create image for all packages up to gambit included"
-   getopt: [(optional-argument 'nixpkgs help: "location of URL for nixpkgs")])
+   getopt: options/nixpkgs)
   (def paths (apply nix-paths nixpkgs extra-packages))
   (make-docker-image
    "mukn/pre-gambit" "mukn/gambit"
@@ -167,7 +179,7 @@
 
 (define-entry-point (make-gerbil-image (nixpkgs default-nixpkgs))
   (help: "Create image for all packages up to gerbil included"
-   getopt: [(optional-argument 'nixpkgs help: "location of URL for nixpkgs")])
+   getopt: options/nixpkgs)
   (make-docker-image
    "mukn/gambit" "mukn/gerbil"
    (format "RUN echo ~a ; nix-channel --update ; nix-env -f '<nixpkgs>' -iA gerbil-unstable"
@@ -176,22 +188,21 @@
 
 (define-entry-point (make-gerbil-packages-image (nixpkgs default-nixpkgs))
   (help: "Create image for all packages including all gerbil libraries"
-   getopt: [(optional-argument 'nixpkgs help: "location of URL for nixpkgs")])
+   getopt: options/nixpkgs)
   (make-docker-image
    "mukn/gerbil" "mukn/gerbil-packages"
    (format "RUN echo ~a ; nix-channel --update ; nix-env -f '<nixpkgs>' -iA gerbilPackages-unstable"
            (digest-paths (apply nix-paths nixpkgs all-target-packages)))))
 
-(define-entry-point (make-glow-image (nixpkgs default-nixpkgs))
+(define-entry-point (make-glow-image)
   (help: "Create image ready to roll for glow"
-   getopt: [(optional-argument 'nixpkgs help: "location of URL for nixpkgs")])
+   getopt: [])
   (make-docker-image "mukn/gerbil-packages" "mukn/glow")
   (docker-push "mukn/glow"))
 
 (define-entry-point (nix-paths (nixpkgs default-nixpkgs) . packages)
   (help: "Return the nix store paths for gerbil and gambit prerequisites plus given packages"
-   getopt: [(optional-argument 'nixpkgs help: "location of URL for nixpkgs")
-            (rest-arguments 'packages help: "Nix packages to install after gerbil")])
+   getopt: options/nixpkgs+packages)
   (setenv "NIX_PATH" (format "nixpkgs=~a" nixpkgs)) ;; TODO: is this needed or overridden by -f below?
   (run-process
    coprocess: read-all-as-lines
@@ -202,31 +213,32 @@
 
 (define-entry-point (make-packages (nixpkgs default-nixpkgs))
   (help: "Make the nix packages and push them to the cache"
-   getopt: [(optional-argument 'nixpkgs help: "location of URL for nixpkgs")])
+   getopt: options/nixpkgs)
   (run-command/batch (apply install-command nixpkgs all-target-packages))
   (def paths (apply nix-paths nixpkgs all-target-packages))
   (run-process/batch ["cachix" "push" "mukn" paths ...]))
 
 (define-entry-point (all (nixpkgs default-nixpkgs))
   (help: "Rebuild all images"
-   getopt: [(optional-argument 'nixpkgs help: "location of URL for nixpkgs")])
+   getopt: options/nixpkgs)
+  (DBG "FOOO")
   (make-packages nixpkgs)
   (make-cachix-image)
   (make-pre-gambit-image nixpkgs)
   (make-gambit-image nixpkgs)
   (make-gerbil-image nixpkgs)
   (make-gerbil-packages-image nixpkgs)
-  (make-glow-image nixpkgs))
+  (make-glow-image))
 
 ;; We can use small, assuming we didn't update gambit or gerbil,
 ;; or otherwise rebased nixpkgs since we last created the mukn/gerbil image.
 (define-entry-point (small (nixpkgs default-nixpkgs))
   (help: "Rebuild just gerbil-packages and glow"
-   getopt: [(optional-argument 'nixpkgs help: "location of URL for nixpkgs")])
+   getopt: options/nixpkgs)
   (make-packages nixpkgs)
   (make-gerbil-packages-image nixpkgs)
-  (make-glow-image nixpkgs))
+  (make-glow-image))
 
 (set-default-entry-point! all)
-;;(backtrace-on-abort? #f)
-(def main call-entry-point)
+(backtrace-on-abort? #f)
+(define-multicall-main)
