@@ -80,14 +80,16 @@
               (display (log-line<-json tai-timestamp (metadata name: (or name path))) port)))))))
 
 ;;; Logging JSON into a directory named after the arguments under the data-directory
+;; This is for logging data that you are collecting and care about when things go right.
 ;; (<- Any (Optional Timestamp)) <- String *
 (def (json-data-logger . x)
   (json-logger (string-join x "/") top: (data-directory)))
 
-;;; Logging JSON into a directory named after the arguments under the run-directory
+;;; Logging JSON into a directory named after the arguments under the log-directory
+;; This is for logging things about the running process for monitoring in case things go wrong.
 ;; (<- Any (Optional Timestamp)) <- String *
 (def (json-run-logger . x)
-  (json-logger (string-join x "/") top: (run-directory)))
+  (json-logger (string-join x "/") top: (log-directory)))
 
 ;; Read from a log port a log entry as a cons of a timestamp and
 ;; (skipping leading whitespace) a string containing the rest of the line.

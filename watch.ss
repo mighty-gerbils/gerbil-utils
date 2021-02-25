@@ -53,7 +53,7 @@
 ;; "previous" => previous process PID
 ;; "current" => current process PID
 
-(defonce (daemon-watch-logger) (json-logger "daemon-watch" top: (run-directory)))
+(defonce (daemon-watch-logger) (json-run-logger "daemon-watch"))
 
 ;; Kill a daemon of given pid.
 ;; But first check that the PID is still assigned to a relevant daemon process,

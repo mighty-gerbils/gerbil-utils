@@ -45,9 +45,9 @@
 
 ;; Initialize paths from the environment
 (def here (path-directory (path-normalize (this-source-file))))
-(home-directory-default! (cut path-parent here))
+(set-central-path-config! (subpath (path-parent here) "run"))
 
-(def docker-directory (run-path "docker"))
+(def docker-directory (transient-path "docker"))
 
 ;; We assume nixpkgs is likely be a git checkout.
 ;; But a full nixpkgs checkout will take 2GB of disk space for no reason.
@@ -58,7 +58,7 @@
 (define-entry-point (clean-docker-directory)
   (help: "Remove the docker directory"
    getopt: [])
-  (unless (string-suffix? "/run/docker" docker-directory)
+  (unless (string-suffix? "/docker" docker-directory)
     (error "Not removing fishy docker-directory" docker-directory))
   (run-process/batch ["rm" "-rf" docker-directory]))
 
@@ -239,6 +239,6 @@
   (make-gerbil-packages-image nixpkgs)
   (make-glow-image))
 
-(set-default-entry-point! all)
+(set-default-entry-point! 'all)
 (backtrace-on-abort? #f)
 (define-multicall-main)

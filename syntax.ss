@@ -5,6 +5,9 @@
   <expander-runtime> :gerbil/expander :std/sugar :std/text/hex
   ./basic-parsers)
 
+;;; TODO: move as much as possible out of having to depend on the expander.
+;;; TODO: Use generic function to extend the behavior here of functionality that has to work on ASTs.
+
 ;;; Allowing for keywords in macros
 (def (stx-separate-keyword-arguments args (positionals-only? #f)) ;; see std/misc/list#separate-keyword-arguments
   (let lp ((rest (syntax->list args)) (positionals []) (keywords []))

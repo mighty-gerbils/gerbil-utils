@@ -5,7 +5,7 @@
 
 (import
   :std/srfi/13
-  ./base ./basic-parsers)
+  ./base ./basic-parsers ./syntax)
 
 (def (easy-shell-character? x)
   (or (char-ascii-alphanumeric? x) (string-index "%+,-./:=@^_~" x)))
@@ -26,3 +26,16 @@
 
 (def (escape-shell-tokens tokens)
   (string-join (map escape-shell-token tokens) " "))
+
+(def (envvar<- . args)
+  (call-with-output-string
+   (lambda (p)
+     (def alpha? #t)
+     (string-for-each
+      (lambda (c)
+        (def caa? (char-ascii-alphanumeric? c))
+        (when caa?
+          (unless alpha? (write-char #\_ p))
+          (write-char c p))
+        (set! alpha? caa?))
+      (string-upcase (apply stringify args))))))

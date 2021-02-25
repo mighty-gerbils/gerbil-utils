@@ -1,6 +1,8 @@
 ;; -*- Gerbil -*-
 (export #t)
 
+;; TODO: Maybe merge this file into config.ss?
+
 (import
   :std/iter :std/sugar
   :gerbil/gambit/os

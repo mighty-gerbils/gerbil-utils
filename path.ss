@@ -1,23 +1,48 @@
 ;; Manipulate strings that denoting POSIX-style paths, independently from any underlying filesystem.
 
+;; TODO: support Windows?
+
 (export #t)
 
 (import
   :std/misc/list :std/pregexp :std/srfi/1 :std/srfi/13 :std/sugar
   ./base ./list)
 
+;; : String <- String String ...
 (def (subpath top . sub-components)
   (path-expand (string-join sub-components "/") top))
 
-;; TODO: support Windows?
+;; : Bool <- String
 (def (path-absolute? path)
   (string-prefix? "/" path))
+
+;; : Bool <- Any
+(def (absolute-path? path)
+  (and (string? path) (path-absolute? path)))
+
+;; Return the absolute path associated to a designator.
+;; Throw an error if the designator is invalid or does not designate an absolute path.
+;; A string designates itself. A thunk designates its result. #f designates the current-directory.
+;; : String <- (Or String False (Fun String <-))
+(def (get-absolute-path path-designator)
+  (cond
+   ((absolute-path? path-designator) path-designator)
+   ((string? path-designator) (error "Path not absolute" path-designator))
+   ((not path-designator) (get-absolute-path (current-directory)))
+   ((procedure? path-designator) (get-absolute-path (path-designator)))
+   (else (error "Invalid path designator" path-designator))))
+
+;; : String <- String (Or String False (Fun String <-))
+(def (ensure-absolute-path path (base #f))
+  (if (path-absolute? path) path
+      (path-expand path (get-absolute-path base))))
 
 ;; Given a path to a file that may or may exists on the current filesystem,
 ;; return a simplified path, eliminating redundant uses of "." or "/",
 ;; and, unless keep..? is true, also remove ".."
 ;; (assuming no weird symlinks or mounts that makes you want not to simplify foo/..)
 ;; NB: Always simplify away a trailing / except for the root directory /.
+;; : String <- String keep..?:Bool
 (def (path-simplify path keep..?: (keep..? #f))
   (def l (string-split path #\/))
   (def abs? (and (pair? l) (equal? (car l) "")))
@@ -43,6 +68,7 @@
 ;; If `maybe-subpath` is a pathname that is under `base-path`, return a pathname object that
 ;; when used with `path-expand` with defaults `base-path`, yields `maybe-subpath`.
 ;; Otherwise, return #f.
+;; : (OrFalse String) <- (OrFalse String) (OrFalse String)
 (def (subpath? maybe-subpath base-path)
   (and (string? maybe-subpath) (string? base-path)
        (eq? (path-absolute? maybe-subpath) (path-absolute? base-path))
@@ -60,26 +86,31 @@
 ;; Normalize will fail if the file doesn't exist, or
 ;; if some funky business happens with symlink or magic mounts.
 ;; So we gracefully fall back to non-normalized path when that's the case.
+;; : String <- String
 (def (path-maybe-normalize path)
   (with-catch (lambda (_) (path-simplify path)) (cut path-normalize path)))
 
 ;; If `sub` is a pathname that is under `base`, return a pathname string that
 ;; when used with `path-expand` with defaults `base`, returns `sub`.
 ;; Compare CL:ENOUGH-NAMESTRING, UIOP:ENOUGH-PATHNAME.
+;; : String <- String String
 (def (path-enough sub base)
   (or (and base (subpath? sub base)) sub))
 
+;; : String <- String
 (def (path-simplify-directory path)
   (path-simplify (path-directory path)))
 
+;; : String <- String
 (def (path-normalized-directory path)
   (path-maybe-normalize (path-directory path)))
 
+;; : String <- String
 (def (path-parent path)
   (path-maybe-normalize (path-expand ".." path)))
 
+;; : String <- String (OrFalse String)
 (def (path-extension-is? path extension)
   (equal? (path-extension path) extension))
 
-;; TODO: something inspired by UIOP:TRUENAMIZE, UIOP:ENSURE-PATH-ABSOLUTE, etc.
-
+;; TODO: something inspired by UIOP:TRUENAMIZE, etc.
