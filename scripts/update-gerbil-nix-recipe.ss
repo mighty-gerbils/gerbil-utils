@@ -121,6 +121,7 @@
 
 (define-entry-point (update-gerbil-nix-recipe
                      checkouts-dir: (checkouts-dir #f)
+                     nixpkgs-dir: (nixpkgs-dir #f)
                      stable: (stable #f)
                      gambit-off: (gambit-off #f)
                      gambit-github: (gambit-github #f)
@@ -128,14 +129,19 @@
                      gerbil-off: (gerbil-off #f)
                      gerbil-github: (gerbil-github #f)
                      gerbil-dir: (gerbil-dir #f)
-                     gerbil-utils-dir: (gerbil-utils-dir: #f)
+                     gerbil-utils-dir: (gerbil-utils-dir #f)
                      gerbil-crypto-dir: (gerbil-crypto-dir #f)
+                     gerbil-poo-dir: (gerbil-poo-dir #f)
+                     gerbil-persist-dir: (gerbil-persist-dir #f)
                      gerbil-ethereum-dir: (gerbil-ethereum-dir #f)
+                     glow-dir: (glow-dir #f)
                      smug-gerbil-dir: (smug-gerbil-dir #f)
                      gerbil-libp2p-dir: (gerbil-libp2p-dir #f))
   (help: "Update Gerbil (and Gambit) Nix recipies"
    getopt: [(option 'checkouts-dir "-C" "--checkouts" default: #f
                     help: "parent directory to git checkouts")
+            (flag 'nixpkgs-dir "-N" "--nixpkgs"
+                  help: "path or url to nixpkgs")
             (flag 'stable "-S" "--stable"
                   help: "update stable recipes instead of unstable")
             (flag 'gambit-off "-o" "--gambit-off"
@@ -160,6 +166,8 @@
                     help: "git checkout directory for gerbil-persist")
             (option 'gerbil-ethereum-dir "-E" "--gerbil-ethereum-dir" default: #f
                     help: "git checkout directory for gerbil-ethereum")
+            (option 'glow-dir "-E" "--glow-dir" default: #f
+                    help: "git checkout directory for glow")
             (option 'smug-gerbil-dir "-s" "--smug-gerbil-dir" default: #f
                     help: "git checkout directory for smug-gerbil")
             (option 'gerbil-libp2p-dir "-p" "--gerbil-libp2p-dir" default: #f
@@ -183,87 +191,87 @@
       source-dir: gerbil-dir
       nixpkgs-dir: nixpkgs-dir
       stable: stable))
-     (unless (or gerbil-off stable)
-       (update-recipe
-        name: "gerbil-utils"
-        repo: "fare/gerbil-utils"
-        recipe-path: (recipe-path "gerbil" "gerbil-utils")
-        checkouts-dir: checkouts-dir
-        source-dir: gerbil-utils-dir
-        nixpkgs-dir: nixpkgs-dir
-        stable: stable))
-     (unless (or gerbil-off stable)
-       (update-recipe
-        name: "gerbil-crypto"
-        repo: "fare/gerbil-crypto"
-        recipe-path: (recipe-path "gerbil" "gerbil-crypto")
-        checkouts-dir: checkouts-dir
-        source-dir: gerbil-crypto-dir
-        nixpkgs-dir: nixpkgs-dir
-        stable: stable))
-     (unless (or gerbil-off stable)
-       (update-recipe
-        name: "gerbil-poo"
-        repo: "fare/gerbil-poo"
-        recipe-path: (recipe-path "gerbil" "gerbil-poo")
-        checkouts-dir: checkouts-dir
-        source-dir: gerbil-crypto-dir
-        nixpkgs-dir: nixpkgs-dir
-        stable: stable))
-     (unless (or gerbil-off stable)
-       (update-recipe
-        name: "gerbil-persist"
-        repo: "fare/gerbil-persist"
-        recipe-path: (recipe-path "gerbil" "gerbil-persist")
-        checkouts-dir: checkouts-dir
-        source-dir: gerbil-persist-dir
-        nixpkgs-dir: nixpkgs-dir
-        stable: stable))
-     (unless (or gerbil-off stable)
-       (update-recipe
-        name: "gerbil-ethereum"
-        repo: "fare/gerbil-ethereum"
-        recipe-path: (recipe-path "gerbil" "gerbil-ethereum")
-        checkouts-dir: checkouts-dir
-        source-dir: gerbil-ethereum-dir
-        nixpkgs-dir: nixpkgs-dir
-        stable: stable))
-     (unless (or gerbil-off stable)
-       (update-recipe
-        name: "smug-gerbil"
-        repo: "drewc/smug-gerbil"
-        recipe-path: (recipe-path "gerbil" "smug-gerbil")
-        checkouts-dir: checkouts-dir
-        source-dir: smug-gerbil-dir
-        nixpkgs-dir: nixpkgs-dir
-        stable: stable))
-     (unless (or gerbil-off stable)
-       (update-recipe
-        name: "gerbil-libp2p"
-        repo: "github/vyzo/gerbil-libp2p"
-        recipe-path: (recipe-path "gerbil" "gerbil-libp2p")
-        checkouts-dir: checkouts-dir
-        source-dir: gerbil-libp2p-dir
-        nixpkgs-dir: nixpkgs-dir
-        stable: stable))
-     (unless (or gerbil-off stable)
-       (update-recipe
-        name: "gerbil-libp2p"
-        repo: "github/vyzo/gerbil-libp2p"
-        recipe-path: (recipe-path "gerbil" "gerbil-libp2p")
-        checkouts-dir: checkouts-dir
-        source-dir: gerbil-libp2p-dir
-        nixpkgs-dir: nixpkgs-dir
-        stable: stable))
-     (unless (or gerbil-off stable)
-       (update-recipe
-        name: "glow"
-        repo: "gitlab/mukn/glow"
-        recipe-path: (recipe-path "gerbil" "glow-lang")
-        checkouts-dir: checkouts-dir
-        source-dir: glow-dir
-        nixpkgs-dir: nixpkgs-dir
-        stable: stable)))
+   (unless (or gerbil-off stable)
+     (update-recipe
+      name: "gerbil-utils"
+      repo: "fare/gerbil-utils"
+      recipe-path: (recipe-path "gerbil" "gerbil-utils")
+      checkouts-dir: checkouts-dir
+      source-dir: gerbil-utils-dir
+      nixpkgs-dir: nixpkgs-dir
+      stable: stable))
+   (unless (or gerbil-off stable)
+     (update-recipe
+      name: "gerbil-crypto"
+      repo: "fare/gerbil-crypto"
+      recipe-path: (recipe-path "gerbil" "gerbil-crypto")
+      checkouts-dir: checkouts-dir
+      source-dir: gerbil-crypto-dir
+      nixpkgs-dir: nixpkgs-dir
+      stable: stable))
+   (unless (or gerbil-off stable)
+     (update-recipe
+      name: "gerbil-poo"
+      repo: "fare/gerbil-poo"
+      recipe-path: (recipe-path "gerbil" "gerbil-poo")
+      checkouts-dir: checkouts-dir
+      source-dir: gerbil-crypto-dir
+      nixpkgs-dir: nixpkgs-dir
+      stable: stable))
+   (unless (or gerbil-off stable)
+     (update-recipe
+      name: "gerbil-persist"
+      repo: "fare/gerbil-persist"
+      recipe-path: (recipe-path "gerbil" "gerbil-persist")
+      checkouts-dir: checkouts-dir
+      source-dir: gerbil-persist-dir
+      nixpkgs-dir: nixpkgs-dir
+      stable: stable))
+   (unless (or gerbil-off stable)
+     (update-recipe
+      name: "gerbil-ethereum"
+      repo: "fare/gerbil-ethereum"
+      recipe-path: (recipe-path "gerbil" "gerbil-ethereum")
+      checkouts-dir: checkouts-dir
+      source-dir: gerbil-ethereum-dir
+      nixpkgs-dir: nixpkgs-dir
+      stable: stable))
+   (unless (or gerbil-off stable)
+     (update-recipe
+      name: "smug-gerbil"
+      repo: "drewc/smug-gerbil"
+      recipe-path: (recipe-path "gerbil" "smug-gerbil")
+      checkouts-dir: checkouts-dir
+      source-dir: smug-gerbil-dir
+      nixpkgs-dir: nixpkgs-dir
+      stable: stable))
+   (unless (or gerbil-off stable)
+     (update-recipe
+      name: "gerbil-libp2p"
+      repo: "github/vyzo/gerbil-libp2p"
+      recipe-path: (recipe-path "gerbil" "gerbil-libp2p")
+      checkouts-dir: checkouts-dir
+      source-dir: gerbil-libp2p-dir
+      nixpkgs-dir: nixpkgs-dir
+      stable: stable))
+   (unless (or gerbil-off stable)
+     (update-recipe
+      name: "gerbil-libp2p"
+      repo: "github/vyzo/gerbil-libp2p"
+      recipe-path: (recipe-path "gerbil" "gerbil-libp2p")
+      checkouts-dir: checkouts-dir
+      source-dir: gerbil-libp2p-dir
+      nixpkgs-dir: nixpkgs-dir
+      stable: stable))
+   (unless (or gerbil-off stable)
+     (update-recipe
+      name: "glow"
+      repo: "gitlab/mukn/glow"
+      recipe-path: (recipe-path "gerbil" "glow-lang")
+      checkouts-dir: checkouts-dir
+      source-dir: glow-dir
+      nixpkgs-dir: nixpkgs-dir
+      stable: stable))
    (catch (getopt-error? exn)
      (getopt-display-help exn "update-gerbil-nix-recipe" (current-error-port))
      (exit 2))
@@ -271,4 +279,4 @@
      (display-exception (uncaught-exception-reason exn) (current-error-port))
      (exit 2))))
 
-(def main update-gerbil-nix-recipe)
+(def (main . args) (apply call-entry-point 'update-gerbil-nix-recipe args))

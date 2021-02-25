@@ -3,7 +3,7 @@
 
 (import
   :gerbil/expander
-  :std/getopt :std/misc/process :std/srfi/1 :std/sugar)
+  :std/getopt :std/misc/list :std/misc/process :std/srfi/1 :std/sugar)
 
 (def srcdir (path-normalize (path-directory (this-source-file))))
 (current-directory srcdir)
@@ -39,15 +39,19 @@
  build-docker name: "docker" help: "build a Gerbil NixOS docker image"
  getopt: [(rest-arguments 'docker-options help: "options to pass on to docker")])
 
-(def (build-nixpkgs . opts)
-  (void (run-process ["nix-env" "--show-trace" opts ... "-iA" "gerbil-unstable" "gerbilPackages-unstable"])))
+(def (build-nixpkgs nixpkgs-file: (nixpkgs-file #f))
+  (void (run-process ["nix-env" "--show-trace"
+                      (when/list nixpkgs-file ["--file" nixpkgs-file])...
+                      "-iA" "gerbil-unstable" "gerbilPackages-unstable"])))
 (clan/multicall#register-entry-point
  build-nixpkgs name: "nixpkgs" help: "build all gerbil packages and their dependencies"
- getopt: [(rest-arguments 'nix-options help: "options to pass on to nix")])
+ getopt: [(option 'nixpkgs-file "-f" "--file" help: "path or url for nixpkgs")])
 
-(def (publish-nixpkgs . opts)
+(def (publish-nixpkgs nixpkgs-file: (nixpkgs-file #f))
   (clan/base#!>
-   (run-process ["nix" "path-info" opts ... "-r" "gerbil-unstable" "gerbilPackages-unstable"])
+   (run-process ["nix" "path-info"
+                 (when/list nixpkgs-file ["--file" nixpkgs-file])...
+                 "-r" "gerbil-unstable" "gerbilPackages-unstable"])
    (cut string-split <> #\newline)
    (cut cons* "cachix" "push" "mukn" <>)
    (cut run-process/batch <>)
@@ -55,7 +59,7 @@
 (clan/multicall#register-entry-point
  publish-nixpkgs name: "publish"
  help: "publish all gerbil packages and their dependencies to cachix"
- getopt: [(rest-arguments 'nix-options help: "options to pass on to nix")])
+ getopt: [(option 'nixpkgs-file "-f" "--file" help: "path or url for nixpkgs")])
 
 (def main clan/multicall#call-entry-point)
 (clan/multicall#current-program (this-source-file))
