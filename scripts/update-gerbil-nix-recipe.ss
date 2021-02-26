@@ -124,10 +124,10 @@
                      nixpkgs-dir: (nixpkgs-dir #f)
                      stable: (stable #f)
                      gambit-off: (gambit-off #f)
-                     gambit-github: (gambit-github #f)
+                     gambit-repo: (gambit-repo #f)
                      gambit-dir: (gambit-dir #f)
                      gerbil-off: (gerbil-off #f)
-                     gerbil-github: (gerbil-github #f)
+                     gerbil-repo: (gerbil-repo #f)
                      gerbil-dir: (gerbil-dir #f)
                      gerbil-utils-dir: (gerbil-utils-dir #f)
                      gerbil-crypto-dir: (gerbil-crypto-dir #f)
@@ -135,6 +135,7 @@
                      gerbil-persist-dir: (gerbil-persist-dir #f)
                      gerbil-ethereum-dir: (gerbil-ethereum-dir #f)
                      glow-dir: (glow-dir #f)
+                     glow-repo: (glow-repo #f)
                      smug-gerbil-dir: (smug-gerbil-dir #f)
                      gerbil-libp2p-dir: (gerbil-libp2p-dir #f))
   (help: "Update Gerbil (and Gambit) Nix recipies"
@@ -146,37 +147,39 @@
                   help: "update stable recipes instead of unstable")
             (flag 'gambit-off "-o" "--gambit-off"
                   help: "skip gambit update")
-            (option 'gambit-github "-g" "--gambit-repo" default: #f
+            (option 'gambit-repo "-g" "--gambit-repo" default: #f
                     help: "github owner/repo[@tree] for gambit")
             (option 'gambit-dir "-d" "--gambit-dir" default: #f
                     help: "git checkout directory for gambit")
             (flag 'gerbil-off "-O" "--gerbil-off"
                   help: "skip gerbil update")
-            (option 'gerbil-github "-G" "--gerbil-repo" default: #f
+            (option 'gerbil-repo "-G" "--gerbil-repo" default: #f
                     help: "github owner/repo[@tree] for gerbil")
             (option 'gerbil-dir "-D" "--gerbil-dir" default: #f
                     help: "git checkout directory for gerbil")
             (option 'gerbil-utils-dir "-U" "--gerbil-utils-dir" default: #f
                     help: "git checkout directory for gerbil-utils")
-            (option 'gerbil-poo-dir "-Y" "--gerbil-poo-dir" default: #f
+            (option 'gerbil-poo-dir "-p" "--gerbil-poo-dir" default: #f
                     help: "git checkout directory for gerbil-poo")
             (option 'gerbil-crypto-dir "-Y" "--gerbil-crypto-dir" default: #f
                     help: "git checkout directory for gerbil-crypto")
-            (option 'gerbil-persist-dir "-Y" "--gerbil-persist-dir" default: #f
+            (option 'gerbil-persist-dir "-P" "--gerbil-persist-dir" default: #f
                     help: "git checkout directory for gerbil-persist")
             (option 'gerbil-ethereum-dir "-E" "--gerbil-ethereum-dir" default: #f
                     help: "git checkout directory for gerbil-ethereum")
-            (option 'glow-dir "-E" "--glow-dir" default: #f
+            (option 'glow-dir "-W" "--glow-dir" default: #f
                     help: "git checkout directory for glow")
+            (option 'glow-repo "-w" "--glow-repo" default: #f
+                    help: "git repo for glow")
             (option 'smug-gerbil-dir "-s" "--smug-gerbil-dir" default: #f
                     help: "git checkout directory for smug-gerbil")
-            (option 'gerbil-libp2p-dir "-p" "--gerbil-libp2p-dir" default: #f
+            (option 'gerbil-libp2p-dir "-2" "--gerbil-libp2p-dir" default: #f
                     help: "git checkout directory for gerbil-libp2p")])
   (try
    (unless gambit-off
      (update-recipe
       name: "gambit"
-      repo: (or gambit-github "feeley/gambit")
+      repo: (or gambit-repo "feeley/gambit")
       recipe-path: (recipe-path "gambit" (if stable "default" "unstable"))
       checkouts-dir: checkouts-dir
       source-dir: gambit-dir
@@ -185,7 +188,7 @@
    (unless gerbil-off
      (update-recipe
       name: "gerbil"
-      repo: (or gerbil-github "vyzo/gerbil")
+      repo: (or gerbil-repo "vyzo/gerbil")
       recipe-path: (recipe-path "gerbil" (if stable "default" "unstable"))
       checkouts-dir: checkouts-dir
       source-dir: gerbil-dir
@@ -266,7 +269,7 @@
    (unless (or gerbil-off stable)
      (update-recipe
       name: "glow"
-      repo: "gitlab/mukn/glow"
+      repo: (or glow-repo "gitlab/mukn/glow")
       recipe-path: (recipe-path "gerbil" "glow-lang")
       checkouts-dir: checkouts-dir
       source-dir: glow-dir
