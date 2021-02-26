@@ -75,7 +75,7 @@
     (def base
       (or (getenv-absolute-path envvar)
           (cond-expand forms ...)))
-    (apply subpath base more)))
+    (and base (apply subpath base more))))
 
 (defrule (defxdgdirs name envvar forms ...)
   (or (getenv-absolute-path envvar)
@@ -113,15 +113,16 @@
 ;; "$XDG_CONFIG_DIRS defines the preference-ordered set of base directories to search for configuration files in addition to the $XDG_CONFIG_HOME base directory. The directories in $XDG_CONFIG_DIRS should be seperated with a colon ':'."
 ;; "If $XDG_CONFIG_DIRS is either not set or empty, a value equal to /etc/xdg should be used."
 (defxdgdirs xdg-config-dirs "XDG_CONFIG_DIRS"
-  (windows (map (cut subpath <> "config") (xdg-data-dirs)))
+  (windows (map (cut subpath <> "config") (filter identity (xdg-data-dirs))))
   (else '("/etc/xdg/")))
 
 ;; XDG basedir spec: The order of base directories denotes their importance; the first directory listed is the most important. When the same information is defined in multiple places the information defined relative to the more important base directory takes precedent. The base directory defined by $XDG_DATA_HOME is considered more important than any of the base directories defined by $XDG_DATA_DIRS. The base directory defined by $XDG_CONFIG_HOME is considered more important than any of the base directories defined by $XDG_CONFIG_DIRS.
 (def (search-xdg-dirs base dirs . more)
   (let/cc return
     (for (d [base . dirs])
-      (let (p (apply subpath d more))
-        (when (file-exists? p) (return p))))
+      (when d
+        (let (p (apply subpath d more))
+          (when (file-exists? p) (return p)))))
     #f))
 #;
 (def (search-data-dirs . more)

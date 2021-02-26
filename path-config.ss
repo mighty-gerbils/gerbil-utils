@@ -18,12 +18,20 @@
 (def (application-source-envvar) (envvar<- (application-name) '-source))
 (def (application-home-envvar) (envvar<- (application-name) '-home))
 
+;; Default for application-source-directory below when the variable is undefined.
+;; : (OrFalse String)
+(def default-application-source-directory
+  (values #f))
+
 ;; Where the top of the application source files are stored.
 ;; Only meaningful for some applications.
 ;; : String <-
 (def application-source-directory
   (values (cut getenv (application-source-envvar) default-application-source-directory)))
-(def default-application-source-directory
+
+;; Default for application-home-directory below when the variable is undefined.
+;; : (OrFalse String)
+(def default-application-home-directory
   (values #f))
 
 ;; Where the top of the application run files are stored.
@@ -31,8 +39,6 @@
 ;; : String <-
 (def application-home-directory
   (values (cut getenv (application-home-envvar) default-application-home-directory)))
-(def default-application-home-directory
-  (values #f))
 
 ;; Where executables and other things are created.
 ;; : String <-
