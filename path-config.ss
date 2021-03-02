@@ -70,7 +70,7 @@
 ;; but typically may survive the current session.
 ;; : String <-
 (def log-directory
-  (values (cut path-expand (application-name/) "~/.local/log")))
+  (values (cut xdg-data-home "log" (application-name/))))
 
 ;; Where transient data for the current session is stored.
 ;; These files are may be purged after the session is over or when the next session starts,
