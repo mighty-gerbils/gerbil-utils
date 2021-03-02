@@ -76,7 +76,7 @@
   (def src (path-directory (path-maybe-normalize script-path)))
   (current-directory src)
   (add-load-path src)
-  (set-central-path-config! (subpath src "run"))
+  (set-path-config-root! (subpath src "run"))
   (set! application-source-directory (lambda () src))
   (set! application-home-directory (lambda () src))
   (set-default-entry-point! 'unit-tests)

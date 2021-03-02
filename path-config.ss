@@ -85,10 +85,10 @@
 (def persistent-directory
   (values (cut subpath (config-directory) "db/")))
 
-;; Use a central directory for all path configuration,
+;; Use a root directory for all path configuration,
 ;; rather than store it in the user's respective relevant directories.
 ;; : Unit <- String
-(def (set-central-path-config! (dir (subpath (application-home-directory) "run/")))
+(def (set-path-config-root! (dir (subpath (application-home-directory) "run/")))
   (set! build-output-directory (cut subpath dir "build_outputs/"))
   (set! cache-directory (cut subpath dir "cache/"))
   (set! config-directory (cut subpath dir "config/"))

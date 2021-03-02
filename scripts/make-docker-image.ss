@@ -45,7 +45,7 @@
 
 ;; Initialize paths from the environment
 (def here (path-directory (path-normalize (this-source-file))))
-(set-central-path-config! (subpath (path-parent here) "run"))
+(set-path-config-root! (subpath (path-parent here) "run"))
 
 (def docker-directory (transient-path "docker"))
 

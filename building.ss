@@ -36,7 +36,7 @@
   (set! %srcdir (path-maybe-normalize (path-directory script-path)))
   (current-directory %srcdir)
   (add-load-path %srcdir)
-  (set-central-path-config! (subpath %srcdir "run"))
+  (set-path-config-root! (subpath %srcdir "run"))
   (set! application-source-directory (lambda () %srcdir))
   (set! application-home-directory (lambda () %srcdir))
   (set! %name name)
