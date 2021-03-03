@@ -85,3 +85,8 @@
         (λ (path) (when (and (path-is-file? path)
                              (pregexp-match regexp path))
                     (collect! path))))))))
+
+(def (modification-time file)
+  (let/cc return
+    (def info (with-catch false (cut file-info file #t)))
+    (time->seconds (file-info-last-modification-time info))))

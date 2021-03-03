@@ -239,10 +239,10 @@
 ;; so that 0 means "just before the string digits", -4 means "four positions before the string digits",
 ;; 3 means "3 positions after the first digit".
 ;; The input position, if not false, indicates how many fractional digits are wanted.
-;; The boolean true means the digits are relative to the most significant digit of the number,
+;; The boolean #t means the digits are relative to the most significant digit of the number,
 ;; and indicate how many digits of precision are needed;
 ;; if they are not enough to fit the digits of the number the precision-loss-behavior is invoked.
-;; The boolean false (the default) means the digits are the absolute position of the desired
+;; The boolean #f (the default) means the digits are the absolute position of the desired
 ;; smallest digit: negative means that the digits will represent a fraction of a unit
 ;; (e.g. -2 for cents of a dollar), whereas positive means that the digits will correspond to
 ;; a multiple of the unit (e.g. 3 for thousands of dollars).

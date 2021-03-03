@@ -37,6 +37,8 @@
           ("3.14" 157/50)
           ("42." 42 always-decimal?: #t)
           ("1.0" 1 always-decimal?: ".0")
+          ("007" 7 width: 3 pad: #\0)
+          #;("10" 10 width: 2 pad: #\0) ;; <--- known bug; the original ported code always assumed a .
           ("+317000" 317000 always-sign?: #t)
           ("-0.00000317" -317/100000000)
           ("3.14" 314 scale: -2)
