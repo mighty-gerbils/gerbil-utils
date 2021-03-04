@@ -3,15 +3,8 @@
 (import
   :gerbil/gambit/bits :gerbil/gambit/exact
   :scheme/base-impl
-  :std/error :std/iter :std/misc/number :std/sugar
+  :std/error :std/iter :std/misc/number :std/srfi/13 :std/sugar
   ./base ./basic-parsers ./basic-printers ./number ./string)
-
-;; : (Parameter Char)
-(def decimal-mark (make-parameter #\.))
-
-;; Precision loss mode. Must be 'error, 'round, or 'truncate
-;; : (Parameter Symbol)
-(def precision-loss-behavior (make-parameter 'error))
 
 ;; : Bool <- Any
 (def (decimal? x)
@@ -22,6 +15,8 @@
 (def (factor-out-powers-of-2 n)
   (arithmetic-shift n (- (first-bit-set n))))
 
+;; TODO: study the limit conditions of validity of this algorithm, and
+;; add a check at the beginning to detect when they are not satisfied.
 ;; : Bool <- Integer
 (def (power-of-5? n)
   (def l (integer-part (round (log n 5))))
@@ -194,18 +189,39 @@
     (values (expt 5 (- m n)) m)
     (values (expt 2 (- n m)) n)))
 
-;; : Nat+ <- Integer
-(def (count-digits n)
-  (assert! (exact-integer? n))
+;; Count the number of significant digits to represent this natural integer.
+;; For 0, return 0.
+;; TODO: document and check the limit conditions of validity of the algorithm
+;; : Nat <- Nat
+(def (count-significant-digits n)
+  (assert! (nat? n))
   (if (zero? n)
-      1
-      ;; Could use log instead but it might not be safe in every case
-      (let loop ((l 0) (a (abs n)))
-        (if (< a 1) l (loop (1+ l) (quotient a 10))))))
+      0
+      (let (l0 (integer-part (log n 10)))
+        (let loop ((l l0) (a (quotient n (expt 10 l0))))
+          (if (< a 1) l (loop (1+ l) (quotient a 10)))))))
 
-;; Note that the exponent is a natural.
+;; Converts an integer into a base 10 string. The sign is ignored.
+;; For 0 becomes an empty string "" rather than "0".
+;; : String <- Nat
+(def (significant-digits<-nat n)
+  (assert! (nat? n))
+  (let* ((digit-count (count-significant-digits n))
+         (str (make-string digit-count))
+         (remainder 0))
+    (let loop ((a n)
+               (i (1- digit-count)))
+      (if (minus? i) str
+          (let-values (((q r) (truncate/ a 10)))
+            (string-set! str i (digit-char r 10))
+            (loop q (1- i)))))))
+
+;; Given a decimal number, return
+;; - The absolute smallest integer with all its digits
+;; - the non-negative power of ten by which the decimal had to be multiplied to get this integer.
 ;; Maybe we should find the valuation of the decimal in base 10,
 ;; and return the least, negative, number when appropriate?
+;; : Integer Nat <- Decimal
 (def (digits-exponent<-decimal decimal)
   (defvalues (c m) (find-multiplier (denominator decimal)))
   (values (* (numerator decimal) c) m))
@@ -215,263 +231,210 @@
 (def (decimal<-digits-exponent digits exponent)
   (/ digits (expt 10 exponent)))
 
-;; Converts an integer into a base 10 string. The sign is ignored.
-;; : String <- Integer
-(def (digits<-integer n)
-  (assert! (exact-integer? n))
-  (if (zero? n)
-    "0"
-    (let* ((digit-count (count-digits n))
-           (str (make-string digit-count))
-           (remainder 0))
-      (let loop ((a (abs n))
-                 (i (1- digit-count)))
-        (if (minus? i) str
-            (let-values (((q r) (truncate/ a 10)))
-              (string-set! str i (digit-char r 10))
-              (loop q (1- i))))))))
-
 ;; Attempted print operation would lose precision. See precision-loss-behavior.
 (defstruct (disallowed-loss-of-precision Exception) () transparent: #t)
 
-;; Given a decimal number, a position (integer or false), and a boolean,
-;; Returns a string of digits, and the position of the decimal mark relative to the start of that string,
-;; so that 0 means "just before the string digits", -4 means "four positions before the string digits",
-;; 3 means "3 positions after the first digit".
-;; The input position, if not false, indicates how many fractional digits are wanted.
-;; The boolean #t means the digits are relative to the most significant digit of the number,
-;; and indicate how many digits of precision are needed;
-;; if they are not enough to fit the digits of the number the precision-loss-behavior is invoked.
-;; The boolean #f (the default) means the digits are the absolute position of the desired
-;; smallest digit: negative means that the digits will represent a fraction of a unit
-;; (e.g. -2 for cents of a dollar), whereas positive means that the digits will correspond to
-;; a multiple of the unit (e.g. 3 for thousands of dollars).
-;; If they are not enough to fit the digits of the number the precision-loss-behavior is invoked.
-;; : String Integer <- Decimal (OrFalse Integer) Bool
-(def (digits<-decimal n (position #f) (relative? #f))
-  (when (and position relative?)
-    (assert! (plus? position)))
-  (defvalues (all-digits denominator-power) (digits-exponent<-decimal n))
-  (def digit-count (count-digits all-digits))
-  (def decimal-mark-index (- digit-count denominator-power))
-  (if position
-    (if relative?
-      (if (plus? (+ position decimal-mark-index))
-        (let ((new-digit-count (min digit-count
-                                    (+ (min position (+ (max 0 (- decimal-mark-index))
-                                                        digit-count))
-                                       (min 0 decimal-mark-index)))))
-          (unless (= new-digit-count digit-count)
-            (case (precision-loss-behavior)
-              ((error) (raise (disallowed-loss-of-precision)))
-              ((truncate) (set! all-digits (truncate all-digits (expt 10 (- digit-count new-digit-count)))))
-              ((round) (let-values (((rounded-all-digits remainder)
-                                     (round/ all-digits (expt 10 (- digit-count new-digit-count)))))
-                         (unless (or (>= remainder 0)
-                                     (= digit-count (count-digits (- all-digits remainder))))
-                           (increment! decimal-mark-index))
-                         (set! all-digits rounded-all-digits)))
-              (else (error "Invalid precision-loss-behavior")))
-            (when (zero? all-digits)
-              (set! decimal-mark-index 0)))
-          (values (digits<-integer all-digits) decimal-mark-index))
-        (values "0" 0))
-      (if (plus? (- (max 0 decimal-mark-index) position))
-        (let ((new-digit-count (min digit-count
-                                    (- decimal-mark-index position))))
-          (unless (= new-digit-count digit-count)
-            (case (precision-loss-behavior)
-              ((error) (raise (disallowed-loss-of-precision)))
-              ((truncate) (set! all-digits (truncate all-digits (expt 10 (- digit-count new-digit-count)))))
-              ((round) (let-values (((rounded-all-digits remainder)
-                                     (round/ all-digits (expt 10 (- digit-count new-digit-count)))))
-                         (unless (or (<= 0 remainder)
-                                     (= digit-count (count-digits (- all-digits remainder))))
-                           (increment! decimal-mark-index))
-                         (set! all-digits rounded-all-digits)))
-              (else (error "Invalid precision-loss-behavior")))
-            (when (zero? all-digits)
-              (set! decimal-mark-index 0)))
-          (values (digits<-integer all-digits) decimal-mark-index))
-        (values "0" position)))
-    (values (digits<-integer all-digits) decimal-mark-index)))
-
-;; Takes
+;; Given
 ;; - a decimal number,
-;; - a number of allowed characters in which to fit the representation, or false if no limit,
-;; - a number of desired fractional digits, or false if no limit,
-;; - a scale, power of ten by which to notionally multiply the number (or false),
-;; Returns
-;; - a string for the digits plus the decimal mark,
-;; - a boolean true iff the number is fractional (in which case it starts with the decimal mark),
-;; - a boolean true iff the number is integral (in which case the decimal mark is NOT included in the string)
-;; : String Nat Bool Bool (OrFalse Nat) <- Decimal (OrFalse Nat) (OrFalse Nat) (OrFalse Integer) (OrFalse Nat)
-(def (%string<-decimal x (width #f) (fdigits #f) (scale #f))
-  (assert! (decimal? x))
-  (set! x (abs x))
-  (defvalues (digits mark-place)
-    (if fdigits
-      (digits<-decimal x (- (+ fdigits (or scale 0))))
-      (if (and width (> width 1))
-        (let-values (((wd we)
-                      (digits<-decimal x
-                                       (max 1
-                                            (+ (1- width)
-                                               (if (and scale (minus? scale))
-                                                 scale 0)))
-                                       #t))
-                     ((fd fe)
-                      (digits<-decimal x (- (or scale 0)))))
-          (if (>= (string-length wd) (string-length fd))
-            (values wd we)
-            (values fd fe)))
-        (digits<-decimal x))))
-  (def e (+ mark-place (or scale 0)))
-  (def l (string-length digits))
-  (def int? (<= l e))
-  (def string
-    (call-with-output-string
-     (lambda (port)
-       (if (plus? e)
-         (begin
-           (display (substring digits 0 (min l e)) port)
-           (write-n-chars (- e l) #\0 port)
-           (unless int?
-             (write-char (decimal-mark) port)
-             (display (substring digits (min l e) l) port)
-             (when fdigits
-               (write-n-chars (- fdigits (- l (min l e))) #\0 port))))
-         (begin
-           (write-char (decimal-mark) port)
-           (write-n-chars (- e) #\0 port)
-           (display digits port)
-           (when fdigits
-             (write-n-chars (+ fdigits e (- l)) #\0 port)))))))
-  (values string (string-length string)
-          (<= e 0)
-          int?))
-
-;; Port, Decimal,
-;; a desired width in which to fit the number (or false),
-;; a requested number of fractional digits (or false),
-;; a scale (or false),
-;; a character with which to fill the string to given width on overflow (or false),
-;; a character to print when padding for desired width (or false if no desired width),
-;; Return true iff there was an overflow and the overflow character was used.
-;; : Bool <- Decimal Port \
+;; - a scale (or #f meaning 0), the number being notionally multiplied by ten to that scale (default #f),
+;; - a width within which to fit the number or #f for no limitation (default #f),
+;; - a minimum number of integral digits to display or false (default #f),
+;;   that can be 1 to force #\0 to be printed before a decimal point,
+;; - a minimum number of fractional digits to display or false (default #f),
+;;   that can be 1 to force #\0 to be printed after a decimal point,
+;; - a boolean for whether a decimal mark will always be printed even for integers (default #f),
+;; - a character to use as the decimal mark,
+;; - a symbol for the behavior on precision loss, one of error, truncate or round,
+;; Return a string, or raise an exception if the number won't fit the specified width
+;; : String <- Decimal Port \
+;;   scale:(OrFalse Integer) \
 ;;   width:(OrFalse Nat) \
 ;;   integral-digits:(OrFalse Nat) \
 ;;   fractional-digits:(OrFalse Nat) \
-;;   scale:(Or Integer Bool) \
-;;   overflow:(OrFalse Char) \
-;;   pad:Char \
-;;   leading-decimal-mark-allowed?:Bool \
-;;   always-decimal?:(Or Bool String) \
-;;   always-sign?:Bool
-(def (write-decimal number (port (current-output-port))
-                    width: (w #f) fractional-digits: (d #f) scale: (k #f)
-                    overflow: (ovf_ #f) pad: (pad_ #f)
-                    leading-decimal-mark-allowed?: (leading-decimal-mark-allowed? #f)
-                    always-decimal?: (always-decimal?_ #f) always-sign?: (always-sign? #f))
-  (def pad (or pad_ #\space))
-  (def ovf (if (eq? #t ovf_) #\X ovf_))
-  (def always-decimal? (if (eq? #t always-decimal?_) (make-string 1 (decimal-mark)) always-decimal?_))
-  (def spaceleft w)
-  (when (and w (or always-sign? (> 0 number)))
-    (decrement! spaceleft))
-  (defvalues (str len frac? int?)
-    (%string<-decimal (abs number) spaceleft d k))
-  (when w
-    (decrement! spaceleft len)
-    ;; optional leading zero
-    (when (and frac? (not leading-decimal-mark-allowed?))
-      (decrement! spaceleft))
-    ;; optional trailing decimal mark
-    (when (and int? always-decimal?)
-      (decrement! spaceleft (string-length always-decimal?))))
-  (cond ((and w (minus? spaceleft) ovf)
-         ;; field width overflow
-         (write-n-chars w ovf port)
-         #t)
-        (else
-         (when w
-           (write-n-chars spaceleft pad port))
-         (if (> 0 number)
-           (write-char #\- port)
-           (when always-sign?
-             (write-char #\+ port)))
-         (when (and frac? (not leading-decimal-mark-allowed?))
-           (write-char #\0 port))
-         (display str port)
-         (when (and int? always-decimal?)
-           (display always-decimal? port))
-         #f)))
+;;   always-decimal?:Bool \
+;;   decimal-mark:Char \
+;;   precision-loss-behavior:(Enum error truncate round)
+(def (%digits<-decimal n scale: (scale #f) width: (width #f)
+                       integral-digits: (integral-digits #f)
+                       fractional-digits: (fractional-digits #f)
+                       always-decimal?: (always-decimal? #f)
+                       decimal-mark: (decimal-mark #\.)
+                       precision-loss-behavior: (precision-loss-behavior 'error))
+  (unless integral-digits (set! integral-digits 0))
+  (unless fractional-digits (set! fractional-digits 0))
+  (let/cc return
+    (when (and (zero? n) (zero? integral-digits) (zero? fractional-digits))
+      (return (if always-decimal? "0." "0")))
 
-;; Takes:
-;; - Decimal number
-;; - Port
-;; - a desired width in which to fit the number (or false),
-;; - a requested number of fractional digits (or false),
-;; - a scale, power of ten by which to notionally multiply the number (or false),
-;; - a character to fill the string to desired width with on overflow (or false),
-;; - a character to print when padding for desired width (or false if no desired width),
-;; - a boolean (default false) true if the sign must always be printed even when positive.
-;; Returns a string, or raise the symbol 'overflow if there was an overflow.
+    ;; Integer with the significant digits, number of fractional digits in it
+    (defvalues (all-digits denominator-power) (digits-exponent<-decimal n))
+    ;; Total number of significant digits in number
+    (def digit-count (count-significant-digits all-digits))
+    ;; Where is the decimal mark relative to the start of the significant digits (0: just before)
+    (def decimal-mark-index (- (+ digit-count (or scale 0)) denominator-power))
+    ;; How many 0s to add in front of the digits for the integer part?
+    (def integral-left-padding (max 0 (- integral-digits (max 0 decimal-mark-index))))
+    ;; How many digits to copy from all-digits for the integer part?
+    (def integral-digits-copied (max 0 (min digit-count decimal-mark-index)))
+    ;; How many digits to add behind all-digits for the integer part?
+    (def integral-right-padding (max 0 (- decimal-mark-index digit-count)))
+    ;; Total number of digits required for the integral part
+    (def total-integral-digits (+ integral-left-padding integral-digits-copied integral-right-padding))
+    ;; How many 0s to add in front of the digits for the integer part?
+    (def fractional-left-padding (max 0 (- decimal-mark-index)))
+    ;; How many digits to copy from all-digits for the integer part?
+    (def fractional-digits-copied (max 0 (min digit-count (- digit-count decimal-mark-index))))
+    ;; How many digits to add behind all-digits for the integer part?
+    (def fractional-right-padding (max 0 (- fractional-digits (max 0 (- digit-count decimal-mark-index)))))
+    ;; Total number of digits required for the fractional part
+    (def total-fractional-digits (+ fractional-left-padding fractional-digits-copied fractional-right-padding))
+    ;; Shall we print the decimal mark?
+    (def decimal-mark? (or always-decimal? (plus? total-fractional-digits)))
+    ;; Width reserved for the decimal mark
+    (def decimal-mark-width (if decimal-mark? 1 0))
+    ;; Total length of a string required to print the decimal number
+    (def total-length (+ total-integral-digits decimal-mark-width total-fractional-digits))
+    ;; Where do fractional digits start?
+    (def fractional-digits-start (+ total-integral-digits decimal-mark-width fractional-left-padding))
+    ;; How many characters more than the allowed width do we need?
+    (def extra-width (if width (max 0 (- total-length width)) 0))
+    ;; How many digits can we throw away and still show the minimum required number of fractional digits?
+    (def throwable-digits (- total-fractional-digits fractional-digits))
+    ;; What is the effective length of the string?
+    (def effective-length (- total-length extra-width))
+    ;; How many fractional digits will we actually copy?
+    (def effective-fractional-digits (min fractional-digits-copied (- effective-length fractional-digits-start)))
+
+    #;(DBG dd: n scale width integral-digits fractional-digits always-decimal?
+         all-digits denominator-power digit-count decimal-mark-index
+         integral-left-padding integral-digits-copied integral-right-padding total-integral-digits
+         fractional-left-padding fractional-digits-copied fractional-right-padding total-fractional-digits
+         decimal-mark? decimal-mark-width total-length fractional-digits-start
+         extra-width throwable-digits decimal-mark precision-loss-behavior
+         effective-length effective-fractional-digits)
+
+    (def (digits)
+      ;; A string with the significant digits
+      (def significant-digits (significant-digits<-nat all-digits))
+      ;; The target string
+      (def string (make-string effective-length #\0))
+      (string-copy! string integral-left-padding significant-digits 0 integral-digits-copied)
+      (when decimal-mark?
+        (string-set! string (+ integral-left-padding integral-digits-copied) decimal-mark))
+      (when (plus? effective-fractional-digits)
+        (string-copy! string fractional-digits-start significant-digits
+                      integral-digits-copied (+ integral-digits-copied effective-fractional-digits)))
+      string)
+
+    (cond
+     ((>= 0 extra-width)
+      (digits))
+     ((< throwable-digits extra-width)
+      (error (disallowed-loss-of-precision)))
+     (else
+      (case precision-loss-behavior
+        ((error)
+         (raise (disallowed-loss-of-precision)))
+        ((truncate)
+         (digits))
+        ((round)
+         (let-values (((rounded-all-digits remainder)
+                       (round/ all-digits (expt 10 extra-width))))
+           (%digits<-decimal rounded-all-digits
+                             scale: (- extra-width total-fractional-digits)
+                             width: width
+                             integral-digits: integral-digits
+                             fractional-digits: fractional-digits
+                             always-decimal?: always-decimal?)))
+        (else (error "Invalid precision-loss-behavior")))))))
+
+;; Given
+;; - a decimal number,
+;; - a port on which to write the number (default (current-output-port)),
+;; - a scale (or #f meaning 0), the number being notionally multiplied by ten to that scale (default #f),
+;; - a width within which to fit the number or #f for no limitation (default #f),
+;; - a minimum number of integral digits to display or false (default #f),
+;;   that can be 1 to force #\0 to be printed before a decimal point,
+;; - a minimum number of fractional digits to display or false (default #f),
+;;   that can be 1 to force #\0 to be printed after a decimal point,
+;; - a character to print when left-padding for desired width (or #f meaning #\space) (default #f),
+;; - a boolean for whether a decimal mark will always be printed even for integers (default #f),
+;; - a boolean for whether a sign will always be printed even for non-negative numbers (default #f),
+;; - a character to use as the decimal mark,
+;; - a symbol for the behavior on precision loss, one of error, truncate or round,
+;; Return (void), or raise an exception if the number won't fit in the width
+;; : Bool <- Decimal Port \
+;;   scale:(OrFalse Integer) \
+;;   width:(OrFalse Nat) \
+;;   integral-digits:(OrFalse Nat) \
+;;   fractional-digits:(OrFalse Nat) \
+;;   pad:(OrFalse Char) \
+;;   always-decimal?:Bool \
+;;   always-sign?:Bool \
+;;   decimal-mark:Char \
+;;   precision-loss-behavior:(Enum error truncate round)
+(def (write-decimal number (port (current-output-port))
+                    scale: (scale #f)
+                    width: (width #f)
+                    integral-digits: (integral-digits #f)
+                    fractional-digits: (fractional-digits #f)
+                    pad: (pad_ #f)
+                    always-decimal?: (always-decimal? #f)
+                    always-sign?: (always-sign? #f)
+                    decimal-mark: (decimal-mark #\.)
+                    precision-loss-behavior: (precision-loss-behavior 'error))
+  (def pad (or pad_ #\space))
+  (def spaceleft width)
+  (when (and width (or always-sign? (> 0 number)))
+    (decrement! spaceleft))
+  (def digits (%digits<-decimal (abs number) scale: scale width: spaceleft
+                                integral-digits: integral-digits
+                                fractional-digits: fractional-digits
+                                always-decimal?: always-decimal?
+                                decimal-mark: decimal-mark
+                                precision-loss-behavior: precision-loss-behavior))
+  (when width
+    (decrement! spaceleft (string-length digits))
+    (write-n-chars spaceleft pad port))
+  (if (> 0 number)
+    (write-char #\- port)
+    (when always-sign?
+      (write-char #\+ port)))
+  (display digits port)
+  (void))
+
+;; Given
+;; - a decimal number,
+;; - a scale (or #f meaning 0), the number being notionally multiplied by ten to that scale (default #f),
+;; - a width within which to fit the number or #f for no limitation (default #f),
+;; - a minimum number of integral digits to display or false (default #f),
+;;   that can be 1 to force #\0 to be printed before a decimal point,
+;; - a minimum number of fractional digits to display or false (default #f),
+;;   that can be 1 to force #\0 to be printed after a decimal point,
+;; - a character to print when left-padding for desired width (or #f meaning #\space) (default #f),
+;; - a boolean for whether a leading decimal mark is allowed or #\0 must be printed first (default #f),
+;; - a boolean for whether a decimal mark will always be printed even for integers (default #f),
+;; - a boolean for whether a sign will always be printed even for non-negative numbers (default #f),
+;; - a character to use as the decimal mark,
+;; - a symbol for the behavior on precision loss, one of error, truncate or round,
+;; Return a string, or an except if the number couldn't fit the specified width
 ;; : String <- Decimal Port \
 ;;   width:(OrFalse Nat) \
 ;;   fractional-digits:(OrFalse Nat) \
 ;;   scale:(Or Integer Bool) \
-;;   overflow:(OrFalse Char) \
 ;;   pad:(OrFalse Char) \
 ;;   always-decimal?:Bool \
-;;   always-sign?:Bool
+;;   always-sign?:Bool \
+;;   decimal-mark:Char \
+;;   precision-loss-behavior:(Enum error truncate round)
 (def (string<-decimal number
-                      width: (w #f) fractional-digits: (d #f) scale: (k #f)
-                      overflow: (ovf #f) pad: (pad #f)
-                      leading-decimal-mark-allowed?: (leading-decimal-mark-allowed? #f)
-                      always-decimal?: (always-decimal? #f) always-sign?: (always-sign? #f))
+                      scale: (scale #f) width: (width #f)
+                      integral-digits: (integral-digits #f) fractional-digits: (fractional-digits #f)
+                      pad: (pad #f) always-decimal?: (always-decimal? #f) always-sign?: (always-sign? #f)
+                      decimal-mark: (decimal-mark #\.)
+                      precision-loss-behavior: (precision-loss-behavior 'error))
   (call-with-output-string
-   (lambda (port)
-     (when (write-decimal number port width: w fractional-digits: d scale: k
-                          overflow: ovf pad: pad
-                          leading-decimal-mark-allowed?: leading-decimal-mark-allowed?
-                          always-decimal?: always-decimal? always-sign?: always-sign?)
-       (raise 'overflow)))))
-
-;; Takes:
-;; - Decimal number
-;; - Port
-;; - a desired width in which to fit the number (or false),
-;; - a requested number of fractional digits (or false),
-;; - a scale, power of ten by which to notionally multiply the number (or false),
-;; - a character to fill the string to desired width with on overflow (or false),
-;; - a character to print when padding for desired width (or false if no desired width),
-;; - a boolean (default false) true if the sign must always be printed even when positive,
-;; - a boolean (default false) true if the sign must always be printed even when positive.
-;; Return a boolean true iff there was an overflow and the overflow character was used.
-;; : Bool <- Decimal Port \
-;;   width:(OrFalse Nat) \
-;;   fractional-digits:(OrFalse Nat) \
-;;   scale:(Or Integer Bool) \
-;;   overflow:(OrFalse Char) \
-;;   pad:(OrFalse Char) \
-;;   always-decimal?:Bool \
-;;   always-sign?:Bool
-(def (write-amount decimal (port (current-output-port)) width:(w #f) integral-digits:(n #f) fractional-digits:(d #f) pad:(pad #\space) always-sign?:(always-sign? #f) sign-before-pad?:(sign-before-pad? #f))
-  (assert! (decimal? decimal))
-  (set! d (or d 2))
-  (set! n (or n 1))
-  (set! w (or w 0))
-  (def signstr (cond ((> 0 decimal) "-")
-                     (always-sign? "+")
-                     (else "")))
-  (def signlen (string-length signstr))
-  (defvalues (str _strlen _ig2 _ig3) (%string<-decimal decimal #f d #f))
-  (def pointplace (string-index str (decimal-mark)))
-  (when sign-before-pad?
-    (display signstr port))
-  (write-n-chars (- w signlen (max n pointplace) 1 d) pad port)
-  (unless sign-before-pad?
-    (display signstr port))
-  (write-n-chars (- n pointplace) #\0 port)
-  (display str port))
+   (cut write-decimal number <> scale: scale width: width
+        integral-digits: integral-digits fractional-digits: fractional-digits
+        pad: pad always-decimal?: always-decimal? always-sign?: always-sign?
+        decimal-mark: decimal-mark precision-loss-behavior: precision-loss-behavior)))
