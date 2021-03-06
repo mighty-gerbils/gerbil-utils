@@ -77,15 +77,15 @@
    getopt: [])
   (make-docker-image
    "nixos/nix:latest" "mukn/cachix"
-   "RUN echo A3 ; nix-env -iA cachix -f https://cachix.org/api/v1/install && cachix use mukn"
+   "RUN echo cachix install 0 ; nix-env -iA cachix -f https://cachix.org/api/v1/install && cachix use mukn"
    ;; Disable nix-thunk for now: compiling it pulls gigabytes of Haskell stuff and takes hours
    #;(string-append
-    "RUN echo B0 ; "
+    "RUN echo nix-thunk 0 ; "
     "nix-env -f https://github.com/obsidiansystems/nix-thunk/archive/master.tar.gz -iA command")
    ;;This FAILS. We'd need a better configuration.nix with an actual user. Sigh.
    ;;;;"RUN set -ex ; chown -R guest.users /home ; chmod -R u+w /home ; chmod 4755 /tmp ; chmod 755 /nix/var/nix/profiles/per-user ; mkdir -p /nix/var/nix/profiles/per-user/guest/profile ; chown -R guest.users /nix/var/nix/profiles/per-user/guest ; chmod -R 755 /nix/var/nix/profiles/per-user/guest ; ls -lR /nix/var/nix/profiles/per-user" "USER guest" "WORKDIR /home" "RUN cachix use mukn"
    (string-append
-    "RUN echo C2 ; "
+    "RUN echo nix keys 0 ; "
     "mkdir -p /root/.config/nix && "
     "(echo substituters = "
     "https://cache.nixos.org https://hydra.iohk.io "
@@ -132,11 +132,11 @@
      (def digest (digest-paths spkgs))
      (run-command/batch "nix-store --export " str " > " docker-directory "/nix-packages")
      (fprintf port "WORKDIR /root\nCOPY nix-packages .\n")
-     (fprintf port (string-append "RUN echo ~a && "
+     (fprintf port (string-append "RUN pkgs='~a' digest=~a && "
                                   "nix-store --import < nix-packages && "
                                   "rm -f nix-packages && "
-                                  "nix-env -i ~a\n") ;; use -f $nixpkgs ? -iA ?
-              digest str)
+                                  "nix-env -i $pkgs\n") ;; use -f $nixpkgs ? -iA ?
+              str digest)
      (display command port))))
 
 (def our-target-packages ["gerbil-unstable" "gambit-unstable" "gerbilPackages-unstable"])
@@ -162,9 +162,9 @@
    getopt: options/nixpkgs)
   (make-docker-image
    "mukn/cachix" "mukn/pre-gambit"
-   (format "RUN echo ~a ; echo ~a nixpkgs > /root/.nix-channels ; nix-channel --update ; ~a"
-           (digest-paths (apply nix-paths nixpkgs extra-packages))
+   (format "RUN echo ~a nixpkgs > /root/.nix-channels ; echo ~a ; nix-channel --update ; ~a"
            nixpkgs
+           (digest-paths (apply nix-paths nixpkgs extra-packages))
            (apply install-command "<nixpkgs>" extra-packages))))
 
 (define-entry-point (make-gambit-image (nixpkgs default-nixpkgs))
@@ -173,7 +173,7 @@
   (def paths (apply nix-paths nixpkgs extra-packages))
   (make-docker-image
    "mukn/pre-gambit" "mukn/gambit"
-   (format "RUN echo ~a ; nix-channel --update ; nix-env -f '<nixpkgs>' -iA gerbil-unstable"
+   (format "RUN echo gambit-unstable ~a ; nix-channel --update ; nix-env -f '<nixpkgs>' -iA gambit-unstable"
            (digest-paths (apply nix-paths nixpkgs "gambit-unstable" extra-packages)))
    "ENV GAMBOPT t8,f8,-8,i8,dRr"))
 
@@ -182,7 +182,7 @@
    getopt: options/nixpkgs)
   (make-docker-image
    "mukn/gambit" "mukn/gerbil"
-   (format "RUN echo ~a ; nix-channel --update ; nix-env -f '<nixpkgs>' -iA gerbil-unstable"
+   (format "RUN echo gerbil-unstable ~a ; nix-channel --update ; nix-env -f '<nixpkgs>' -iA gerbil-unstable"
            (digest-paths (apply nix-paths nixpkgs "gerbil-unstable" "gambit-unstable" extra-packages)))
    "ENV GERBIL_LOADPATH /root/.nix-profile/gerbil/lib"))
 
@@ -191,7 +191,7 @@
    getopt: options/nixpkgs)
   (make-docker-image
    "mukn/gerbil" "mukn/gerbil-packages"
-   (format "RUN echo ~a ; nix-channel --update ; nix-env -f '<nixpkgs>' -iA gerbilPackages-unstable"
+   (format "RUN echo gerbilPackages-unstable ~a ; nix-channel --update ; nix-env -f '<nixpkgs>' -iA gerbilPackages-unstable"
            (digest-paths (apply nix-paths nixpkgs all-target-packages)))))
 
 (define-entry-point (make-glow-image)
