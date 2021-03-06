@@ -80,8 +80,8 @@
 (def (system-error m e) (json-rpc-error code: -32400 message: m e: e))
 (def (tranport-error m e) (json-rpc-error code: -32300 message: m e: e))
 
-(defclass (malformed-request jsonable exception) (method params e) transparent: #t)
-(defclass (malformed-response jsonable exception) (request-id response e) transparent: #t)
+(defclass (malformed-request jsonable Exception) (method params e) transparent: #t)
+(defclass (malformed-response jsonable Exception) (request-id response e) transparent: #t)
 
 (def (decode-json-rpc-response decoder request-id response-json)
   (def (mal e)
