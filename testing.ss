@@ -80,7 +80,7 @@
   (set! application-source-directory (lambda () src))
   (set! application-home-directory (lambda () src))
   (set-default-entry-point! 'unit-tests)
-  (current-program script-path))
+  (current-program (path-strip-directory script-path)))
 
 (defrule (%init-test-environment! ctx)
    (begin

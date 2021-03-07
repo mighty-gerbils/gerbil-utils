@@ -11,8 +11,11 @@
   (for-syntax ./syntax)
   ./base ./exit ./list ./number ./shell ./source ./syntax ./versioning ./with-id)
 
-(def current-program (make-parameter #f))
+(def current-program (make-parameter []))
 (def entry-points (make-hash-table))
+
+(def (current-program-string (program (current-program)))
+  (string-join (reverse (flatten-pair-tree program)) " "))
 
 (defgeneric getopt-spec
   (lambda (spec)
@@ -83,7 +86,7 @@
   (begin (def (id . formals) body ...)
          (register-entry-point id id: 'id options ...)))
 
-(def multicall-default "help")
+(def multicall-default 'help)
 
 (def (set-default-entry-point! x)
   (set! multicall-default x))
@@ -93,7 +96,7 @@
    getopt: [(optional-argument 'command help: "subcommand for which to display help")])
   (awhen (id (software-identifier)) (displayln id))
   (def gopt (apply getopt (entry-points-getopt-spec)))
-  (def program (current-program))
+  (def program (current-program-string (cdr (current-program))))
   (if command
     (getopt-display-help-topic gopt (symbolify command) program)
     (getopt-display-help gopt program)))
@@ -114,7 +117,8 @@
   (match (hash-get entry-points (symbolify command))
     (#f (raise (format "Unknown command ~s. Try command help.\n" command)))
     ((entry-point _name fun _help getopt)
-     (call-with-processed-command-line getopt args fun))))
+     (parameterize ((current-program (cons command (current-program))))
+       (call-with-processed-command-line getopt args fun)))))
 
 (def (call-entry-point . args)
    (with-abort-on-error ()
@@ -126,6 +130,5 @@
 (defsyntax (define-multicall-main stx)
   (syntax-case stx ()
     ((_ ctx) (with-syntax ((main (identifierify #'ctx "main")))
-               #'(begin (define main call-entry-point)
-                        (current-program (this-source-file ctx))))) ;; TODO: debug why the program is #f
+               #'(begin (define main call-entry-point))))
     ((d) #'(d d))))

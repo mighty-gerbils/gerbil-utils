@@ -62,6 +62,5 @@
  getopt: [(option 'nixpkgs-file "-f" "--file" help: "path or url for nixpkgs")])
 
 (def main clan/multicall#call-entry-point)
-(clan/multicall#current-program (this-source-file))
-
+(clan/multicall#current-program "build.ss")
 (clan/exit#backtrace-on-abort? #t)

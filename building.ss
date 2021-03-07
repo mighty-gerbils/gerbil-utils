@@ -47,7 +47,7 @@
   (set! %pkg-config-libs pkg-config-libs)
   (set! %nix-deps nix-deps)
   (set-default-entry-point! 'compile)
-  (current-program script-path))
+  (current-program (path-strip-directory script-path)))
 
 (defrule (%init-build-environment! ctx args ...)
   (begin
