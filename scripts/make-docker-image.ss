@@ -221,7 +221,6 @@
 (define-entry-point (all (nixpkgs default-nixpkgs))
   (help: "Rebuild all images"
    getopt: options/nixpkgs)
-  (DBG "FOOO")
   (make-packages nixpkgs)
   (make-cachix-image)
   (make-pre-gambit-image nixpkgs)
