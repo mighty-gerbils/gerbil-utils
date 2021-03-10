@@ -7,11 +7,16 @@
 
 (import
   :gerbil/gambit/continuations :gerbil/gambit/exceptions :gerbil/gambit/threads
-  :std/format :std/sugar)
+  :std/format :std/misc/repr :std/sugar
+  ./base)
 
 ;; String <- Exception
 (def (string<-exception e)
-  (call-with-output-string (cut display-exception e <>)))
+  (cond
+   ((exception? e) (call-with-output-string (cut display-exception e <>)))
+   ((string? e) e)
+   ((Exception? e) (repr e))
+   (else (repr e))))
 
 ;; The exception and continuation are valid for use with display-exception-in-context
 ;; and display-continuation-backtrace
