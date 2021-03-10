@@ -35,7 +35,7 @@
 (def extra-packages
   (map stringify
   '(zsh su screen less git openssh xz bashInteractive
-    go-ethereum solc racket gnumake
+    go-ethereum #;solc racket gnumake
     coreutils attr curl binutils diffutils findutils patch
     ;; sqlite leveldb postgresql mariadb-connector-c lmdb
     ;; nghttp2 openssl snappy libossp_uuid c-ares
