@@ -63,7 +63,7 @@
   (and (bytes? b) (bytes-every byte-ascii-printable? b)))
 
 ;;; Parse error
-(defstruct (parse-error Exception) (message args where))
+(defstruct (parse-error Exception) (message args where) transparent: #t)
 (def (parse-error! where message . args) (raise (make-parse-error message args where)))
 
 ;;; Expect a natural number in decimal on the current port, return it.
@@ -86,6 +86,17 @@
     (if (char-pred? (peek-char port))
       (read-char port)
       (parse-error! 'expect-one-of "Unexpected character" (peek-char port) port))))
+
+(def (expect-any-number-of char-pred?)
+  (λ (in)
+    (and (char-pred? (peek-char in))
+         (call-with-output-string
+          (lambda (out) (while (begin (write-char (read-char in) out) (char-pred? (peek-char in)))))))))
+
+(def (expect-one-or-more-of char-pred?)
+  (λ (in)
+    (or ((expect-any-number-of char-pred?) in)
+        (parse-error! 'expect-one-or-more-of "Unexpected character" (peek-char in) in))))
 
 (def (expect-maybe-char char)
   (expect-maybe-one-of (cut eqv? char <>)))
@@ -132,6 +143,13 @@
               ((eof-object? char) (void))
               (else (display char out) (read-char port) (loop))))))))
 
+(def (expect-then-eof expecter)
+  (lambda (in) (begin0 (expecter in) (expect-eof in))))
+
 (def (parse-file file parser (description #f))
   (with-catch (lambda (e) (error "failure parsing file" description file (error-message e)))
-              (cut call-with-input-file file parser)))
+              (cut call-with-input-file file (expect-then-eof parser))))
+
+(def (parse-string string parser (description #f))
+  (with-catch (lambda (e) (error "failure parsing string" description string (error-message e)))
+              (cut call-with-input-string string (expect-then-eof parser))))

@@ -2,7 +2,8 @@
 (export #t)
 
 (import
-  :std/iter :std/misc/number :std/srfi/13)
+  :std/iter :std/misc/number :std/srfi/13
+  ./basic-parsers)
 
 ;; TODO: write a string-substitute function in the style of http://clhs.lisp.se/Body/f_sbs_s.htm
 ;; and/or of SRFI 13 (that will be contributed to std/misc/string);
@@ -25,3 +26,6 @@
                                     (begin (increment! k) new-char)
                                     char))))
     new-string))
+
+(def (string-trim-spaces string)
+  (string-trim-both string char-ascii-whitespace?))
