@@ -58,7 +58,7 @@
 ;;; into a precedence list such that direct supers are all included before indirect supers.
 ;;; It is used for multiple inheritance in all modern languages since Dylan: Python, Raku, Parrot, Solidity.
 ;;;       https://en.wikipedia.org/wiki/C3_linearization
-;;;       http://citeseerx.ist.psu.edu/viewdoc/download;jsessionid=35C3856CFE46B32E3047826297384694?doi=10.1.1.19.3910&rep=rep1&type=pdf
+;;;       https://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.19.3910
 
 ;; : ((NonEmptyList X) <- X) <- ((List X) <- X)
 (def (get-precedence-list<-get-supers get-supers)

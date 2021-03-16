@@ -3,7 +3,7 @@
 
 (import
   :std/iter :std/misc/number :std/srfi/13
-  ./basic-parsers)
+  ./basic-parsers ./list)
 
 ;; TODO: write a string-substitute function in the style of http://clhs.lisp.se/Body/f_sbs_s.htm
 ;; and/or of SRFI 13 (that will be contributed to std/misc/string);
@@ -29,3 +29,7 @@
 
 (def (string-trim-spaces string)
   (string-trim-both string char-ascii-whitespace?))
+
+(def (co-pad-strings strings)
+  (def maxlen (extremum<-list > (map string-length strings) 0))
+  (map (cut string-pad-right <> maxlen) strings))
