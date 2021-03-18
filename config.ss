@@ -78,8 +78,9 @@
     (and base (apply subpath base more))))
 
 (defrule (defxdgdirs name envvar forms ...)
-  (or (getenv-absolute-path envvar)
-      (cond-expand forms ...)))
+  (def (name)
+    (or (getenv-absolute-paths envvar)
+        (cond-expand forms ...))))
 
 ;; Returns an absolute pathname for the directory containing user-specific data files,
 ;; extended with any specified components.
