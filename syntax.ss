@@ -3,7 +3,7 @@
   (for-syntax :std/iter :std/srfi/1)
   :gerbil/gambit/bytes
   <expander-runtime> :gerbil/expander :std/sugar :std/text/hex
-  ./basic-parsers)
+  ./basic-parsers ./path)
 
 ;;; TODO: move as much as possible out of having to depend on the expander.
 ;;; TODO: Use generic function to extend the behavior here of functionality that has to work on ASTs.
@@ -98,3 +98,25 @@
 
 (def (formals<-nat n)
   (for/collect (i (in-range n)) (gensym))))
+
+(defsyntax (syntax-eval stx)
+  (syntax-case stx () ((_ expr) #'(let () (defsyntax (foo _) expr) (foo)))))
+
+(defsyntax (syntax-call stx)
+  (syntax-case stx ()
+    ((ctx expr) #'(ctx expr ctx))
+    ((_ expr ctx stxs ...)
+     #'(let ()
+         (defsyntax (foo stx)
+           (datum->syntax (stx-car (stx-cdr stx)) (apply expr (syntax->list (stx-cdr stx)))))
+         (foo ctx stxs ...)))))
+
+(def (stx-source-file stx)
+  (alet (loc (stx-source stx)) (vector-ref loc 0)))
+
+(def (stx-source-position stx)
+  (alet (loc (stx-source stx)) (vector-ref loc 1)))
+
+(def (stx-source-path stx . a)
+  (alet (file (stx-source-file stx))
+    (apply subpath (path-directory file) a)))

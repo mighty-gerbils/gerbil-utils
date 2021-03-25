@@ -1,5 +1,7 @@
 ;; Support for JSON RPC 2.0 -- https://www.jsonrpc.org/specification
 
+;; TODO: log details of http errors, e.g. 404 Not Found, etc.
+
 (export #t)
 
 (import
