@@ -32,7 +32,7 @@
      (λ vs
        (unless (equal? vs [(void)])
          (for-each prn vs))
-       (force-output)
+       (ignore-errors (force-current-outputs))
        (exit (if (or (null? vs) (and (length=n? vs 1) (not (car vs)))) 1 0))))))
 
 (def abort-on-error? (make-parameter #t))

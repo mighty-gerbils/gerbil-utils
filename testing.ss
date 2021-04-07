@@ -131,7 +131,8 @@
              (0x<-random-source)))
 
 (define-entry-point (check-git-up-to-date)
-  (help: "Check that this git checkout is up-to-date with its target branch")
+  (help: "Check that this git checkout is up-to-date with its target branch"
+   getopt: [])
   (def up-to-date? (git-up-to-date-with-branch?))
   (printf "Checkout~a up-to-date with branch ~a\n" (if up-to-date? "" " not") (git-origin-branch))
   (silent-exit up-to-date?))
