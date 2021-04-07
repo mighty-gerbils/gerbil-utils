@@ -6,7 +6,7 @@
 (import
   :gerbil/gambit/continuations :gerbil/gambit/exceptions :gerbil/gambit/ports :gerbil/gambit/threads
   :std/format :std/misc/list :std/misc/repr :std/sugar
-  ./base ./exception ./versioning)
+  ./base ./exception ./ports ./versioning)
 
 (defrule (eval-print-exit body ...) (call-print-exit (λ () body ...)))
 
