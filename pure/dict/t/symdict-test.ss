@@ -76,4 +76,10 @@
            (list->symdict '((red . (255 0 0)) (blue . (0 255 0)))))
     (check assq=?
            (symdict->list (list->symdict '((a . 1) (b . 2) (c . 3))))
-           '((a . 1) (b . 2) (c . 3)))))
+           '((a . 1) (b . 2) (c . 3)))
+
+    (check-equal? ((symdict->repr-sexpr values) (symdict ('a 10) ('b 20) ('c 30)))
+                  '(symdict ('a 10) ('c 30) ('b 20)))
+    (check symdict=?
+           ((repr-sexpr->symdict values) '(symdict ('a 10) ('c 30) ('b 20)))
+           (symdict ('a 10) ('b 20) ('c 30)))))
