@@ -1,9 +1,11 @@
 (export assq-ref
+        assq-get
         assq-put
         assq-update
         assq-remove
         assq-has-key?
         assq-keys
+        assq-values
         assq-put/list
         list->assq
         assq=?)
@@ -12,10 +14,15 @@
 ;; where the keys should be compared by `eq?`,
 ;; and there are no duplicate keys
 
-;; assq-ref : [Assqof K V] K -> V
-(def (assq-ref a k)
+;; assq-ref : [Assqof K V] K ?[-> V] -> V
+(def (assq-ref a k (default (cut error "assq-ref: No value associated with key" a k)))
   (def e (assq k a))
-  (if e (cdr e) (error 'assq-ref)))
+  (if e (cdr e) (default)))
+
+;; assq-get : [Assqof K V] K ?V -> V
+(def (assq-get a k (default #f))
+  (def e (assq k a))
+  (if e (cdr e) default))
 
 ;; assq-put : [Assqof K V] K V -> [Assqof K V]
 ;; do not introduce duplicate keys, if key exists remove old entry
@@ -41,6 +48,9 @@
 
 ;; assq-keys : [Assqof K V] -> [Listof K]
 (def (assq-keys a) (map car a))
+
+;; assq-values : [Assqof K V] -> [Listof V]
+(def (assq-values a) (map cdr a))
 
 ;; assq-put/list : [Assqof K V] [Listof [Cons K V]] -> [Assqof K V]
 ;; `a` has no duplicate keys, but `l` can

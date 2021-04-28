@@ -1,11 +1,13 @@
 (export empty-dicteq
         dicteq-empty?
         dicteq-ref
+        dicteq-get
         dicteq-put
         dicteq-update
         dicteq-remove
         dicteq-has-key?
         dicteq-keys
+        dicteq-values
         dicteq-put/list
         list->dicteq
         dicteq->list
@@ -34,15 +36,18 @@
 (def dicteq-empty? rationaldict-empty?)
 
 ;; dicteq-ref : [DictEqof K V] K ?[-> V] -> V
-(def (dicteq-ref d k (default (cut error "No value associated with key" d k)))
-  (def a (rationaldict-ref d (eq?-hash k) (cut list)))
-  (def e (assq k a))
-  (cond (e (cdr e))
-        (else (default))))
+(def (dicteq-ref d k (default (cut error "dicteq-ref: No value associated with key" d k)))
+  (def a (rationaldict-get d (eq?-hash k) []))
+  (assq-ref a k default))
+
+;; dicteq-get : [DictEqof K V] K ?V -> V
+(def (dicteq-get d k (default #f))
+  (def a (rationaldict-get d (eq?-hash k) []))
+  (assq-get a k default))
 
 ;; dicteq-put : [DictEqof K V] K V -> [DictEqof K V]
 (def (dicteq-put d k v)
-  (rbtree-update
+  (rationaldict-update
     d
     (eq?-hash k)
     (lambda (a) (assq-put a k v))
@@ -50,7 +55,7 @@
 
 ;; dicteq-update : [DictEqof K V] K [V -> V] V -> [DictEqof K V]
 (def (dicteq-update d k f v0)
-  (rbtree-update
+  (rationaldict-update
     d
     (eq?-hash k)
     (lambda (a) (assq-update a k f v0))
@@ -59,17 +64,22 @@
 ;; dicteq-remove : [DictEqof K V] K -> [DictEqof K V]
 (def (dicteq-remove d k)
   (def kh (eq?-hash k))
-  (def a (assq-remove (rationaldict-ref d kh (cut list)) k))
+  (def a (assq-remove (rationaldict-get d kh []) k))
   (if (null? a) (rationaldict-remove d kh) (rationaldict-put d kh a)))
 
 ;; dicteq-has-key? : [DictEqof K V] K -> Bool
 (def (dicteq-has-key? d k)
-  (assq-has-key? (rationaldict-ref d (eq?-hash k) (cut list)) k))
+  (assq-has-key? (rationaldict-get d (eq?-hash k) []) k))
 
 ;; dicteq-keys : [DictEqof K V] -> [Listof K]
 (def (dicteq-keys d)
   (for/fold (l []) (a (in-rbtree-values d))
     (append-reverse (assq-keys a) l)))
+
+;; dicteq-values : [DictEqof K V] -> [Listof V]
+(def (dicteq-values d)
+  (for/fold (l []) (a (in-rbtree-values d))
+    (append-reverse (assq-values a) l)))
 
 ;; dicteq-put/list : [DictEqof K V] [Listof [Cons K V]] -> [DictEqof K V]
 (def (dicteq-put/list d l)
