@@ -37,6 +37,7 @@
   '(zsh su screen less git openssh xz bashInteractive
     go-ethereum #;solc racket gnumake
     coreutils attr curl binutils diffutils findutils patch
+    rsync go-libp2p-daemon multimarkdown
     ;; sqlite leveldb postgresql mariadb-connector-c lmdb
     ;; nghttp2 openssl snappy libossp_uuid c-ares
     ;; gawk ed libxml2 stdenv systemd libev ncurses
