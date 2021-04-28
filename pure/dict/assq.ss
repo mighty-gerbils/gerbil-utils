@@ -8,7 +8,11 @@
         assq-values
         assq-put/list
         list->assq
-        assq=?)
+        assq=?
+        assq->repr-sexpr
+        repr-sexpr->assq)
+
+(import :std/iter)
 
 ;; An [Assqof K V] is a [Listof [Cons K V]]
 ;; where the keys should be compared by `eq?`,
@@ -70,3 +74,20 @@
                  (def be (assq (car ae) b))
                  (and be (v=? (cdr ae) (cdr be))))
                a)))
+
+;; assq->repr-sexpr : [K -> Sexpr] [V -> Sexpr] -> [[Assqof K V] -> Sexpr]
+(def ((assq->repr-sexpr k->s v->s) a)
+  (cons '@list
+        (for/collect ((e a))
+          ['cons (k->s (car e)) (v->s (cdr e))])))
+
+;; repr-sexpr->assq : [Sexpr -> K] [Sexpr -> V] -> [Sexpr -> [Assqof K V]]
+(def ((repr-sexpr->assq s->k s->v) s)
+  (match s
+    ((cons '@list l)
+     (for/collect (e l)
+       (match e
+         (['cons ks vs]
+          (cons (s->k ks) (s->v vs)))
+         (_ (error "repr-sexpr->assq: bad entry shape, expected `cons`" e)))))
+    (_ (error "repr-sexpr->assq: expected `@list`" s))))

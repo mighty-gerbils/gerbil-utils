@@ -76,4 +76,10 @@
            (list->dicteq '((red . (255 0 0)) (blue . (0 255 0)))))
     (check assq=?
            (dicteq->list (list->dicteq '((a . 1) (b . 2) (c . 3))))
-           '((a . 1) (b . 2) (c . 3)))))
+           '((a . 1) (b . 2) (c . 3)))
+
+    (check-equal? ((dicteq->repr-sexpr values values) (dicteq ('a 10) ('b 20) ('c 30)))
+                  '(dicteq (b 20) (c 30) (a 10)))
+    (check dicteq=?
+           ((repr-sexpr->dicteq values values) '(dicteq (b 20) (c 30) (a 10)))
+           (dicteq ('a 10) ('b 20) ('c 30)))))

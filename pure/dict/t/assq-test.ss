@@ -58,4 +58,9 @@
         '((red . (255 0 0)) (blue . (0 255 0))))
     (check assq=?
         (list->assq '((a . 1) (b . 2) (c . 3)))
-        '((a . 1) (b . 2) (c . 3)))))
+        '((a . 1) (b . 2) (c . 3)))
+
+    (check-equal? ((assq->repr-sexpr values values) '((a . 10) (b . 20) (c . 30)))
+                  '(@list (cons a 10) (cons b 20) (cons c 30)))
+    (check-equal? ((repr-sexpr->assq values values) '(@list (cons a 10) (cons b 20) (cons c 30)))
+                  '((a . 10) (b . 20) (c . 30)))))

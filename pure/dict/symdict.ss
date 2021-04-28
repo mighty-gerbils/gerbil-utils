@@ -12,7 +12,9 @@
         list->symdict
         symdict->list
         symdict=?
-        (rename: *symdict symdict))
+        (rename: *symdict symdict)
+        symdict->repr-sexpr
+        repr-sexpr->symdict)
 
 (import :std/iter
         :std/misc/repr
@@ -86,3 +88,21 @@
         (pr (bare-symdict-ref bare k) port options)
         (display ")" port))
       (display ")" port))))
+
+;; symdict->repr-sexpr : [Symdictof V] [V -> Sexpr] -> Sexpr
+(def ((symdict->repr-sexpr v->s) d)
+  (with ((symdict bare) d)
+    (cons 'symdict
+          (for/collect (k (bare-symdict-keys bare))
+            [['quote k] (v->s (bare-symdict-ref bare k))]))))
+
+;; repr-sexpr->symdict : Sexpr [Sexpr -> V] -> [Symdictof V]
+(def ((repr-sexpr->symdict s->v) s)
+  (match s
+    ((cons 'symdict l)
+     (symdict
+      (for/fold (acc bare-empty-symdict) (e l)
+        (match e
+          ([['quote k] sv] (bare-symdict-put acc k (s->v sv)))
+          (_ (error "repr-sexpr->symdict: bad entry shape" e))))))
+    (_ (error "repr-sexpr->symdict: expected `symdict`" s))))

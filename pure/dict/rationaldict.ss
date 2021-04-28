@@ -15,7 +15,9 @@
         rationaldict=?
         (rename: *rationaldict rationaldict)
         rationaldict-min-key
-        rationaldict-max-key)
+        rationaldict-max-key
+        rationaldict->repr-sexpr
+        repr-sexpr->rationaldict)
 
 (import :std/iter
         :std/misc/repr
@@ -97,3 +99,22 @@
 ;; rationaldict-max-key : [Rationaldictof V] ?X -> [Or Rational X]
 (def (rationaldict-max-key a (default #f))
   (bare-rationaldict-max-key (rationaldict-unwrapped a) default))
+
+;; rationaldict->repr-sexpr : [V -> Sexpr] -> [[Rationaldictof V] -> Sexpr]
+(def ((rationaldict->repr-sexpr v->s) d)
+  (with ((rationaldict bare) d)
+    (cons 'rationaldict
+          (for/collect ((k (bare-rationaldict-keys bare)))
+            [k (v->s (bare-rationaldict-ref bare k))]))))
+
+;; repr-sexpr->rationaldict : [Sexpr -> V] -> [Sexpr -> [Rationaldictof V]]
+(def ((repr-sexpr->rationaldict s->v) s)
+  (match s
+    ((cons 'rationaldict l)
+     (rationaldict
+      (for/fold (acc bare-empty-rationaldict) (e l)
+        (match e
+          ([k vs]
+           (bare-rationaldict-put acc k (s->v vs)))
+          (_ (error "repr-sexpr->rationaldict: bad entry shape" e))))))
+    (_ (error "repr-sexpr->rationaldict: expected `rationaldict`" s))))

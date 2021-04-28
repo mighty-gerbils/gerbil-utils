@@ -12,7 +12,9 @@
         list->dicteq
         dicteq->list
         dicteq=?
-        (rename: *dicteq dicteq))
+        (rename: *dicteq dicteq)
+        dicteq->repr-sexpr
+        repr-sexpr->dicteq)
 
 (import :std/iter
         :std/misc/repr
@@ -86,3 +88,22 @@
         (pr (bare-dicteq-ref bare k) port options)
         (display ")" port))
       (display ")" port))))
+
+;; dicteq->repr-sexpr : [K -> Sexpr] [V -> Sexpr] -> [[Dicteqof K V] -> Sexpr]
+(def ((dicteq->repr-sexpr k->s v->s) d)
+  (with ((dicteq bare) d)
+    (cons 'dicteq
+          (for/collect ((k (bare-dicteq-keys bare)))
+            [(k->s k) (v->s (bare-dicteq-ref bare k))]))))
+
+;; repr-sexpr->dicteq : [Sexpr -> K] [Sexpr -> V] -> [Sexpr -> [Dicteqof K V]]
+(def ((repr-sexpr->dicteq s->k s->v) s)
+  (match s
+    ((cons 'dicteq l)
+     (dicteq
+      (for/fold (acc bare-empty-dicteq) (e l)
+        (match e
+          ([ks vs]
+           (bare-dicteq-put acc (s->k ks) (s->v vs)))
+          (_ (error "repr-sexpr->dicteq: bad entry shape" e))))))
+    (_ (error "repr-sexpr->dicteq: expected `dicteq`" s))))
