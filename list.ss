@@ -56,7 +56,8 @@
 
 ;;; Below is the C3 Linearization algorithm to topologically sort an inheritance DAG
 ;;; into a precedence list such that direct supers are all included before indirect supers.
-;;; It is used for multiple inheritance in all modern languages since Dylan: Python, Raku, Parrot, Solidity.
+;;; It has since been adopted for multiple inheritance by many modern object systems:
+;;; Dylan, Python, Raku, Parrot, Solidity, PGF/TikZ.
 ;;;       https://en.wikipedia.org/wiki/C3_linearization
 ;;;       https://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.19.3910
 
