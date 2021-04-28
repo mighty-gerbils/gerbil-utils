@@ -1,11 +1,13 @@
 (export empty-dicteq
         dicteq-empty?
         dicteq-ref
+        dicteq-get
         dicteq-put
         dicteq-update
         dicteq-remove
         dicteq-has-key?
         dicteq-keys
+        dicteq-values
         dicteq-put/list
         list->dicteq
         dicteq->list
@@ -25,8 +27,12 @@
 (def (dicteq-empty? d) (bare-dicteq-empty? (dicteq-unwrapped d)))
 
 ;; dicteq-ref : [DictEqof K V] K ?[-> V] -> V
-(def (dicteq-ref d k (default (cut error "No value associated with key" d k)))
+(def (dicteq-ref d k (default (cut error "dicteq-ref: No value associated with key" d k)))
   (bare-dicteq-ref (dicteq-unwrapped d) k default))
+
+;; dicteq-get : [DictEqof K V] K ?V -> V
+(def (dicteq-get d k (default #f))
+  (bare-dicteq-get (dicteq-unwrapped d) k default))
 
 ;; dicteq-put : [DictEqof K V] K V -> [DictEqof K V]
 (def (dicteq-put d k v) (dicteq (bare-dicteq-put (dicteq-unwrapped d) k v)))
@@ -42,6 +48,9 @@
 
 ;; dicteq-keys : [DictEqof K V] -> [Listof K]
 (def (dicteq-keys d) (bare-dicteq-keys (dicteq-unwrapped d)))
+
+;; dicteq-values : [DictEqof K V] -> [Listof V]
+(def (dicteq-values d) (bare-dicteq-values (dicteq-unwrapped d)))
 
 ;; dicteq-put/list : [DictEqof K V] [Listof [Cons K V]] -> [DictEqof K V]
 (def (dicteq-put/list d l) (dicteq (bare-dicteq-put/list (dicteq-unwrapped d) l)))

@@ -7,6 +7,7 @@
         symdict-remove
         symdict-has-key?
         symdict-keys
+        symdict-values
         symdict-put/list
         list->symdict
         symdict->list
@@ -25,15 +26,16 @@
 ;; symdict-empty? : [Symdictof V] -> Bool
 (def (symdict-empty? d) (bare-symdict-empty? (symdict-unwrapped d)))
 
-;; symdict-ref : [Symdictof V] Symbol -> V
-(def (symdict-ref d k) (bare-symdict-ref (symdict-unwrapped d) k))
+;; symdict-ref : [Symdictof V] Symbol ?[-> V] -> V
+(def (symdict-ref d k (default (cut error "symdict-ref: No value associated with key" d k)))
+  (bare-symdict-ref (symdict-unwrapped d) k default))
+
+;; symdict-get : [Symdictof V] Symbol ?V -> V
+(def (symdict-get d k (default #f))
+  (bare-symdict-get (symdict-unwrapped d) k default))
 
 ;; symdict-put : [Symdictof V] Symbol V -> [Symdictof V]
 (def (symdict-put d k v) (symdict (bare-symdict-put (symdict-unwrapped d) k v)))
-
-;; symdict-get : [Symdictof V] Symbol [Optional V] -> V
-(def (symdict-get d k (default #f))
-  (if (symdict-has-key? d k) (symdict-ref d k) default))
 
 ;; symdict-update : [Symdictof V] Symbol [V -> V] V -> [Symdictof V]
 (def (symdict-update d k f v0) (symdict (bare-symdict-update (symdict-unwrapped d) k f v0)))
@@ -46,6 +48,9 @@
 
 ;; symdict-keys : [Symdictof V] -> [Listof Symbol]
 (def (symdict-keys d) (bare-symdict-keys (symdict-unwrapped d)))
+
+;; symdict-values : [Symdictof V] -> [Listof V]
+(def (symdict-values d) (bare-symdict-values (symdict-unwrapped d)))
 
 ;; symdict-put/list : [Symdictof V] [Listof [Cons Symbol V]] -> [Symdictof V]
 (def (symdict-put/list d l) (symdict (bare-symdict-put/list (symdict-unwrapped d) l)))

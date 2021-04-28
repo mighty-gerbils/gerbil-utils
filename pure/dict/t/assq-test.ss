@@ -1,7 +1,12 @@
 (export assq-test)
 
 (import :std/test
+        :gerbil/gambit/exceptions
         ../assq)
+
+(def (error-with-message? message)
+  (lambda (e)
+    (and (error-exception? e) (equal? (error-exception-message e) message))))
 
 (def assq-test
   (test-suite "test suite for pure/dict/assq"
@@ -14,6 +19,12 @@
                 5)
     (check-equal? (assq-ref '((red . 5) (blue . 4) (black . 1)) 'black)
                 1)
+    (check-exception (assq-ref '((red . 5) (blue . 4) (black . 1)) 'white)
+                     (error-with-message? "assq-ref: No value associated with key"))
+    (check-equal? (assq-get '((red . 5) (blue . 4) (black . 1)) 'white)
+                  #f)
+    (check-equal? (assq-get '((red . 5) (blue . 4) (black . 1)) 'white 0)
+                  0)
 
     (check-equal? (assq-put [] 'red [255 0 0])
                 '((red . (255 0 0))))
@@ -39,6 +50,8 @@
 
     (check-equal? (assq-keys '((red . 5) (blue . 4) (black . 1)))
                 ['red 'blue 'black])
+    (check-equal? (assq-values '((red . 5) (blue . 4) (black . 1)))
+                [5 4 1])
 
     (check assq=?
         '((blue . (0 255 0)) (red . (255 0 0)))
