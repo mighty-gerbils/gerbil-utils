@@ -77,7 +77,9 @@
          command)))
   (when nix-hack? ($$ "echo ok")) ;; do a first run to ensure all dependencies are loaded
   (def ($pkg-config options)
-    ($$ (string-join ["pkg-config" . options] " ")))
+    (or ($$ (string-join ["pkg-config" . options] " "))
+        (error "Failed to autodetect C library options. Are these libraries installed?"
+          pkg-config-libs)))
   ["-ld-options" ($pkg-config ["--libs" . pkg-config-libs])
    "-cc-options" ($pkg-config ["--cflags" . pkg-config-libs])])
 
@@ -123,7 +125,7 @@
   (def optimize? (not no-optimize))
   (when %name (create-version-file))
   (make (build-spec tcc: tcc optimize: optimize?)
-    verbose: verbose debug: (and debug 'env) optimize: optimize? srcdir: %srcdir))
+    verbose: (and verbose 9) debug: (and debug 'env) optimize: optimize? srcdir: %srcdir))
 
 (define-entry-point (spec verbose: (verbose #f) debug: (debug #f)
                           tcc: (tcc #f) no-optimize: (no-optimize #f))
