@@ -49,3 +49,13 @@
 
 ;; TODO: for end-user reporting, use error contexts as ported from quux or cl-scripting.
 ;; Maybe also port that to Gerbil main, and use it in std/test ?
+
+(define error-exception::type
+  (object-type (with-catch identity (cut error "foo"))))
+
+(bind-method! error-exception::type ':wr
+  (lambda (obj we)
+    (##default-wr we obj)
+    (##wr-str we " #;")
+    (##wr we (cons* 'error (error-exception-message obj) (error-exception-parameters obj))))
+  #t)
