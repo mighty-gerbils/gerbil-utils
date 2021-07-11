@@ -92,6 +92,8 @@
 
   (def package-date (string<-unix-time commit-unix-time "~Y-~m-~d"))
   (def package-version (if stable package-date (string-append "unstable-" package-date)))
+  (def package-ymd (string<-unix-time commit-unix-time "~Y~m~d"))
+  (def package-hms (string<-unix-time commit-unix-time "~H~M~S"))
 
   ;; Extract the new hash using nix-prefetch-git (sha256 as a 52(?) character base-36 string).
   (def nix-source-hash
@@ -104,6 +106,8 @@
               "\"sha256\": \"([0-9a-z]+)\"," (read-all-as-string port))))))
 
   ;; Insert new commit ID in the recipe file
+  ;; Also support other parameters used in gambit's stamp.h
+  ;; See stamp: target in gambit/include/makefile.in and according nix recipe.
   (maybe-replace-file
    recipe-file
    (apply compose
@@ -111,6 +115,8 @@
         [(pregexp-string-replacer "  version = \"" "[-.0-9A-Za-z]+" "\";" git-version)]
         [(pregexp-string-replacer "  version = \"" "[-.0-9A-Za-z]+" "\";" package-version)
          (pregexp-string-replacer " git-version = \"" "[-.0-9A-Za-z]+" "\";" git-version)
+         (pregexp-string-replacer " stampYmd = " "[0-9]+" ";" package-ymd)
+         (pregexp-string-replacer " stampHms = " "[0-9]+" ";" package-hms)
          (pregexp-string-replacer "    rev = \"" "[0-9a-f]+" "\";" latest-commit-hash)])...
       (pregexp-string-replacer "    owner = \"" "[-.0-9A-Za-z]+" "\";" owner)
       (pregexp-string-replacer "    repo = \"" "[-.0-9A-Za-z]+" "\";" repo-name)
