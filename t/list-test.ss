@@ -20,6 +20,9 @@
       '(((a: 1 b: 2 c: 3) ((a: . 1) (b: . 2) (c: . 3)))
         (() ())
         ((a (x y) b (z t)) ((a x y) (b z t)))))
+    (test-case "grouping"
+      (check-equal? (grouping '("abc" "b" "c" "ef" "gh" "ijk") string-length)
+                    '(("abc" "ijk") ("b" "c") ("ef" "gh"))))
     (test-case "c3 linearization"
       (def my-supers
         (hash (O '())
