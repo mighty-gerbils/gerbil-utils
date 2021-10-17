@@ -242,3 +242,8 @@
 (set-default-entry-point! 'all)
 (backtrace-on-abort? #f)
 (define-multicall-main)
+
+
+;; To make a release:
+;; pushtag () { for i ; do docker tag mukn/glow mukn/glow:$i ; docker push mukn/glow:$i ; done; }
+;; pushtag latest devel
