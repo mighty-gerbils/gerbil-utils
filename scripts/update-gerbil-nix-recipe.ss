@@ -290,7 +290,7 @@
    (unless (or gerbil-off stable)
      (update-recipe
       name: "glow"
-      repo: (or glow-repo "gitlab/mukn/glow")
+      repo: (or glow-repo "github/Glow-Lang/glow") ;;"gitlab/mukn/glow")
       recipe-path: (recipe-path "gerbil" "glow-lang")
       checkouts-dir: checkouts-dir
       source-dir: glow-dir
