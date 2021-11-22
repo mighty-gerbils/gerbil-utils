@@ -26,6 +26,8 @@
   :std/srfi/1 :std/srfi/19 :std/sugar
   ./base ./concurrency ./timestamp ./multicall ./number)
 
+(deflogger clan)
+
 ;;; Some infrastructure for call limiters:
 
 (defproto limiter-service
@@ -66,7 +68,7 @@
             (update-timestamp now)
             (!!value (get-ticket now param) k))
           (catch (e)
-            (log-error "request error" e)
+            (errorf "request error: ~a" e)
             (!!error (error-message e) k)))
          (loop))
         ((!limiter-service.return-ticket ticket)
@@ -163,7 +165,7 @@
                (when found
                  (unless (equal? ticket found)
                    (error "ticket mismatch" name number ticket found))
-                 (warning "~a ticket expired: ~s" name ticket)
+                 (warnf "~a ticket expired: ~s" name ticket)
                  (return-ticket timestamp ['ticket number tokens timestamp])))
              (loop)))
           (bogus (error "ticket-timeouts mismatch" name bogus)))))
@@ -206,7 +208,7 @@
          (cond
           ((not found)
            (if (<= timestamp now)
-             (warning "~a ticket returned after it expired: ~s" name ticket)
+             (warnf "~a ticket returned after it expired: ~s" name ticket)
              (error "~a ticket returned but not found (double return?): ~s" name ticket)))
           ((not (equal? [tokens timestamp] found))
            (error "~a ticket returned but doesn't match!: ~s vs ~s" name ticket found))

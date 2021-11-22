@@ -1,13 +1,15 @@
 ;; -*- Gerbil -*-
 ;;;; Utilities for concurrency
 
-(export #t)
+(export (except-out #t errorf warnf infof debugf verbosef))
 
 (import
   :gerbil/gambit/bytes :gerbil/gambit/continuations :gerbil/gambit/random :gerbil/gambit/threads
   :std/actor :std/error :std/logger
   :std/misc/bytes :std/misc/completion :std/misc/list :std/misc/repr :std/sugar
   ./base ./error ./exception)
+
+(deflogger clan)
 
 ;;; Protocol for process shutdown: periodically check for the (shutdown?) flag,
 ;; so you can shutdown gracefully after having received a signal,
@@ -65,7 +67,7 @@
       (try
        (apply fun (append args more-args))
        (catch (e)
-         (log-error "unhandled exception" e))))))
+         (errorf "unhandled exception: ~a" e))))))
 
 
 ;;;; Sequentialize access to a (stateful) function
