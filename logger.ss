@@ -2,8 +2,7 @@
 ;;;; General-purpose logging facility.
 ;; TODO: modify the interface to allow for actions on log rotation.
 
-(export
-  #t)
+(export (except-out #t errorf warnf infof debugf verbosef))
 
 (import
   :gerbil/gambit/ports
@@ -11,6 +10,8 @@
   :std/srfi/13 :std/sugar :std/text/json
   ./base ./basic-parsers ./concurrency ./timestamp ./filesystem ./generator
   ./json ./list ./memo ./path ./path-config ./versioning)
+
+(deflogger clan)
 
 ;;; Logging text to a series of log files.
 ;; Start a new logger, with given name (optional) and a hook to call when switching files.
@@ -185,7 +186,7 @@
                   (syntax-rules ()
                     ((_ form) (delay (try form
                                           (catch (_)
-                                            (warning "Bad log entry ~a ~a" timestamp line)
+                                            (warnf "Bad log entry ~a ~a" timestamp line)
                                             (void))))))))
       (if (metadata-line? line)
         (metadata-hook timestamp (delay-warn (json<-string line)))

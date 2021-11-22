@@ -1,12 +1,14 @@
 ;; -*- Gerbil -*-
 ;;;; Utilities for using websocket
 
-(export #t)
+(export (except-out #t errorf warnf infof debugf verbosef))
 
 (import
   :gerbil/gambit/threads
   :std/actor :std/error :std/logger :std/net/websocket :std/text/json :std/sugar
   ../base)
+
+(deflogger clan)
 
 (defproto websocket-client
   event: ;; asynchronous
@@ -19,7 +21,7 @@
            (ignore-errors
             (read-json (open-input-u8vector [char-encoding: 'UTF-8 init: bytes]))))
       (begin
-        (warning "websocket: server sent binary data (~s bytes)" (u8vector-length bytes))
+        (warnf "websocket: server sent binary data (~s bytes)" (u8vector-length bytes))
         (raise-io-error 'websocket "server sent binary data" bytes))))
 
 (def (websocket-encode-message-json msg)
