@@ -146,28 +146,30 @@
            help: "github owner/repo[@tree] for gerbil")
    (option 'gerbil-dir "-D" "--gerbil-dir"
            help: "git checkout directory for gerbil")
-   (option 'gerbil-utils-dir "-U" "--gerbil-utils-dir"
+   (option 'gerbil-utils-dir "--gerbil-utils-dir"
            help: "git checkout directory for gerbil-utils")
-   (option 'gerbil-poo-dir "-p" "--gerbil-poo-dir"
+   (option 'gerbil-poo-dir "--gerbil-poo-dir"
            help: "git checkout directory for gerbil-poo")
-   (option 'gerbil-crypto-dir "-Y" "--gerbil-crypto-dir"
+   (option 'gerbil-crypto-dir "--gerbil-crypto-dir"
            help: "git checkout directory for gerbil-crypto")
-   (option 'gerbil-persist-dir "-P" "--gerbil-persist-dir"
+   (option 'gerbil-persist-dir "--gerbil-persist-dir"
            help: "git checkout directory for gerbil-persist")
-   (option 'gerbil-ethereum-dir "-E" "--gerbil-ethereum-dir"
+   (option 'gerbil-ethereum-dir "--gerbil-ethereum-dir"
            help: "git checkout directory for gerbil-ethereum")
    (option 'glow-dir "-W" "--glow-dir"
            help: "git checkout directory for glow")
    (option 'glow-repo "-w" "--glow-repo"
            help: "git repo for glow")
-   (option 'smug-gerbil-dir "-s" "--smug-gerbil-dir"
+   (option 'smug-gerbil-dir "--smug-gerbil-dir"
            help: "git checkout directory for smug-gerbil")
-   (option 'gerbil-libp2p-dir "-2" "--gerbil-libp2p-dir"
+   (option 'gerbil-libp2p-dir "--gerbil-libp2p-dir"
            help: "git checkout directory for gerbil-libp2p")
    (option 'gerbil-libp2p-repo "--gerbil-libp2p-repo"
            help: "git repo for gerbil-libp2p")
-   (option 'ftw-dir "-F" "--ftw-dir"
-           help: "git checkout directory for ftw")])
+   (option 'ftw-dir "--ftw-dir"
+           help: "git checkout directory for ftw")
+   (option 'ftw-repo "--ftw-repo"
+           help: "git repository for ftw")])
 
 (def program "update-gerbil-nix-recipe")
 
@@ -192,6 +194,7 @@
                      gerbil-libp2p-dir: (gerbil-libp2p-dir #f)
                      gerbil-libp2p-repo: (gerbil-libp2p-repo #f)
                      ftw-dir: (ftw-dir #f)
+                     ftw-repo: (ftw-repo #f)
                      help: (help #f))
   (help: "Update Gerbil (and Gambit) Nix recipies"
    getopt: getopt-spec)
@@ -284,7 +287,7 @@
    (unless (or gerbil-off stable)
      (update-recipe
       name: "ftw"
-      repo: "github/drewc/ftw"
+      repo: (or ftw-repo "github/drewc/ftw")
       recipe-path: (recipe-path "gerbil" "ftw")
       checkouts-dir: checkouts-dir
       source-dir: ftw-dir
