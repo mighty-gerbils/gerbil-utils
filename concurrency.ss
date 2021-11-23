@@ -4,8 +4,9 @@
 (export (except-out #t errorf warnf infof debugf verbosef))
 
 (import
-  :gerbil/gambit/bytes :gerbil/gambit/continuations :gerbil/gambit/random :gerbil/gambit/threads
-  :std/actor :std/error :std/logger
+  :gerbil/gambit/bytes :gerbil/gambit/continuations
+  :gerbil/gambit/random :gerbil/gambit/threads
+  :std/actor :std/error :std/format :std/logger
   :std/misc/bytes :std/misc/completion :std/misc/list :std/misc/repr :std/sugar
   ./base ./error ./exception)
 
@@ -67,7 +68,7 @@
       (try
        (apply fun (append args more-args))
        (catch (e)
-         (errorf "unhandled exception: ~a" e))))))
+         (log-error "unhandled exception" e))))))
 
 
 ;;;; Sequentialize access to a (stateful) function

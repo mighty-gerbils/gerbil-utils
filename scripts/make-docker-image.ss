@@ -198,8 +198,8 @@
 (define-entry-point (make-glow-image)
   (help: "Create image ready to roll for glow"
    getopt: [])
-  (make-docker-image "mukn/gerbil-packages" "mukn/glow")
-  (docker-push "mukn/glow"))
+  (make-docker-image "mukn/gerbil-packages" "mukn/glow:devel")
+  (docker-push "mukn/glow:devel"))
 
 (define-entry-point (nix-paths (nixpkgs default-nixpkgs) . packages)
   (help: "Return the nix store paths for gerbil and gambit prerequisites plus given packages"

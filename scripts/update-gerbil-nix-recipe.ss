@@ -164,6 +164,8 @@
            help: "git checkout directory for smug-gerbil")
    (option 'gerbil-libp2p-dir "-2" "--gerbil-libp2p-dir"
            help: "git checkout directory for gerbil-libp2p")
+   (option 'gerbil-libp2p-repo "--gerbil-libp2p-repo"
+           help: "git repo for gerbil-libp2p")
    (option 'ftw-dir "-F" "--ftw-dir"
            help: "git checkout directory for ftw")])
 
@@ -188,6 +190,7 @@
                      glow-repo: (glow-repo #f)
                      smug-gerbil-dir: (smug-gerbil-dir #f)
                      gerbil-libp2p-dir: (gerbil-libp2p-dir #f)
+                     gerbil-libp2p-repo: (gerbil-libp2p-repo #f)
                      ftw-dir: (ftw-dir #f)
                      help: (help #f))
   (help: "Update Gerbil (and Gambit) Nix recipies"
@@ -272,7 +275,7 @@
    (unless (or gerbil-off stable)
      (update-recipe
       name: "gerbil-libp2p"
-      repo: "github/vyzo/gerbil-libp2p"
+      repo: (or gerbil-libp2p-repo "github/vyzo/gerbil-libp2p")
       recipe-path: (recipe-path "gerbil" "gerbil-libp2p")
       checkouts-dir: checkouts-dir
       source-dir: gerbil-libp2p-dir

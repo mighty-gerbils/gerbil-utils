@@ -24,7 +24,7 @@
   :std/actor :std/format :std/getopt :std/logger
   :std/misc/list :std/misc/number :std/misc/pqueue :std/sort
   :std/srfi/1 :std/srfi/19 :std/sugar
-  ./base ./concurrency ./timestamp ./multicall ./number)
+  ./base ./concurrency ./error ./timestamp ./multicall ./number)
 
 (deflogger clan)
 
@@ -68,7 +68,7 @@
             (update-timestamp now)
             (!!value (get-ticket now param) k))
           (catch (e)
-            (errorf "request error: ~a" e)
+            (log-error "request error" e)
             (!!error (error-message e) k)))
          (loop))
         ((!limiter-service.return-ticket ticket)

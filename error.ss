@@ -5,9 +5,9 @@
 (export (except-out #t errorf warnf infof debugf verbosef))
 
 (import
-  :gerbil/gambit/os
+  :gerbil/gambit/exceptions :gerbil/gambit/os
   :std/error :std/format :std/logger
-  ./base)
+  ./base ./exception)
 
 (deflogger clan)
 
@@ -20,3 +20,6 @@
   (exit code))
 
 (def current-error-context (make-parameter '()))
+
+(def (log-error what exn)
+  (errorf "~a: ~a" what (string<-exception exn)))
