@@ -43,10 +43,10 @@
 (def (for-byte-lines port f)
   (declare (fixnum) (not safe))
   (let/cc return
-    (def buf (make-bytes buffer-length))
+    (def buf (make-bytes buffer-length 0))
     (def other-bufs [])
     (def (newbuf)
-      (set! buf (make-bytes buffer-length)))
+      (set! buf (make-bytes buffer-length 0)))
     (def start 0)
     (def end 0)
     (def (fill-buf)
@@ -85,7 +85,7 @@
 
 (def (count-lines/port port)
   (declare (fixnum) (not safe))
-  (def buf (make-bytes buffer-length))
+  (def buf (make-bytes buffer-length 0))
   (let loop ((i 0))
     (def c (read-bytes buf port))
     (if (zero? c) i

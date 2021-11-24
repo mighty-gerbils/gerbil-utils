@@ -45,7 +45,7 @@
 (def (integer-length-in-bytes n) (n-bytes<-n-bits (integer-length n)))
 
 (def (bytes<-nat n (n-bytes (integer-length-in-bytes n)))
-  (def bytes (make-bytes n-bytes))
+  (def bytes (make-bytes n-bytes 0))
   (when (positive? n-bytes)
     (u8vector-uint-set! bytes 0 n big n-bytes))
   bytes)
