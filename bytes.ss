@@ -6,7 +6,7 @@
 
 (def (bytes-reverse b)
   (def l (bytes-length b))
-  (def r (make-bytes l))
+  (def r (make-bytes l 0))
   (for (i (in-range l))
     (bytes-set! r i (bytes-ref b (- l i 1))))
   r)

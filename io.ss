@@ -31,7 +31,7 @@
 ;; : <- UInt16 Out
 (def (marshal-uint16 n port)
   (assert! (<= 0 n 65535))
-  (def bytes (make-bytes 2))
+  (def bytes (make-bytes 2 0))
   (bytevector-u16-set! bytes 0 n big)
   (write-bytes bytes port))
 
