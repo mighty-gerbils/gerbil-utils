@@ -73,7 +73,7 @@
   (def ($$ command)
     ($ (if nix-hack?
          (string-append "nix-shell '<nixpkgs>' -p pkg-config " (string-join nix-deps " ")
-                        " --run '" command "'")
+                        " --run '" command "' 2> /dev/null")
          command)))
   (when nix-hack? ($$ "echo ok")) ;; do a first run to ensure all dependencies are loaded
   (def ($pkg-config options)
