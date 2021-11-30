@@ -7,7 +7,7 @@
 (import
   :gerbil/gambit/exact :gerbil/gambit/threads
   :scheme/base
-  :std/format :std/misc/number :std/srfi/19 :std/sugar
+  :std/assert :std/format :std/misc/number :std/srfi/19 :std/sugar
   ./base ./basic-parsers ./number)
 
 ;; We deal with several time representations:

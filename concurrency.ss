@@ -6,7 +6,7 @@
 (import
   :gerbil/gambit/bytes :gerbil/gambit/continuations
   :gerbil/gambit/random :gerbil/gambit/threads
-  :std/actor :std/error :std/format :std/logger
+  :std/actor :std/assert :std/error :std/format :std/logger
   :std/misc/bytes :std/misc/completion :std/misc/list :std/misc/repr :std/sugar
   ./base ./error ./exception)
 

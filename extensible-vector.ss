@@ -5,7 +5,7 @@
 
 (import
   :gerbil/gambit/bits :gerbil/gambit/bytes :gerbil/gambit/exact
-  :std/misc/bytes :std/srfi/43 :std/sugar
+  :std/assert :std/misc/bytes :std/srfi/43 :std/sugar
   ./number)
 
 (defstruct evector (values fill-pointer) transparent: #t)
