@@ -8,7 +8,7 @@
 (import
   :gerbil/gambit/bits :gerbil/gambit/exact :gerbil/gambit/misc :gerbil/gambit/random
   :scheme/base-impl
-  :std/iter :std/misc/list-builder :std/misc/number :std/srfi/1 :std/sugar
+  :std/iter :std/misc/list-builder :std/misc/number :std/srfi/1 :std/sugar :std/assert
   ./number ./extensible-vector)
 
 ;; Given a list of `primes`, return a vector the size of which is the product M of those primes,

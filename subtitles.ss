@@ -6,7 +6,7 @@
 (import
   :gerbil/gambit/exact
   :scheme/base-impl :scheme/char
-  :std/error :std/misc/list :std/misc/number :std/misc/string :std/srfi/13 :std/sugar
+  :std/error :std/misc/list :std/misc/number :std/misc/string :std/srfi/13 :std/sugar :std/assert
   ./base ./basic-parsers ./files ./number)
 
 (def (expect-srt-time-offset port)

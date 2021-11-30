@@ -55,7 +55,7 @@
   (for-syntax :std/stxutil)
   :gerbil/gambit/bytes
   :scheme/base-ports
-  :std/error :std/iter :std/misc/list :std/srfi/1 :std/srfi/43 :std/stxparam :std/sugar
+  :std/error :std/iter :std/misc/list :std/srfi/1 :std/srfi/43 :std/stxparam :std/sugar :std/assert
   ./bytestring)
 
 ; -----------------------------------------------------------------------------

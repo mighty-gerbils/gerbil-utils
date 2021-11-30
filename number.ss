@@ -6,7 +6,7 @@
 (import
   :gerbil/gambit/bits :gerbil/gambit/bytes :gerbil/gambit/exact
   :scheme/base
-  :std/misc/bytes :std/sugar
+  :std/misc/bytes :std/sugar :std/assert
   ./base ./ports)
 
 ;;;; Numbers
