@@ -4,7 +4,7 @@
 (export #t)
 
 (import
-  (for-syntax :gerbil/expander)
+  (for-syntax (only-in :gerbil/expander core-bound-identifier?))
   :std/logger :std/sugar :std/format
   ./base ./error)
 
