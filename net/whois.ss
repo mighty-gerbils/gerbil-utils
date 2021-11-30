@@ -2,7 +2,7 @@
 (export #t)
 
 (import
-  :std/format :std/misc/list :std/misc/ports :std/misc/process :std/pregexp :std/srfi/1 :std/sugar :std/assert
+  :std/assert :std/format :std/misc/list :std/misc/ports :std/misc/process :std/pregexp :std/srfi/1 :std/sugar
   ../assert ../base ../list)
 
 (def (valid-domain? name)

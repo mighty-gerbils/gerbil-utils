@@ -4,7 +4,7 @@
 (import
   :gerbil/gambit/bytes
   :scheme/base-ports
-  :std/iter :std/misc/list :std/srfi/43 :std/sugar :std/assert)
+  :std/assert :std/iter :std/misc/list :std/srfi/43 :std/sugar)
 
 (def (byte? x)
   (and (fixnum? x) (<= 0 x 255)))

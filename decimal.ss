@@ -3,7 +3,7 @@
 (import
   :gerbil/gambit/bits :gerbil/gambit/exact
   :scheme/base-impl
-  :std/error :std/iter :std/misc/number :std/srfi/13 :std/sugar :std/assert
+  :std/assert :std/error :std/iter :std/misc/number :std/srfi/13 :std/sugar
   ./base ./basic-parsers ./basic-printers ./number ./string)
 
 ;; : Bool <- Any

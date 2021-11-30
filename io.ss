@@ -1,7 +1,7 @@
 (export #t)
 (import
   :gerbil/gambit/bits :gerbil/gambit/bytes :gerbil/gambit/ports
-  :std/misc/bytes :std/sugar :std/assert
+  :std/assert :std/misc/bytes :std/sugar
   ./base ./number)
 
 ;;(def (write-u8vector v p) (write-subu8vector v 0 (u8vector-length v) p))

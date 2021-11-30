@@ -9,7 +9,7 @@
 
 (import
   :gerbil/gambit/random
-  :std/format :std/iter :std/misc/list :std/misc/ports :std/pregexp :std/srfi/13 :std/sugar :std/assert
+  :std/assert :std/format :std/iter :std/misc/list :std/misc/ports :std/pregexp :std/srfi/13 :std/sugar
   ./base ./basic-parsers ./basic-printers ./basic-parsers ./number ./random)
 
 (def diceware-file (getenv "DICEWARE_FILE" #f))
