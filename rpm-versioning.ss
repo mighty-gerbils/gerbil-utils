@@ -40,7 +40,8 @@
   (def dotpos (string-index-right basename #\.))
   (assert! (equal? extension "rpm"))
   (assert! dotpos)
-  (assert! (valid-rpm-architecture-component? basename start: (1+ dotpos)))
+  (assert! (valid-rpm-architecture-component? basename start: (1+ dotpos))
+           "" basename dotpos) ;; bypass lack of keyword support in gerbil v0.16-262-g5bd98f7b until fixed upstream
   (def architecture (substring basename (1+ dotpos) (string-length basename)))
   (defvalues (name version) (parse-rpm-versioned-name basename end: dotpos))
   (values directory name version architecture))
