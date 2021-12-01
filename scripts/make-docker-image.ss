@@ -14,7 +14,7 @@
   :clan/net/simple-http-client
   :clan/poo/cli)
 
-(def default-nixpkgs "http://github.com/muknio/nixpkgs/archive/devel.tar.gz")
+(def default-nixpkgs "https://github.com/MuKnIO/nixpkgs/archive/devel.tar.gz")
 (def default-label "mukn/gerbil-nix:latest")
 
 (def options/nixpkgs
