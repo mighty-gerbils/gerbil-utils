@@ -14,6 +14,11 @@
     ((_ ctx) (datum->syntax #'ctx ['quote (alet (loc (stx-source #'ctx)) (vector-ref loc 0))]))
     ((foo) #'(this-source-file foo))))
 
+(defsyntax (this-source-directory stx)
+  (syntax-case stx ()
+    ((_ ctx)  #'(path-directory (this-source-file ctx)))
+    ((foo) #'(this-source-directory foo))))
+
 (defsyntax (this-source-position stx)
   (syntax-case stx ()
     ((_ ctx) (datum->syntax #'ctx ['quote (alet (loc (stx-source #'ctx)) (vector-ref loc 1))]))

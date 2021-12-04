@@ -1,5 +1,5 @@
 ;; -*- Gerbil -*-
-;;;; Basic parsers
+;;;; Basic LL(1) parsers
 
 ;; TODO: parsing combinators that produce generating functions for all the values of a parse
 ;; from a generator (or stream?) of values?
@@ -14,7 +14,7 @@
   (for-syntax :std/stxutil)
   :gerbil/gambit/bytes
   :scheme/base-ports :scheme/char
-  :std/error :std/iter :std/srfi/13 :std/sugar
+  :std/error :std/iter :std/misc/list-builder :std/srfi/13 :std/sugar
   ./base)
 
 ;; NB: This assumes Latin / English alphabet
@@ -76,6 +76,21 @@
          n))
     (parse-error! 'expect-natural "Not a digit in requested base" (peek-char port) base port)))
 
+(def (expect-signed-integer port (base 10))
+  (let ((char (peek-char port)))
+    (cond
+     ((eqv? char #\+)
+      (read-char port)
+      (expect-natural port base))
+     ((eqv? char #\-)
+      (read-char port)
+      (- (expect-natural port base)))
+     ((char-ascii-digit char)
+      (expect-natural port base))
+     (else
+      (parse-error! 'expect-signed-integer "Neither a sign nor a digit in requested base"
+                    char base port)))))
+
 (def (expect-maybe-one-of char-pred?)
   (λ (port)
     (and (char-pred? (peek-char port))
@@ -85,7 +100,7 @@
   (λ (port)
     (if (char-pred? (peek-char port))
       (read-char port)
-      (parse-error! 'expect-one-of "Unexpected character" (peek-char port) port))))
+      (parse-error! 'expect-one-of "Unexpected character" (peek-char port) char-pred? port))))
 
 (def (expect-any-number-of char-pred?)
   (λ (in)
@@ -111,7 +126,7 @@
 (def expect-eof (expect-one-of eof-object?))
 
 (def (eol-char? x)
-  (or (eqv? x #\newline) (eqv? x #\return)))
+  (or (eqv? x #\newline) (eqv? x #\return) (eof-object? x)))
 
 (def (expect-eol port)
   (def char ((expect-one-of eol-char?) port))
@@ -143,13 +158,57 @@
               ((eof-object? char) (void))
               (else (display char out) (read-char port) (loop))))))))
 
+(def (expect-lines parse-line port)
+  (nest
+   (with-list-builder (c))
+   (until (char-port-eof? port))
+   (begin (c (parse-line port)))
+   (expect-eol port)))
+
 (def (expect-then-eof expecter)
   (lambda (in) (begin0 (expecter in) (expect-eof in))))
 
-(def (parse-file file parser (description #f))
-  (with-catch (lambda (e) (error "failure parsing file" description file (error-message e)))
-              (cut call-with-input-file file (expect-then-eof parser))))
+(def (parse-port port parser (description port) (where 'parse-port))
+  (with-catch (lambda (e) (parse-error! where "failure parsing" description (error-message e)))
+              (lambda () ((expect-then-eof parser) port))))
 
-(def (parse-string string parser (description #f))
-  (with-catch (lambda (e) (error "failure parsing string" description string (error-message e)))
-              (cut call-with-input-string string (expect-then-eof parser))))
+(def (parse-file file parser (description file) (where 'parse-file))
+  (call-with-input-file file (lambda (port) (parse-port port parser description where))))
+
+(def (parse-string string parser (description string) (where 'parse-string))
+  (call-with-input-string string (lambda (port) (parse-port port parser description where))))
+
+(def (parse-file-lines parse-line file (description file) (where 'parse-file-lines))
+  (parse-file file (cut expect-lines parse-line <>) description where))
+
+(def ((expect-alternatives alternatives (where 'expect-alternatives)) port)
+  (let loop ((as alternatives))
+    (if (null? as)
+      (parse-error! where "none applied" alternatives port)
+      (with-catch (λ (e) (if (parse-error? e) (loop (cdr as)) (raise e)))
+                  (lambda () ((car as) port))))))
+
+;; Monadic parsing combinators
+(defrule (expect-result result) (lambda (_port) result))
+(def (expect-pure value) (expect-result value))
+(def (expect-bind processed processor)
+  (lambda (port) ((processor (processed port)) port)))
+(def (expect-or . alternatives)
+  (expect-alternatives alternatives 'expect-or))
+(defrule (expect-begin expect-ignored ... expect-value)
+  (λ (port) (expect-ignored port) ... (expect-value port)))
+(defrule (expect-begin0 expect-value expect-ignored ...)
+  (λ (port) (begin0 (expect-value port) (expect-ignored port) ...)))
+(def (expect-repeated expect-element expect-terminator (rhead '()))
+  (let loop ((r rhead))
+    (expect-or
+     (expect-begin expect-terminator (expect-result (reverse r)))
+     (expect-bind expect-element (lambda (e) (loop [e . r]))))))
+(def (expect-separated expect-element expect-separator expect-terminator)
+  (expect-or
+   (expect-begin expect-terminator (expect-pure '()))
+   (expect-bind expect-element
+                (lambda (e) (expect-repeated (expect-begin expect-separator expect-element)
+                                        expect-terminator [e])))))
+(def ((expect-n-repeats n expect-element) port)
+  (for/collect ((_ (in-range n))) (expect-element port)))

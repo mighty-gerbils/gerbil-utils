@@ -297,3 +297,14 @@
 
 (def (generating-peeking-shutting<-shutdown-generating shutdown generating)
   (in-cothread/peekable (λ () (try (generating yield) (finally (shutdown))))))
+
+(def (generating-reduce f seed g)
+  (nest
+   (generating<-for-each) (λ (yield))
+   (generating-for-each! g)
+   (λ (x) (set! seed (f seed x)) (yield seed))))
+
+(def (generating-sums g) (generating-reduce + 0 g))
+
+(def (generating-indefinitely gg)
+  (generating<-for-each (λ (yield) (while #t (generating-for-each! (gg) yield)))))
