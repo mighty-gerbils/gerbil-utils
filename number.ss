@@ -31,6 +31,8 @@
 
 (def (plus? x) (< 0 x))
 (def (minus? x) (> 0 x))
+(def (sign<-real x)
+  (cond ((< 0 x) +1) ((> 0 x) -1) (else 0)))
 
 (def (nat? n)
   (and (exact-integer? n) (not (negative? n))))

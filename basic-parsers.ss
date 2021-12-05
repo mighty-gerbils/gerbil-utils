@@ -14,7 +14,7 @@
   (for-syntax :std/stxutil)
   :gerbil/gambit/bytes
   :scheme/base-ports :scheme/char
-  :std/error :std/iter :std/misc/list-builder :std/srfi/13 :std/sugar
+  :std/error :std/iter :std/misc/list-builder :std/srfi/1 :std/srfi/13 :std/sugar
   ./base)
 
 ;; NB: This assumes Latin / English alphabet
@@ -212,3 +212,9 @@
                                         expect-terminator [e])))))
 (def ((expect-n-repeats n expect-element) port)
   (for/collect ((_ (in-range n))) (expect-element port)))
+
+(def ((expect* f . expect-elements) port)
+  (apply f (map-in-order (lambda (ee) (ee port)) expect-elements)))
+
+(def (expect-list . expect-elements)
+  (apply expect* list expect-elements))
