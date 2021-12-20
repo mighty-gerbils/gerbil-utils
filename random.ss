@@ -24,7 +24,7 @@
 (def (generate-OKCoin-password)
   (n-random-chars 32 "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890&!?"))
 
-(def (randomize! (random-source (default-random-source)))
+(def (randomize! (random-source default-random-source))
   (random-source-randomize! random-source))
 
 (def (shuffle-list list (n #f))
