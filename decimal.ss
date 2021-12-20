@@ -13,7 +13,7 @@
 
 ;; : Integer <- Integer
 (def (factor-out-powers-of-2 n)
-  (arithmetic-shift n (- (first-bit-set n))))
+  (arithmetic-shift n (- (first-set-bit n))))
 
 ;; TODO: study the limit conditions of validity of this algorithm, and
 ;; add a check at the beginning to detect when they are not satisfied.
@@ -177,7 +177,7 @@
 ;; Returns c and max(m,n).
 ;; : Nat Nat <- Nat
 (def (find-multiplier d)
-  (def m (first-bit-set d))
+  (def m (first-set-bit d))
   (def 5^n (arithmetic-shift d (- m)))
   (def n (integer-part (round (log 5^n 5))))
   ;; Log and integer-length seem to work perfectly as used above even for
