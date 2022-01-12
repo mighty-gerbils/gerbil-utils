@@ -37,7 +37,7 @@
   '(zsh su screen less git openssh xz bashInteractive
     go-ethereum #;solc racket gnumake
     coreutils attr curl binutils diffutils findutils patch
-    rsync go-libp2p-daemon multimarkdown
+    rsync go-libp2p-daemon multimarkdown cacert
     ;; sqlite leveldb postgresql mariadb-connector-c lmdb
     ;; nghttp2 openssl snappy libossp_uuid c-ares
     ;; gawk ed libxml2 stdenv systemd libev ncurses
@@ -78,7 +78,9 @@
    getopt: [])
   (make-docker-image
    "nixos/nix:latest" "mukn/cachix"
-   "RUN echo cachix install 0 ; nix-env -iA cachix -f https://cachix.org/api/v1/install && cachix use mukn"
+   ;;Update the CA certificates??? "RUN ???"
+   "RUN echo cachix install 0 ; nix-env -iA cachix -f https://cachix.org/api/v1/install"
+   "RUN cachix use mukn || :" ;; <-- This currently fails due to CA certificate not recognized(!)
    ;; Disable nix-thunk for now: compiling it pulls gigabytes of Haskell stuff and takes hours
    #;(string-append
     "RUN echo nix-thunk 0 ; "
