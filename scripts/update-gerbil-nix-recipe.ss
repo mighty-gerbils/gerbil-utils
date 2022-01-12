@@ -13,7 +13,10 @@
 
 ;; Initialize paths from the environment
 (defonce (default-checkouts-dir)
-  (path-maybe-normalize (path-expand "../.." (path-directory (this-source-file)))))
+  (path-maybe-normalize (path-expand "../.." (this-source-directory))))
+
+(defonce (default-checkouts-by-owner-dir)
+  (path-maybe-normalize (path-expand "../../.." (this-source-directory))))
 
 (def (separate-string-prefix separator string)
   (if string
@@ -47,21 +50,43 @@
        ;; Thanks to vyzo for debugging this issue!!!
        (string-append "\\1\\$" new "\\2")))
 
+(def (error/dir-not-found name dir sf)
+  (define s (format "~a: directory not found\n  at: ~a" name dir))
+  (error
+    (cond
+      ((not (pair? sf))       s)
+      ((not (pair? (cdr sf))) (format "~a\n  suggested fix: ~a" s (car sf)))
+      (else                   (format "~a\n  suggested fixes: ~a" s sf)))))
+
+;; cmdopts contains the command-line options that could be changed/added to either
+;;   fix the source-dir directly, or stop it from attempting to update this recipe
 (def (update-recipe
       name: name
       repo: repo
       recipe-path: recipe-path
-      checkouts-dir: (checkouts-dir #f)
+      checkouts-dir: (checkouts-dir_ #f)
       source-dir: (source-dir_ #f)
       nixpkgs-dir: (nixpkgs-dir_ #f)
-      stable: (stable #f))
+      stable: (stable #f)
+      cmdopts: (cmdopts []))
 
-  (def (defaultize dir reponame)
-    (path-expand (or dir reponame) (or checkouts-dir (default-checkouts-dir))))
-  (def source-dir (defaultize source-dir_ name))
-  (def nixpkgs-dir (defaultize nixpkgs-dir_ "nixpkgs"))
+  (def checkouts-dir (or checkouts-dir_ (default-checkouts-dir)))
+  (unless (file-exists? checkouts-dir)
+    (error/dir-not-found "checkouts-dir" checkouts-dir ["-C" "--checkouts"]))
+
+  (def (defaultize dir owner reponame)
+    (cond (dir (path-expand dir checkouts-dir))
+          (else
+           (let ((d1 (path-expand reponame checkouts-dir))
+                 (d2 (path-expand reponame (path-expand owner (default-checkouts-by-owner-dir)))))
+             (if (or (file-exists? d1) (not (file-exists? d2))) d1 d2)))))
   (defvalues (repo-url site owner repo-name git-tree) (parse-repo-argument repo))
+  (def source-dir (defaultize source-dir_ owner repo-name))
+  (def nixpkgs-dir (defaultize nixpkgs-dir_ "NixOS" "nixpkgs"))
   (def recipe-file (path-expand recipe-path nixpkgs-dir))
+
+  (unless (file-exists? source-dir)
+    (error/dir-not-found name source-dir cmdopts))
 
   ;; Update source directory via git fetch
   (call-with-input-process
@@ -104,6 +129,9 @@
      (λ (port)
        (cadr (pregexp-match
               "\"sha256\": \"([0-9a-z]+)\"," (read-all-as-string port))))))
+
+  (unless (file-exists? recipe-file)
+    (error/dir-not-found "nixpkgs" nixpkgs-dir ["-N" "--nixpkgs"]))
 
   ;; Insert new commit ID in the recipe file
   ;; Also support other parameters used in gambit's stamp.h
@@ -148,20 +176,32 @@
            help: "git checkout directory for gerbil")
    (option 'gerbil-utils-dir "--gerbil-utils-dir"
            help: "git checkout directory for gerbil-utils")
+   (option 'gerbil-utils-repo "--gerbil-utils-repo"
+           help: "git repository for gerbil-utils")
    (option 'gerbil-poo-dir "--gerbil-poo-dir"
            help: "git checkout directory for gerbil-poo")
+   (option 'gerbil-poo-repo "--gerbil-poo-repo"
+           help: "git repository for gerbil-poo")
    (option 'gerbil-crypto-dir "--gerbil-crypto-dir"
            help: "git checkout directory for gerbil-crypto")
+   (option 'gerbil-crypto-repo "--gerbil-crypto-repo"
+           help: "git repository for gerbil-crypto")
    (option 'gerbil-persist-dir "--gerbil-persist-dir"
            help: "git checkout directory for gerbil-persist")
+   (option 'gerbil-persist-repo "--gerbil-persist-repo"
+           help: "git repository for gerbil-persist")
    (option 'gerbil-ethereum-dir "--gerbil-ethereum-dir"
            help: "git checkout directory for gerbil-ethereum")
+   (option 'gerbil-ethereum-repo "--gerbil-ethereum-repo"
+           help: "git repository for gerbil-ethereum")
    (option 'glow-dir "-W" "--glow-dir"
            help: "git checkout directory for glow")
    (option 'glow-repo "-w" "--glow-repo"
            help: "git repo for glow")
    (option 'smug-gerbil-dir "--smug-gerbil-dir"
            help: "git checkout directory for smug-gerbil")
+   (option 'smug-gerbil-repo "--smug-gerbil-repo"
+           help: "git repository for smug-gerbil")
    (option 'gerbil-libp2p-dir "--gerbil-libp2p-dir"
            help: "git checkout directory for gerbil-libp2p")
    (option 'gerbil-libp2p-repo "--gerbil-libp2p-repo"
@@ -184,13 +224,19 @@
                      gerbil-repo: (gerbil-repo #f)
                      gerbil-dir: (gerbil-dir #f)
                      gerbil-utils-dir: (gerbil-utils-dir #f)
+                     gerbil-utils-repo: (gerbil-utils-repo #f)
                      gerbil-crypto-dir: (gerbil-crypto-dir #f)
+                     gerbil-crypto-repo: (gerbil-crypto-repo #f)
                      gerbil-poo-dir: (gerbil-poo-dir #f)
+                     gerbil-poo-repo: (gerbil-poo-repo #f)
                      gerbil-persist-dir: (gerbil-persist-dir #f)
+                     gerbil-persist-repo: (gerbil-persist-repo #f)
                      gerbil-ethereum-dir: (gerbil-ethereum-dir #f)
+                     gerbil-ethereum-repo: (gerbil-ethereum-repo #f)
                      glow-dir: (glow-dir #f)
                      glow-repo: (glow-repo #f)
                      smug-gerbil-dir: (smug-gerbil-dir #f)
+                     smug-gerbil-repo: (smug-gerbil-repo #f)
                      gerbil-libp2p-dir: (gerbil-libp2p-dir #f)
                      gerbil-libp2p-repo: (gerbil-libp2p-repo #f)
                      ftw-dir: (ftw-dir #f)
@@ -206,12 +252,13 @@
    (unless gambit-off
      (update-recipe
       name: "gambit"
-      repo: (or gambit-repo "feeley/gambit")
+      repo: (or gambit-repo "gambit/gambit")
       recipe-path: (recipe-path "gambit" (if stable "default" "unstable"))
       checkouts-dir: checkouts-dir
       source-dir: gambit-dir
       nixpkgs-dir: nixpkgs-dir
-      stable: stable))
+      stable: stable
+      cmdopts: ["--gambit-repo" "--gambit-dir" "--gambit-off"]))
    (unless gerbil-off
      (update-recipe
       name: "gerbil"
@@ -220,61 +267,68 @@
       checkouts-dir: checkouts-dir
       source-dir: gerbil-dir
       nixpkgs-dir: nixpkgs-dir
-      stable: stable))
+      stable: stable
+      cmdopts: ["--gerbil-repo" "--gerbil-dir" "--gerbil-off"]))
    (unless (or gerbil-off stable)
      (update-recipe
       name: "gerbil-utils"
-      repo: "fare/gerbil-utils"
+      repo: (or gerbil-utils-repo "fare/gerbil-utils")
       recipe-path: (recipe-path "gerbil" "gerbil-utils")
       checkouts-dir: checkouts-dir
       source-dir: gerbil-utils-dir
       nixpkgs-dir: nixpkgs-dir
-      stable: stable))
+      stable: stable
+      cmdopts: ["--gerbil-utils-dir" "--gerbil-utils-repo" "--gerbil-off" "--stable"]))
    (unless (or gerbil-off stable)
      (update-recipe
       name: "gerbil-crypto"
-      repo: "fare/gerbil-crypto"
+      repo: (or gerbil-crypto-repo "fare/gerbil-crypto")
       recipe-path: (recipe-path "gerbil" "gerbil-crypto")
       checkouts-dir: checkouts-dir
       source-dir: gerbil-crypto-dir
       nixpkgs-dir: nixpkgs-dir
-      stable: stable))
+      stable: stable
+      cmdopts: ["--gerbil-crypto-dir" "--gerbil-crypto-repo" "--gerbil-off" "--stable"]))
    (unless (or gerbil-off stable)
      (update-recipe
       name: "gerbil-poo"
-      repo: "fare/gerbil-poo"
+      repo: (or gerbil-poo-repo "fare/gerbil-poo")
       recipe-path: (recipe-path "gerbil" "gerbil-poo")
       checkouts-dir: checkouts-dir
-      source-dir: gerbil-crypto-dir
+      source-dir: gerbil-poo-dir
       nixpkgs-dir: nixpkgs-dir
-      stable: stable))
+      stable: stable
+      cmdopts: ["--gerbil-poo-dir" "--gerbil-poo-repo" "--gerbil-off" "--stable"]))
    (unless (or gerbil-off stable)
      (update-recipe
       name: "gerbil-persist"
-      repo: "fare/gerbil-persist"
+      repo: (or gerbil-persist-repo "fare/gerbil-persist")
       recipe-path: (recipe-path "gerbil" "gerbil-persist")
       checkouts-dir: checkouts-dir
       source-dir: gerbil-persist-dir
       nixpkgs-dir: nixpkgs-dir
-      stable: stable))
+      stable: stable
+      cmdopts: ["--gerbil-persist-dir" "--gerbil-persist-repo" "--gerbil-off" "--stable"]))
    (unless (or gerbil-off stable)
      (update-recipe
       name: "gerbil-ethereum"
-      repo: "fare/gerbil-ethereum"
+      repo: (or gerbil-ethereum-repo "fare/gerbil-ethereum")
       recipe-path: (recipe-path "gerbil" "gerbil-ethereum")
       checkouts-dir: checkouts-dir
       source-dir: gerbil-ethereum-dir
       nixpkgs-dir: nixpkgs-dir
-      stable: stable))
+      stable: stable
+      cmdopts: ["--gerbil-ethereum-dir" "--gerbil-ethereum-repo" "--gerbil-off" "--stable"]))
    (unless (or gerbil-off stable)
      (update-recipe
       name: "smug-gerbil"
-      repo: "drewc/smug-gerbil"
+      repo: (or smug-gerbil-repo "drewc/smug-gerbil")
       recipe-path: (recipe-path "gerbil" "smug-gerbil")
       checkouts-dir: checkouts-dir
       source-dir: smug-gerbil-dir
       nixpkgs-dir: nixpkgs-dir
-      stable: stable))
+      stable: stable
+      cmdopts: ["--smug-gerbil-dir" "--smug-gerbil-repo" "--gerbil-off" "--stable"]))
    (unless (or gerbil-off stable)
      (update-recipe
       name: "gerbil-libp2p"
@@ -283,7 +337,8 @@
       checkouts-dir: checkouts-dir
       source-dir: gerbil-libp2p-dir
       nixpkgs-dir: nixpkgs-dir
-      stable: stable))
+      stable: stable
+      cmdopts: ["--gerbil-libp2p-repo" "--gerbil-libp2p-dir" "--gerbil-off" "--stable"]))
    (unless (or gerbil-off stable)
      (update-recipe
       name: "ftw"
@@ -292,7 +347,8 @@
       checkouts-dir: checkouts-dir
       source-dir: ftw-dir
       nixpkgs-dir: nixpkgs-dir
-      stable: stable))
+      stable: stable
+      cmdopts: ["--ftw-repo" "--ftw-dir" "--gerbil-off" "--stable"]))
    (unless (or gerbil-off stable)
      (update-recipe
       name: "glow"
@@ -301,7 +357,8 @@
       checkouts-dir: checkouts-dir
       source-dir: glow-dir
       nixpkgs-dir: nixpkgs-dir
-      stable: stable))
+      stable: stable
+      cmdopts: ["--glow-repo" "--glow-dir" "--gerbil-off" "--stable"]))
    (catch (getopt-error? exn)
      (getopt-display-help (apply getopt getopt-spec) program (current-error-port))
      (exit 2))
