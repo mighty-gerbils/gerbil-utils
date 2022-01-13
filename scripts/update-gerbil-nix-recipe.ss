@@ -148,7 +148,7 @@
          (pregexp-string-replacer "    rev = \"" "[0-9a-f]+" "\";" latest-commit-hash)])...
       (pregexp-string-replacer "    owner = \"" "[-.0-9A-Za-z]+" "\";" owner)
       (pregexp-string-replacer "    repo = \"" "[-.0-9A-Za-z]+" "\";" repo-name)
-      (pregexp-string-replacer "    sha256 = \"" "[0-9a-z]+" "\";" nix-source-hash)])))
+      (pregexp-string-replacer "    sha256 = \"" "[0-9a-zA-Z+/=-]+" "\";" nix-source-hash)])))
 
 (def (recipe-path lang file)
   (format "pkgs/development/compilers/~a/~a.nix" lang file))
