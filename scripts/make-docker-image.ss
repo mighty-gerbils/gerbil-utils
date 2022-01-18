@@ -209,7 +209,7 @@
   (setenv "NIX_PATH" (format "nixpkgs=~a" nixpkgs)) ;; TODO: is this needed or overridden by -f below?
   (run-process
    coprocess: read-all-as-lines
-   ["nix" "--extra-experimental-features" "nix-command" "path-info" "--recursive" "-f" nixpkgs
+   ["nix" "--extra-experimental-features" "nix-command" "path-info" "--recursive" "--impure" "--expr"
     (string-append
      "(with (import <nixpkgs> {}) ;"
      (apply package-expression packages) ")")]))
