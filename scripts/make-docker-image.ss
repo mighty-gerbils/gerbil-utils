@@ -79,6 +79,8 @@
   (make-docker-image
    "nixos/nix:latest" "mukn/cachix"
    ;;Update the CA certificates??? "RUN ???"
+   "RUN mkdir -p /etc/ssl/certs/"
+   "RUN ln -s $NIX_SSL_CERT_FILE /etc/ssl/certs"
    "RUN echo cachix install 0 ; nix-env -iA cachix -f https://cachix.org/api/v1/install"
    "RUN cachix use mukn || :" ;; <-- This currently fails due to CA certificate not recognized(!)
    ;; Disable nix-thunk for now: compiling it pulls gigabytes of Haskell stuff and takes hours
