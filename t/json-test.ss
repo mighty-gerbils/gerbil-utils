@@ -27,4 +27,20 @@
         (t (json-rpc-error -100 "bar" (void)) (hash (code -100) (message "bar") (data (void))))
         (check equal-struct?
                (json-rpc-error<-json (hash (code -2) (message "x")))
-               (json-rpc-error -2 "x" (void)))))))
+               (json-rpc-error -2 "x" (void)))))
+
+    (test-case "json-object-ref, json-object-get"
+      (check-equal? (json-object-ref (hash ("a" "apple") ("b" "banana")) "a") "apple")
+      (check-equal? (json-object-ref (hash ("a" "apple") ("b" "banana")) 'a) "apple")
+      (check-equal? (json-object-ref (hash ("a" "apple") ("b" "banana")) "b") "banana")
+      (check-equal? (json-object-ref (hash ("a" "apple") ("b" "banana")) 'b) "banana")
+      (check-equal? (json-object-ref (hash (a "apple") (b "banana")) "a") "apple")
+      (check-equal? (json-object-ref (hash (a "apple") (b "banana")) 'a) "apple")
+      (check-equal? (json-object-ref (hash (a "apple") (b "banana")) "b") "banana")
+      (check-equal? (json-object-ref (hash (a "apple") (b "banana")) 'b) "banana")
+      (check-equal? (json-object-ref (Alist '(("a" . "apple") ("b" . "banana"))) "a") "apple")
+      (check-equal? (json-object-ref (Alist '(("a" . "apple") ("b" . "banana"))) 'a) "apple")
+      (check-equal? (json-object-ref (Alist '(("a" . "apple") ("b" . "banana"))) "b") "banana")
+      (check-equal? (json-object-ref (Alist '(("a" . "apple") ("b" . "banana"))) 'b) "banana")
+      (check-equal? (json-object-get (Alist '(("a" . "apple") ("b" . "banana"))) 'b) "banana")
+      (check-equal? (json-object-get (Alist '(("a" . "apple") ("b" . "banana"))) "c") #f))))

@@ -116,6 +116,33 @@
 (def (parse-json-file file <-json (description #f))
   (parse-file file (compose <-json json<-port) description))
 
+;; json-key=? : StringOrSymbol StringOrSymbol -> Bool
+(def (json-key=? a b)
+  (cond ((and (string? a) (string? b)) (equal? a b))
+        ((and (symbol? a) (symbol? b)) (eq? a b))
+        ((and (string? a) (symbol? b)) (equal? a (symbol->string b)))
+        ((and (symbol? a) (string? b)) (equal? (symbol->string a) b))
+        (else (error "json-key=?: expected strings or symbols, given" a b))))
+
+;; json-object-ref : JsonObject StringOrSymbol [-> Json] -> Json
+(def (json-object-ref j k (d (cut error "json-object-ref: No value associated with key" j k)))
+  ;; toggle : StringOrSymbol -> StringOrSymbol
+  (def (toggle s)
+    (cond ((symbol? s) (symbol->string s))
+          (else        (string->symbol s))))
+  (cond
+    ((hash-table? j)
+     (hash-ref/default j k
+       (lambda () (hash-ref/default j (toggle k) d))))
+    ((Alist? j)
+     (let ((e (assoc k (Alist-value j) json-key=?)))
+       (if e (cdr e) (d))))
+    (else (error "json-object-ref: expected a hash-table or Alist struct, given" j))))
+
+;; json-object-get : JsonObject StringOrSymbol Json -> Json
+(def (json-object-get j k (d #f))
+  (json-object-ref j k (lambda () d)))
+
 ;; TODO: have a strict mode in std/text/json that will reject (string<-json (hash ("a" 1) (a 2)))
 
 (defstruct Alist (value) transparent: #t)
