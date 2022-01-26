@@ -78,34 +78,37 @@
    getopt: [])
   (make-docker-image
    "nixos/nix:latest" "mukn/cachix"
-   ;;Update the CA certificates??? "RUN ???"
-   "RUN mkdir -p /etc/ssl/certs/"
-   "RUN ln -s $NIX_SSL_CERT_FILE /etc/ssl/certs"
+   "RUN mkdir -p /etc/ssl/certs ; ln -s $NIX_SSL_CERT_FILE /etc/ssl/certs" ;; Update CA certificates
    "RUN echo cachix install 0 ; nix-env -iA cachix -f https://cachix.org/api/v1/install"
-   "RUN cachix use mukn || :" ;; <-- This currently fails due to CA certificate not recognized(!)
-   ;; Disable nix-thunk for now: compiling it pulls gigabytes of Haskell stuff and takes hours
-   #;(string-append
-    "RUN echo nix-thunk 0 ; "
-    "nix-env -f https://github.com/obsidiansystems/nix-thunk/archive/master.tar.gz -iA command")
+   "RUN cachix use mukn"
    ;;This FAILS. We'd need a better configuration.nix with an actual user. Sigh.
    ;;;;"RUN set -ex ; chown -R guest.users /home ; chmod -R u+w /home ; chmod 4755 /tmp ; chmod 755 /nix/var/nix/profiles/per-user ; mkdir -p /nix/var/nix/profiles/per-user/guest/profile ; chown -R guest.users /nix/var/nix/profiles/per-user/guest ; chmod -R 755 /nix/var/nix/profiles/per-user/guest ; ls -lR /nix/var/nix/profiles/per-user" "USER guest" "WORKDIR /home" "RUN cachix use mukn"
    (string-append
     "RUN echo nix keys 0 ; "
     "mkdir -p /root/.config/nix && "
     "(echo substituters = "
-    "https://cache.nixos.org https://hydra.iohk.io "
+    "https://cache.nixos.org "
+    "https://hydra.iohk.io "
     "https://iohk.cachix.org "
     ;;"https://hydra.goguen-ala-cardano.dev-mantis.iohkdev.io "
-    "https://cache.nixos.org/ "
+    "https://nixcache.reflex-frp.org "
+    "https://cache.nixos.org "
     "https://mukn.cachix.org "
     "; "
     "echo trusted-public-keys = "
     "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= "
     "hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ= "
     "iohk.cachix.org-1:DpRUyj7h7V830dp/i6Nti+NEO2/nhblbov/8MW7Rqoo= "
+    "ryantrinkle.com-1:JJiAKaRv9mWgpVAz8dwewnZe0AzzEAzPkagE9SP5NWI= "
     ;; "hydra.goguen-ala-cardano.dev-mantis.iohkdev.io-1:wh2Nepc/RGAY2UMvY5ugsT8JOz84BKLIpFbn7beZ/mo= "
     "mukn.cachix.org-1:ujoZLZMpGNQMeZbLBxmOcO7aj+7E5XSnZxwFpuhhsqs= "
-    ") > /root/.config/nix/nix.conf")))
+    ") > /root/.config/nix/nix.conf")
+   (string-append
+    "RUN echo nix-thunk 1 ; "
+    ;;"nix-env -f https://github.com/obsidiansystems/nix-thunk/archive/master.tar.gz -iA command"
+    "nix-env -f https://github.com/obsidiansystems/nix-thunk/archive/v0.3.0.0.tar.gz -iA command"
+    )
+   "RUN nix-collect-garbage -d"))
 
 ;; : Bytes32 <- Bytes
 (def (sha256<-bytes b (start 0) (end (u8vector-length b)))
@@ -167,7 +170,7 @@
    getopt: options/nixpkgs)
   (make-docker-image
    "mukn/cachix" "mukn/pre-gambit"
-   (format "RUN echo ~a nixpkgs > /root/.nix-channels ; echo ~a ; nix-channel --update ; ~a"
+   (format "RUN echo ~a nixpkgs > /root/.nix-channels ; echo ~a ; nix-channel --update ; ~a ; nix-collect-garbage -d"
            nixpkgs
            (digest-paths (apply nix-paths nixpkgs extra-packages))
            (apply install-command "<nixpkgs>" extra-packages))))
