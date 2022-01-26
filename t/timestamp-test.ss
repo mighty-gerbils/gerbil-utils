@@ -18,4 +18,5 @@
                               (λ () (increment! counter)
                                  (when (> (current-tai-timestamp) target)
                                    (break counter)))))))
-        (check-equal? (<= 19 count-for-one-second 21) #t)))))
+        ;; We expect about 20, but on a Mac using Nix, we've seen as little as 11.
+        (check-predicate count-for-one-second (lambda (x) (<= 10 x 21)))))))
