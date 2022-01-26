@@ -15,7 +15,6 @@
   :clan/poo/cli)
 
 (def default-nixpkgs "https://github.com/MuKnIO/nixpkgs/archive/devel.tar.gz")
-(def default-label "mukn/gerbil-nix:latest")
 
 (def options/nixpkgs
   (make-options
@@ -105,10 +104,9 @@
     ") > /root/.config/nix/nix.conf")
    (string-append
     "RUN echo nix-thunk 1 ; "
-    ;;"nix-env -f https://github.com/obsidiansystems/nix-thunk/archive/master.tar.gz -iA command"
-    "nix-env -f https://github.com/obsidiansystems/nix-thunk/archive/v0.3.0.0.tar.gz -iA command"
-    )
+    "nix-env -f https://github.com/obsidiansystems/nix-thunk/archive/v0.3.0.0.tar.gz -iA command")
    "RUN nix-collect-garbage -d"))
+
 
 ;; : Bytes32 <- Bytes
 (def (sha256<-bytes b (start 0) (end (u8vector-length b)))
@@ -170,7 +168,8 @@
    getopt: options/nixpkgs)
   (make-docker-image
    "mukn/cachix" "mukn/pre-gambit"
-   (format "RUN echo ~a nixpkgs > /root/.nix-channels ; echo ~a ; nix-channel --update ; ~a ; nix-collect-garbage -d"
+   (format "RUN echo ~a nixpkgs > /root/.nix-channels ; echo ~a ; nix-channel --update ; ~a"
+           ;; TODO: maybe add `; nix-collect-garbage -d` ???
            nixpkgs
            (digest-paths (apply nix-paths nixpkgs extra-packages))
            (apply install-command "<nixpkgs>" extra-packages))))
