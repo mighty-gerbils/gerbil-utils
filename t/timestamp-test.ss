@@ -18,4 +18,4 @@
                               (λ () (increment! counter)
                                  (when (> (current-tai-timestamp) target)
                                    (break counter)))))))
-        (check-equal? (<= 19 count-for-one-second 21) #t)))))
+        (check-predicate count-for-one-second (λ (x) (<= 19 x 21)))))))
