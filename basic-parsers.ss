@@ -28,7 +28,9 @@
            (def (byte-fun x y ...) (declare (fixnum)) body ...)
            (def (char-fun x y ...) (and (char? x) (byte-fun (char->integer x) y ...))))))))
 
-(def-ascii (alphabetic? b) (or (<= 65 b 90) #|A-Z|# (<= 97 b 122) #|a-z|#))
+(def-ascii (uppercase? b) (<= 65 b 90) #|A-Z|#)
+(def-ascii (lowercase? b) (<= 97 b 122) #|a-z|#)
+(def-ascii (alphabetic? b) (or (byte-ascii-uppercase? b) (byte-ascii-lowercase? b)))
 (def-ascii (numeric? b) (<= 48 b 57)) #|0-9|#
 (def-ascii (alphanumeric? b) (or (byte-ascii-alphabetic? b) (byte-ascii-numeric? b)))
 (def-ascii (alphanumeric-or-underscore? b) (or (byte-ascii-alphanumeric? b) (= b 95)))
