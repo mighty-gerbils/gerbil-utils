@@ -45,21 +45,24 @@
 ;; : (List String)
 (def user-packages
   (map stringify
-  '(zsh su screen less git xz bashInteractive ;; interactive environment
+  '(zsh su screen less git xz nix bashInteractive ;; interactive environment
     coreutils attr findutils diffutils patch gnumake ;; interactive utilities
     curl openssh rsync cacert ;; basic networking
     racket multimarkdown ;; needed by documentation generation
     go-ethereum #;solc ;; needed by gerbil-ethereum
-    go-libp2p-daemon))) ;; needed by gerbil-libp2p
+    go-libp2p-daemon ;; needed by gerbil-libp2p
+    unzip patchelf zlib.dev))) ;; will be downloaded during testing if not present here(!?)
 
-;; These are somehow downloaded during the Glow build&test if we don't explicitly include them:
+
+;; These are still somehow downloaded during the Glow build&test even if we explicitly include them,
+;; but in a different configuration than is available via nixpkgs. WTF???
 (def extra-packages
   (map stringify
-  '(nghttp2
-    patchelf libkrb5.dev libssh2.dev stdenv unzip
-    libressl libressl.dev openssl openssl.dev
-    ;;libyaml ;; needed by gerbil
-    ;;secp256k1 ;; needed by gerbil-crypto
+    '(stdenv
+      openssl openssl.dev openssl.bin libressl libressl.dev
+      curl.dev curl.man nghttp2 nghttp2.bin nghttp2.lib nghttp2.dev
+      bashInteractive.dev bashInteractive.man
+      libssh2 libssh2.dev libkrb5 libkrb5.dev
     )))
 
 ;; Initialize paths from the environment
@@ -325,7 +328,7 @@
               "CMD [\"/bin/sh\"]"
               "ENV GAMBOPT t8,f8,-8,i8,dRr"
               "ENV GERBIL_LOADPATH /root/.nix-profile/gerbil/lib"
-              "ENV NIX_PATH nixpkgs=/root/nixpkgs")))
+              "ENV NIX_PATH nixpkgs=/root/nixpkgs:/root/nixpkgs")))
   ;; 7. Erase the docker directory
   (clean-docker-directory)
   ;; 8. Do integration tests
