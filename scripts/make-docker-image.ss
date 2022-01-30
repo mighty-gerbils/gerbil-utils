@@ -55,9 +55,9 @@
     go-libp2p-daemon ;; needed by gerbil-libp2p
 
     ;; sqlite leveldb postgresql mariadb-connector-c lmdb
-    ;; nghttp2 openssl snappy libossp_uuid c-ares
+    nghttp2 openssl ;; snappy libossp_uuid c-ares
     ;; gawk ed libxml2 stdenv systemd libev ncurses
-    ;; nghttp2 patchelf libkrb5 icu libssh2
+    patchelf libkrb5.dev libssh2.dev stdenv unzip ;; libressl.dev
     )))
 
 ;; Initialize paths from the environment
@@ -120,9 +120,7 @@
     "RUN echo nix-thunk 1 ; "
     "nix-env -f https://github.com/obsidiansystems/nix-thunk/archive/v0.3.0.0.tar.gz -iA command")
    #;"RUN nix-collect-garbage -d"
-   "ENV GAMBOPT t8,f8,-8,i8,dRr"
-   "ENV GERBIL_LOADPATH /root/.nix-profile/gerbil/lib"
-   "ENV NIX_PATH nixpkgs=/root/nixpkgs"))
+   ))
 
 ;; : Bytes32 <- Bytes
 (def (sha256<-bytes b (start 0) (end (u8vector-length b)))
@@ -175,7 +173,7 @@
    (string-append
     "#!/bin/sh -ex" "\n"
     ;;"("
-    "echo $0 $*"
+    "echo $0 $*" "\n"
     "cp -a /nix-packages/. /nix-packages2/" "\n"
     "nix --extra-experimental-features nix-command copy --no-check-sigs --from /nix-packages2 "
     (string-join paths " ") "\n"
@@ -197,7 +195,8 @@
                          from])))
       (run-process/batch ["docker" "wait" container])
       (run-process/batch ["docker" "commit"
-                          "--message" tag "--change" "ENTRYPOINT /bin/sh" container tag:latest])
+                          "--message" tag "--change" "ENTRYPOINT []" "--change" "CMD [\"/bin/sh\"]"
+                          container tag:latest])
       (run-process/batch ["docker" "container" "rm" container])))
   tag:latest)
 
@@ -274,8 +273,8 @@
         (error "Couldn't find nixpkgs in NIX_PATH" name))))
    (else
     (run-process/batch
-     (DBG get-nixpkgs: ["rsync" "-a" "--exclude" ".git"
-                        (string-append (path-simplify nixpkgs) "/") (subpath parent "nixpkgs/")]))
+     ["rsync" "-a" "--exclude" ".git"
+      (string-append (path-simplify nixpkgs) "/") (subpath parent "nixpkgs/")])
     (let (git (subpath nixpkgs ".git"))
       (if (file-exists? git)
         (let (description (string-trim-eol (run-process directory: nixpkgs ["git" "describe" "--tags"])))
@@ -314,7 +313,12 @@
            "cp -a /nix-packages/nixpkgs /root/ ; "
            (string-append "nix-env -f /root/nixpkgs -iA " (string-join all-target-packages " ") " ; ")
            "gxi -e '(displayln (* 6 7))' ; ")
-      (lambda (x) (run-process/batch ["docker" "tag" x "mukn/glow:devel"])))
+      (lambda (x) (make-docker-image x "mukn/glow:devel"
+              "ENTRYPOINT []"
+              "CMD [\"/bin/sh\"]"
+              "ENV GAMBOPT t8,f8,-8,i8,dRr"
+              "ENV GERBIL_LOADPATH /root/.nix-profile/gerbil/lib"
+              "ENV NIX_PATH nixpkgs=/root/nixpkgs")))
   ;; 7. Erase the docker directory
   (clean-docker-directory)
   ;; 8. Do integration tests
