@@ -43,21 +43,23 @@
 
 ;; A list of nixpkgs packages needed for convenience on the docker image
 ;; : (List String)
-(def extra-packages
+(def user-packages
   (map stringify
   '(zsh su screen less git xz bashInteractive ;; interactive environment
     coreutils attr findutils diffutils patch gnumake ;; interactive utilities
     curl openssh rsync cacert ;; basic networking
     racket multimarkdown ;; needed by documentation generation
+    go-ethereum #;solc ;; needed by gerbil-ethereum
+    go-libp2p-daemon))) ;; needed by gerbil-libp2p
+
+;; These are somehow downloaded during the Glow build&test if we don't explicitly include them:
+(def extra-packages
+  (map stringify
+  '(nghttp2
+    patchelf libkrb5.dev libssh2.dev stdenv unzip
+    libressl libressl.dev openssl openssl.dev
     ;;libyaml ;; needed by gerbil
     ;;secp256k1 ;; needed by gerbil-crypto
-    go-ethereum #;solc ;; needed by gerbil-ethereum
-    go-libp2p-daemon ;; needed by gerbil-libp2p
-
-    ;; sqlite leveldb postgresql mariadb-connector-c lmdb
-    nghttp2 openssl ;; snappy libossp_uuid c-ares
-    ;; gawk ed libxml2 stdenv systemd libev ncurses
-    patchelf libkrb5.dev libssh2.dev stdenv unzip ;; libressl.dev
     )))
 
 ;; Initialize paths from the environment
@@ -132,11 +134,6 @@
 (def (digest-paths paths)
   (hex-encode (sha256<-bytes (string->bytes (string-join paths " ")))))
 
-(def (run-command/batch . command-parts)
-  (def command (apply string-append command-parts))
-  (displayln command)
-  (run-process/batch ["sh" "-c" command]))
-
 ;; Many ways to install a package
 ;; - Just COPY the data, install, then delete... but then data appears in the history
 ;;   and makes the image much bigger.
@@ -201,7 +198,8 @@
   tag:latest)
 
 (def all-target-packages
-  [extra-packages ... "gambit-unstable" "gerbil-unstable" "gerbilPackages-unstable"])
+  [user-packages ... extra-packages ...
+   "gambit-unstable" "gerbil-unstable" "gerbilPackages-unstable"])
 
 ;; Return the nix store paths for the given expression;
 ;; also include the recursive dependencies if recursive? is true.
@@ -224,14 +222,20 @@
 (define-entry-point (install-command (nixpkgs default-nixpkgs) . package-expressions)
   (help: "Create a shell command to install given packages"
    getopt: options/nixpkgs+packages)
-  (escape-shell-tokens
-   ["nix-env" "-f" nixpkgs "-iE"
-    (string-join ["nixpkgs: with nixpkgs {}; [" package-expressions ... "]"] " ")]))
+  ["nix-build" "-E" (string-join ["with import" nixpkgs "{}; [" package-expressions ... "]"] " ")])
 
-(define-entry-point (install-all-targets (nixpkgs default-nixpkgs))
+(define-entry-point (build-all-targets (nixpkgs default-nixpkgs))
   (help: "Create a shell command to install all gerbil-related packages"
    getopt: options/nixpkgs)
-  (run-command/batch (apply install-command nixpkgs all-target-packages)))
+  (create-directory* docker-directory)
+  (run-process/batch directory: docker-directory
+                     (apply install-command nixpkgs all-target-packages)))
+
+(def (run-command/batch . command-parts)
+  (def command (apply string-append command-parts))
+  (displayln command)
+  (run-process/batch ["sh" "-c" command]))
+
 
 (define-entry-point (docker-image-id name)
   (help: "Extract image ID for a docker image of a given name"
@@ -285,9 +289,10 @@
   (help: "Create image for all packages before gambit"
    getopt: options/nixpkgs)
   ;; 1. Install all the required packages
-  (install-all-targets)
+  (build-all-targets)
   ;; 2. Extract the paths we want
   (def all-paths (all-target-paths nixpkgs))
+  (def user-paths (apply nix-paths nixpkgs: nixpkgs user-packages))
   (def gambit-path (nix-paths nixpkgs: nixpkgs "gambit-unstable"))
   (def gerbil-path (nix-paths nixpkgs: nixpkgs "gerbil-unstable"))
   (def gerbil-package-paths (nix-paths nixpkgs: nixpkgs "gerbilPackages-unstable"))
@@ -310,9 +315,11 @@
       (cut build-nix-image <> "mukn/gambit" gambit-path)
       (cut build-nix-image <> "mukn/gerbil" gerbil-path)
       (cut build-nix-image <> "mukn/glow" gerbil-package-paths
-           "cp -a /nix-packages/nixpkgs /root/ ; "
-           (string-append "nix-env -f /root/nixpkgs -iA " (string-join all-target-packages " ") " ; ")
-           "gxi -e '(displayln (* 6 7))' ; ")
+           "cp -a /nix-packages/nixpkgs /root/ && "
+           (string-append "nix-env -i "
+                          (string-join (append user-paths gambit-path gerbil-path gerbil-package-paths)
+                                       " ") " && ")
+           "gxi -e '(displayln (* 6 7))' ")
       (lambda (x) (make-docker-image x "mukn/glow:devel"
               "ENTRYPOINT []"
               "CMD [\"/bin/sh\"]"
