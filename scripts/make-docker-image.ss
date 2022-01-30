@@ -174,14 +174,15 @@
    (subpath docker-directory "nix-packages" build-script)
    (string-append
     "#!/bin/sh -ex" "\n"
-    "("
+    ;;"("
     "echo $0 $*"
     "cp -a /nix-packages/. /nix-packages2/" "\n"
     "nix --extra-experimental-features nix-command copy --no-check-sigs --from /nix-packages2 "
     (string-join paths " ") "\n"
     (string-join commands "\n") "\n"
     "ls -l /nix/store" "\n"
-    ") > /nix-packages/" build-script ".log 2>&1"))
+    ;;") > /nix-packages/" build-script ".log 2>&1"
+    ))
   (run-process/batch ["chmod" "a+x" (subpath docker-directory "nix-packages" build-script)])
   (unless (docker-image-id tag:latest)
     (let (container
@@ -190,7 +191,7 @@
                          "--mount" (string-append "type=bind,"
                                                   "src=" docker-directory "/nix-packages,"
                                                   "dst=/nix-packages,"
-                                                  "ro=0")
+                                                  "ro=1")
                          "--mount" "type=tmpfs,dst=/nix-packages2"
                          "--entrypoint" (string-append "/nix-packages/" build-script)
                          from])))
@@ -356,7 +357,7 @@
   (make-images nixpkgs))
 
 (set-default-entry-point! 'all)
-(backtrace-on-abort? #t)
+(backtrace-on-abort? #f)
 (define-multicall-main)
 
 ;; To make a release:
