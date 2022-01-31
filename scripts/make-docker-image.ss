@@ -46,7 +46,7 @@
 (def user-packages
   (map stringify
   '(zsh su screen less git xz nix bashInteractive ;; interactive environment
-    coreutils attr findutils diffutils patch gnumake ;; interactive utilities
+    coreutils attr findutils diffutils patch gnused gnumake ;; interactive utilities
     curl openssh rsync cacert ;; basic networking
     racket multimarkdown ;; needed by documentation generation
     go-ethereum #;solc ;; needed by gerbil-ethereum
