@@ -140,3 +140,21 @@
 
 (def (alist<-hash-list h l)
   (alist<-fun-list (cut hash-get h <>) l))
+
+;; Similar to with-list-builder, but proactively removes duplicates,
+;; as per the specified equality predicate or hash-table (that specifies the predicate),
+;; wherein the equality predicate is one of equal? eqv? eq?, where () signifies equal?
+(defrules with-deduplicated-list-builder (equal? eqv? eq?)
+  ((recur equal (poke) body1 body+ ...)
+   (recur equal (poke _unused) body1 body+ ...))
+  ((_ equal (poke peek) body1 body+ ...)
+   (let (h (specify-hash-table equal))
+     (with-list-builder (primpoke peek)
+       (defrules poke ()
+         ((_ val) (unless (hash-key? h val) (hash-put! h val #t) (primpoke val)))
+         (id (identifier? #'id) (lambda (val) (poke val))))
+       body1 body+ ...))))
+
+(defrule (call-with-deduplicated-list-builder fun (table (make-hash-table)))
+  (with-deduplicated-list-builder table (poke peek) (fun poke peek)))
+

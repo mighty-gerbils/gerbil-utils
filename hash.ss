@@ -56,3 +56,14 @@
 ;; : (Table V K) <- (Table V K) (List K)
 (def (hash-restrict-keys! hash list)
   (hash-filter-keys! hash (let (h (hashset<-list list)) (cut hash-key? h <>))))
+
+;; Specify a hash-table by its equality predicate or an expression, wherein
+;; the equality predicate is one of the keywords equal? eqv? eq?
+;; signifying a hash-table with given predicate, () signifying an equal? hash-table,
+;; or an expression, signifying itself.
+(defrules specify-hash-table (equal? eqv? eq?)
+  ((_ ()) (make-hash-table))
+  ((_ equal?) (make-hash-table))
+  ((_ eqv?) (make-eqv-hash-table))
+  ((_ eq?) (make-eq-hash-table))
+  ((_ expr) expr))
