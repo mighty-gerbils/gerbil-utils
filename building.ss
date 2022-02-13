@@ -9,7 +9,7 @@
   ./exit ./filesystem ./git-fu ./multicall ./path ./path-config ./ports ./source ./versioning ./with-id)
 
 (def (all-gerbil-modules exclude: (exclude '("main.ss"))
-                         exclude-dirs: (exclude-dirs '("t" ".git" "_darcs")))
+                         exclude-dirs: (exclude-dirs '("run" "t" ".git" "_darcs")))
   ((cut lset-difference equal? <> exclude)
    (find-files "" (lambda (x) (and (path-extension-is? x ".ss") (not (path-is-script? x))))
                recurse?: (lambda (x) (not (member (path-strip-directory x) exclude-dirs))))))
