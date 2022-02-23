@@ -84,6 +84,7 @@
             (write-json-ln (hash (C 1) (E 3) (A 6)) port)
             (write-json-ln (hash (C 1) (F 4) (A 6)) port)
             (write-json-ln (hash (C 1) (E 3) (G 5) (B 7)) port)
+            (force-output port)
             (close-output-port port)
             (begin0
               (read-all port read-json)
