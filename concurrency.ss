@@ -226,21 +226,47 @@
             description: (description #f)
             logging: (logging #f)
             thunk)
-  (with-catch
-   (lambda (e)
-     (if (< 0 max-retries)
+  (retry/function retry-window: retry-window
+                  max-window: max-window
+                  max-retries: max-retries
+                  description: description
+                  logging: logging
+                  (lambda (failure) (with-catch failure thunk))
+                  raise))
+
+;; Retry a function until it either succeeds or calls its failure argument,
+;; with an exponential back off that is capped to constant back off.
+;; max-retries: real number, in seconds, (+inf.0 for unlimited),
+;;   maximum number of times to retry the action.
+;; max-window: real number, in seconds, (+inf.0 for unlimited),
+;;  maximum window within which to retry the action
+;; retry-window: real number, in seconds,
+;;  initial retry window, to be doubled at each retry, up to the max-window.
+;; description: an object to print with repr, or #f
+;;  a description to include in a log message. Nothing will be logged if it's #f.
+(def (retry/function retry-window: retry-window
+                     max-window: max-window
+                     max-retries: max-retries
+                     description: (description #f)
+                     logging: (logging #f)
+                     function
+                     failure)
+  (if (< 0 max-retries)
+    (function
+     (lambda args
        (let* ((retry-window (min retry-window max-window))
               (sleep-duration (* (random-real) retry-window)))
          (when logging
            (logging "Sleeping %f seconds before to retry %r" sleep-duration description))
          (thread-sleep! sleep-duration)
-         (retry retry-window: (* 2 retry-window)
-                max-window: max-window
-                max-retries: (1- max-retries)
-                description: description
-                thunk))
-       (raise e)))
-   thunk))
+         (retry/function retry-window: (* 2 retry-window)
+                         max-window: max-window
+                         max-retries: (1- max-retries)
+                         description: description
+                         logging: logging
+                         function
+                         failure))))
+    (function failure)))
 
 (def (simple-client send! make-message)
   (lambda (request)

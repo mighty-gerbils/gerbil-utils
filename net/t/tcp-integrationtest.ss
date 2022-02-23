@@ -14,13 +14,16 @@
         (newline out)
         (force-output out))
 
-      ;; start client first to test retry-until-deadline
+      ;; start client first to test retry
       (def client
         (spawn/name/logged
           'client
           (lambda ()
-            (def deadline (+ (current-unix-time) 10))
-            (def port (tcp-connect/retry-until-deadline [address: "localhost" port-number: 8000] deadline (lambda () #f)))
+            (def port
+              (tcp-connect/retry [address: "localhost" port-number: 8000] (lambda () #f)
+                                 retry-window: 1
+                                 max-window: 10
+                                 max-retries: 10))
             (check-predicate port tcp-client-port?)
             (write-line "hello" port)
             (check-equal? (read-line port) "hi")
@@ -40,7 +43,7 @@
             (close-input-port port)
             #t)))
 
-      ;; have server sleep to test retry-until-deadline
+      ;; have server sleep to test retry
       (def server
         (spawn/name/logged
           'server
@@ -72,13 +75,16 @@
       (check-equal? (thread-join! server) #t))
 
     (test-case "tcp json countdown"
-      ;; start client first to test retry-until-deadline
+      ;; start client first to test retry
       (def client
         (spawn/name/logged
           'client
           (lambda ()
-            (def deadline (+ (current-unix-time) 10))
-            (def port (tcp-connect/retry-until-deadline [address: "localhost" port-number: 8000] deadline (lambda () #f)))
+            (def port
+              (tcp-connect/retry [address: "localhost" port-number: 8000] (lambda () #f)
+                                 retry-window: 1
+                                 max-window: 10
+                                 max-retries: 10))
             (write-json-ln (hash (C 1) (E 3) (G 5)) port)
             (write-json-ln (hash (B 7) (D 2) (G 5)) port)
             (write-json-ln (hash (C 1) (E 3) (A 6)) port)
@@ -90,7 +96,7 @@
               (read-all port read-json)
               (close-input-port port)))))
 
-      ;; have server sleep to test retry-until-deadline
+      ;; have server sleep to test retry
       (def server
         (spawn/name/logged
           'server
