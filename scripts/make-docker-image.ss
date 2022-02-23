@@ -332,9 +332,12 @@
   ;; 7. Erase the docker directory
   (clean-docker-directory)
   ;; 8. Do integration tests
+  ;; TODO: assume there is a recent checkout of glow and actually run ci.ss for it with this image?
+  ;; or make sure ci.ss is part of the glow nix package and use it from there somehow?
   (def integration-test?
-    (let/cc return (run-process/batch ["true"]
-                                      check-status: (lambda (status settings) (return status)))))
+    (let/cc return (run-process/batch
+                    ["true"] ;; Note: this is a stub. Replace it with something real!
+                    check-status: (lambda (status settings) (return status)))))
   (unless integration-test?
     (error "Integration test failed"))
   ;; 9. Push the docker image

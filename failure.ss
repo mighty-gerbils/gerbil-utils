@@ -1,4 +1,5 @@
-;;; Reified failures
+;;; Reified failures.
+;; TODO: rename this file result? Split into failure and result ?
 (export #t)
 (import :std/sugar ./base ./option)
 
