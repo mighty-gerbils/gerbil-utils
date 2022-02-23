@@ -6,12 +6,14 @@
         tcp-accept
         tcp-close
         try-tcp-connect
-        tcp-connect/retry-until-deadline)
+        tcp-connect/retry)
 
 (import :gerbil/gambit/exceptions :gerbil/gambit/ports :gerbil/gambit/threads
         (only-in :scheme/base-ports u8-ready?)
         :std/format :std/pregexp :std/sugar
-        :clan/base :clan/timestamp)
+        :clan/base
+        (only-in :clan/concurrency retry/function)
+        :clan/timestamp)
 
 ;; --------------------------------------------------------
 
@@ -54,12 +56,17 @@
     ((tcp-connection-ready? port) port)
     (else (ignore-errors (close-port port)) (failure))))
 
-(def (tcp-connect/retry-until-deadline port-addr-settings deadline failure)
-  (let loop ()
-    (try-tcp-connect port-addr-settings
-      (lambda ()
-        (cond ((> (current-unix-time) deadline) (failure))
-              (else (thread-sleep! 1) (loop)))))))
+(def (tcp-connect/retry retry-window: retry-window
+                        max-window: max-window
+                        max-retries: max-retries
+                        port-addr-settings
+                        failure)
+  (retry/function
+    retry-window: retry-window
+    max-window: max-window
+    max-retries: max-retries
+    (lambda (failure) (try-tcp-connect port-addr-settings failure))
+    failure))
 
 ;; --------------------------------------------------------
 
