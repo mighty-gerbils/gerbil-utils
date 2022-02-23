@@ -212,8 +212,8 @@
 
 ;; Retry a thunk until it either succeeds or fails,
 ;; with an exponential back off that is capped to constant back off.
-;; max-retries: real number, in seconds, (+inf.0 for unlimited),
-;;   maximum number of times to retry the action.
+;; max-retries: real number, number of retries, (+inf.0 for unlimited),
+;;   ceiling is the maximum number of times to retry the action.
 ;; max-window: real number, in seconds, (+inf.0 for unlimited),
 ;;  maximum window within which to retry the action
 ;; retry-window: real number, in seconds,
@@ -236,8 +236,8 @@
 
 ;; Retry a function until it either succeeds or calls its failure argument,
 ;; with an exponential back off that is capped to constant back off.
-;; max-retries: real number, in seconds, (+inf.0 for unlimited),
-;;   maximum number of times to retry the action.
+;; max-retries: real number, number of retries, (+inf.0 for unlimited),
+;;   ceiling is the maximum number of times to retry the action.
 ;; max-window: real number, in seconds, (+inf.0 for unlimited),
 ;;  maximum window within which to retry the action
 ;; retry-window: real number, in seconds,
