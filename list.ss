@@ -148,7 +148,7 @@
   ((recur equal (poke) body1 body+ ...)
    (recur equal (poke _unused) body1 body+ ...))
   ((_ equal (poke peek) body1 body+ ...)
-   (let (h (specify-hash-table equal))
+   (let (h (specify-hash-table equal?))
      (with-list-builder (primpoke peek)
        (defrules poke ()
          ((_ val) (unless (hash-key? h val) (hash-put! h val #t) (primpoke val)))

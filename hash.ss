@@ -14,7 +14,8 @@
   hash-removed
   hash-filter!
   hash-filter-keys!
-  hash-restrict-keys!)
+  hash-restrict-keys!
+  specify-hash-table)
 
 (import
   :std/misc/hash :std/sort)
