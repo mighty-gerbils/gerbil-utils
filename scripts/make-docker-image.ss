@@ -125,6 +125,7 @@
     "RUN echo nix-thunk 1 ; "
     "nix-env -f https://github.com/obsidiansystems/nix-thunk/archive/v0.3.0.0.tar.gz -iA command")
    #;"RUN nix-collect-garbage -d"
+    "RUN echo 'hosts: files mdns4_minimal [NOTFOUND=return] dns' >/etc/nsswitch.conf"
    ))
 
 ;; : Bytes32 <- Bytes
