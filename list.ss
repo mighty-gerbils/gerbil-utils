@@ -90,6 +90,13 @@
 (def (remove-next next tails)
   (remove-nulls (map (lambda (l) (if (equal? (car l) next) (cdr l) l)) tails)))
 
+(def (c3-select-next tails err) ;; : X <- (NonEmptyList (NonEmptyList X)) (Bottom <- )
+  (def (candidate? c) (every (lambda (tail) (not (member c (cdr tail)))) tails)) ;; : Bool <- X
+  (let loop ((ts tails))
+    (when (null? ts) (err))
+    (def c (caar ts))
+    (if (candidate? c) c (loop (cdr ts)))))
+
 ;; get-name is purely for debugging in case of inconsistent graph
 ;; : (NonEmptyList A) <- A get-supers:((List A) <- A) \
 ;;     get-name:?(?<-A) get-precedence-list:?((NonEmptyList A)<-A)
@@ -98,17 +105,12 @@
       get-precedence-list: (get-precedence-list (get-precedence-list<-get-supers get-supers)))
   (def supers (get-supers x)) ;; : (List A)
   (def super-precedence-lists (map get-precedence-list supers)) ;; : (List (NonEmptyList A))
-  (def (c3-select-next tails) ;; : X <- (NonEmptyList (NonEmptyList X))
-    (def (candidate? c) (every (lambda (tail) (not (member c (cdr tail)))) tails)) ;; : Bool <- X
-    (let loop ((ts tails))
-      (when (null? ts) (error "Inconsistent precedence graph" (get-name x)))
-      (def c (caar ts))
-      (if (candidate? c) c (loop (cdr ts)))))
+  (def (ipge) (error "Inconsistent precedence graph" (get-name x)))
   (let loop ((rhead [x]) ;; : (NonEmptyList X)
              (tails (remove-nulls (append super-precedence-lists [supers])))) ;; : (List (NonEmptyList X))
     (cond ((null? tails) (reverse rhead))
           ((null? (cdr tails)) (append-reverse rhead (car tails)))
-          (else (let (next (c3-select-next tails))
+          (else (let (next (c3-select-next tails ipge))
                   (loop (cons next rhead) (remove-next next tails)))))))
 
 ;; remove-duplicates with a O(n) algorithm
@@ -158,3 +160,15 @@
 (defrule (call-with-deduplicated-list-builder fun (table (make-hash-table)))
   (with-deduplicated-list-builder table (poke peek) (fun poke peek)))
 
+;;; Create a list that contains the elements from the given lists,
+;;; one per list until each list is exhausted.
+;; : (List X) <- (List X) ...
+(def (merge-lists . ls)
+  (with-list-builder (c)
+    (let loop ((ls ls))
+      (def nls (remove-nulls ls))
+      (match nls
+        ([] (void))
+        ([l] (for-each c l))
+        (else (for-each (compose c car) nls)
+              (loop (map cdr nls)))))))

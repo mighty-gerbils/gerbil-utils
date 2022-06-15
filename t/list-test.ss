@@ -34,4 +34,8 @@
       (check-equal? (map my-compute-precedence-list '(O A B C D E K1 K2 K3 Z))
                     '((O) (A O) (B O) (C O) (D O) (E O)
                       (K1 A B C O) (K2 D B E O) (K3 D A O)
-                      (Z K1 K2 K3 D A B C E O))))))
+                      (Z K1 K2 K3 D A B C E O))))
+    (test-case "merge-lists"
+      (check-equal? (merge-lists '(A B C D E F G) '(a b c d e) '() '() '(1 2 3 4 5 6 7 8 9))
+                    '(A a 1 B b 2 C c 3 D d 4 E e 5 F 6 G 7 8 9))
+      )))
