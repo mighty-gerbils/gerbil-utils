@@ -120,13 +120,11 @@
     "ryantrinkle.com-1:JJiAKaRv9mWgpVAz8dwewnZe0AzzEAzPkagE9SP5NWI= "
     ;; "hydra.goguen-ala-cardano.dev-mantis.iohkdev.io-1:wh2Nepc/RGAY2UMvY5ugsT8JOz84BKLIpFbn7beZ/mo= "
     "mukn.cachix.org-1:ujoZLZMpGNQMeZbLBxmOcO7aj+7E5XSnZxwFpuhhsqs= "
-    ") > /root/.config/nix/nix.conf")
-   #;(string-append
-    "RUN echo nix-thunk 1 ; "
-    "nix-env -f https://github.com/obsidiansystems/nix-thunk/archive/v0.3.0.0.tar.gz -iA command")
-   #;"RUN nix-collect-garbage -d"
-    "RUN echo 'hosts: files mdns4_minimal [NOTFOUND=return] dns' >/etc/nsswitch.conf"
-   ))
+    ") > /root/.config/nix/nix.conf; "
+    ;; "nix-env -f https://github.com/obsidiansystems/nix-thunk/archive/v0.3.0.0.tar.gz -iA command; "
+    ;; "nix-collect-garbage -d; "
+    "echo 'hosts: files mdns4_minimal [NOTFOUND=return] dns' > /etc/nsswitch.conf;"
+   )))
 
 ;; : Bytes32 <- Bytes
 (def (sha256<-bytes b (start 0) (end (u8vector-length b)))
