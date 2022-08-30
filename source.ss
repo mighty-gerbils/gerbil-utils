@@ -1,25 +1,47 @@
 (export #t)
 
-;;; Locations follow the Gambit convention: it's a vector of two values.
-;;; The first value is either a string which is filename, or a list containing a symbol.
-;;; The second value is a fixnum, either non-negative (+ (* 65536 column) line),
-;;; or if the previous formula had overflows, negative file position.
-(defsyntax (this-source-location stx)
-  (syntax-case stx ()
-    ((_ ctx) (datum->syntax #'ctx ['quote (stx-source #'ctx)]))
-    ((foo) #'(this-source-location foo))))
+(import (for-syntax ./syntax)
+        ./syntax)
 
-(defsyntax (this-source-file stx)
-  (syntax-case stx ()
-    ((_ ctx) (datum->syntax #'ctx ['quote (alet (loc (stx-source #'ctx)) (vector-ref loc 0))]))
-    ((foo) #'(this-source-file foo))))
+(def-syntax-call (this-source-location x) (stx-source x))
+(def-syntax-call (this-source-file x) (stx-source-file x))
+(def-syntax-call (this-source-position x) (stx-source-position x))
+(def-syntax-call (this-source-directory x) (stx-source-directory x))
+(def-syntax-call (this-source-path x relpath) (stx-source-path x relpath))
+(def-syntax-call (this-source-content x relpath) (stx-source-content x relpath))
 
-(defsyntax (this-source-directory stx)
-  (syntax-case stx ()
-    ((_ ctx)  #'(path-directory (this-source-file ctx)))
-    ((foo) #'(this-source-directory foo))))
-
-(defsyntax (this-source-position stx)
-  (syntax-case stx ()
-    ((_ ctx) (datum->syntax #'ctx ['quote (alet (loc (stx-source #'ctx)) (vector-ref loc 1))]))
-    ((foo) #'(this-source-position foo))))
+;; At a test's runtime, locate test files from a package's separately-installed source code,
+;; wherein the test files are not part of the binary installation of the package being tested.
+;;
+;; TODO: replace this with something that just uses Gerbil's load-path mechanism
+;; (as controllable by GERBIL_LOADPATH and GERBIL_PATH),
+;; possibly as a variant of gx-gambc0's find-library-module?
+;;
+;; Given a String for the name of a package in the gxpkg namespace, and
+;; a String for a subpath relative to the package source,
+;; return a path for that file, located either
+;; (a) under the application source-path (see path-config) so if you're currently
+;; developing and testing or debugging that package it will find it
+;; *or an override from whatever package you're testing or debugging instead*, or
+;; (b) under the package source code as configured in the GERBIL_PATH (which defaults to
+;; ~/.gerbil/pkg), so if you're developing and testing another application,
+;; it will find where you installed or linked gerbil-ethereum with gxpkg.
+;; If not found in either place, issue an error.
+;;
+;; Note that binary packages typically do not include test files, and you're indeed supposed
+;; to install and configure a package's source code to run some integration tests.
+;;
+;; Also note that this "override" mechanism assumes that there will be no name conflict
+;; between relative paths referenced at runtime, between the toplevel package
+;; from which the tests are run, and the package containing the test being run.
+;; By running tests across package boundaries, we assume that the packages are part of a common
+;; collection or hierarchy of packages, wherein the developers will address any namespace conflict.
+;;
+(import ./base ./path ./path-config)
+;; : String <- String String
+(def (find-source-file package test-path)
+  (def (try p) (ignore-errors (and (file-exists? p) p)))
+  (or (try (source-path test-path))
+      (try (subpath (or (getenv "GERBIL_PATH" #f) (path-expand "~/.gerbil"))
+                    "pkg" package test-path))
+      (error 'find-source-file package test-path)))
