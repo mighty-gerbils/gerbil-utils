@@ -49,7 +49,7 @@
 
 (def (publish-nixpkgs nixpkgs-file: (nixpkgs-file #f))
   (clan/base#!>
-   (run-process ["nix" "--extra-experimental-features" "nix-command" "path-info"
+   (run-process ["nix" "path-info"
                  (when/list nixpkgs-file ["--file" nixpkgs-file])...
                  "-r" "gerbil-unstable" "gerbilPackages-unstable"])
    (cut string-split <> #\newline)
