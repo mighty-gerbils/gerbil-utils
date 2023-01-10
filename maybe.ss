@@ -4,13 +4,18 @@
 
 ;; (Maybe A) is a disjoint union (Union A Unit),
 ;; where the "Unit" is a type containing a single element, the Scheme object #!void or (void),
-;; recognized by the predicate void?, which incidentally represents JSON null in std/text/json.
-;; NB: This is different from the Scheme empty list '() often called "null" in Scheme context.
+;; recognized by the predicate void?, which incidentally represents JSON null in std/text/json,
+;; and where A is a type that does *not* contain the unit element.
 ;;
-;; Should default: be annotations on the type rather than on the record entry? MAYBE!
-;; then Maybe would provide default: (void), which could be overridden with nodefault: #t,
-;; or explicitly using (Union A Unit). Now, what does that mean in declaring Scheme functions,
-;; where the default is usually #f? Do we have an OrFalse instead of Maybe?
+;; Please use option.ss in case the type A is generic enough that it cannot be guaranteed
+;; not to contain the unit element
+;;
+;; The unit element is notably different from the Scheme empty list '() often called "null"
+;; and recognized by the predicate null?, as well as from the boolean false value #f.
+;;
+;; (Maybe A) is notably isomorphic to but different from the notional type (OrFalse A)
+;; disjoint union of A and the singleton type containing the boolean false, a.k.a. (Union A '#f).
+
 (def (Option<-Maybe x)
   (and (not (void? x)) (some x)))
 
