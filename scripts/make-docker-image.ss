@@ -45,17 +45,15 @@
 ;; : (List String)
 (def user-packages
   (map stringify
-  '(nix ;; most basic package to install
-    zsh su screen less git xz nix bashInteractive ;; interactive environment
-    coreutils attr findutils diffutils patch gnused gnumake ;; interactive utilities
-    curl openssh rsync cacert ;; basic networking
-    racket multimarkdown ;; needed by documentation generation
-    go-ethereum #;solc ;; needed by gerbil-ethereum
-    go-libp2p-daemon ;; needed by gerbil-libp2p
-    unzip patchelf zlib.dev ;; will be downloaded during testing if not present here(!?)
-    strace
-    ;;zsh.man attr.man gnumake.man
-    )))
+    '(zsh su screen less git xz nix bashInteractive ;; interactive environment
+      coreutils attr findutils diffutils patch gnused gnumake ;; interactive utilities
+      curl openssh rsync cacert ;; basic networking
+      racket multimarkdown ;; needed by documentation generation
+      go-ethereum #;solc ;; needed by gerbil-ethereum
+      go-libp2p-daemon ;; needed by gerbil-libp2p
+      unzip patchelf zlib.dev ;; will be downloaded during testing if not present here(!?)
+      strace man ;; debugging help
+      )))
 
 ;; These are still somehow downloaded during the Glow build&test even if we explicitly include them,
 ;; but in a different configuration than is available via nixpkgs. WTF???
@@ -66,6 +64,7 @@
       curl.dev curl.man nghttp2 nghttp2.bin nghttp2.lib nghttp2.dev
       bashInteractive.dev bashInteractive.man
       libssh2 libssh2.dev libkrb5 libkrb5.dev
+      zsh.man attr.man gnumake.man
     )))
 
 (def all-target-packages
@@ -93,6 +92,11 @@
 
 ;; : String <- (List String)
 (def (digest-spec spec) (hex-encode (sha256<-bytes (string->bytes (line-join spec)))))
+
+;; : (List String) <- (List String)
+(def (nix-dependencies packages)
+  (if (null? packages) []
+      (run-process coprocess: read-all-as-lines ["nix" "path-info" "--recursive" packages ...])))
 
 (define-entry-point (clean-docker-directory)
   (help: "Remove the docker directory"
@@ -170,73 +174,68 @@
     (delete-file build-script))
   to)
 
-;; Use alpine as the basis for the installation, because the nixos/nix image somehow has nix and
-;; nix-env binaries that immediately fail with "error: Operation not permitted" when invoked(!)
-(define-entry-point (make-nix-image (nixpkgs default-nixpkgs))
-  (help: "Create a docker image for a minimal nix on top of alpine linux"
-   getopt: options/nixpkgs)
-  (def from "library/alpine")
-  (def packages (nix-paths nixpkgs: nixpkgs "rsync" "nix"))
-  (def nix (last packages))
-  (def dependencies (nix-dependencies packages))
-  (def changes ["ENTRYPOINT []"
-                "CMD [\"/bin/sh\"]"
-                "WORKDIR /root"
-                "ENV PATH /root/.nix-profile/bin:/root/.nix-profile/sbin:/run/wrappers/bin:/nix/var/nix/profiles/default/bin:/nix/var/nix/profiles/default/sbin:/run/current-system/sw/bin:/run/current-system/sw/sbin:/nix/var/nix/profiles/system/sw/bin:/nix/var/nix/profiles/system/sw/sbin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-                "ENV NIX_PATH nixpkgs=/root/nixpkgs:/root/nixpkgs"])
-  (def commands
-    ["mkdir -p /nix/store /root/.config/nix"
-     "cd /tmp/nix-store"
-     (space-join ["cp -a" (map path-strip-directory dependencies) ... "/nix/store/"])
-     (space-join
-      ["(echo sandbox = false ;"
-       "echo substituters ="
-       "https://cache.nixos.org"
-       "https://hydra.iohk.io"
-       "https://iohk.cachix.org"
-       ;;"https://hydra.goguen-ala-cardano.dev-mantis.iohkdev.io"
-       "https://nixcache.reflex-frp.org"
-       "https://cache.nixos.org"
-       "https://mukn.cachix.org"
-       ";"
-       "echo trusted-public-keys ="
-       "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
-       "hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ="
-       "iohk.cachix.org-1:DpRUyj7h7V830dp/i6Nti+NEO2/nhblbov/8MW7Rqoo="
-       "ryantrinkle.com-1:JJiAKaRv9mWgpVAz8dwewnZe0AzzEAzPkagE9SP5NWI="
-       ;; "hydra.goguen-ala-cardano.dev-mantis.iohkdev.io-1:wh2Nepc/RGAY2UMvY5ugsT8JOz84BKLIpFbn7beZ/mo="
-       "mukn.cachix.org-1:ujoZLZMpGNQMeZbLBxmOcO7aj+7E5XSnZxwFpuhhsqs="
-       ";"
-       ") > /root/.config/nix/nix.conf"])
-     "addgroup -S nixbld"
-     (space-join ["for i in $(seq -w 1 10); do"
-                  "adduser -G nixbld -h /var/empty -s \"$(which nologin)\""
-                  "-g \"Nix build user $i\" -S \"nixbld${i}\";"
-                  "done"])
-     ;; Initialize the nix environment from nix
-     (format "~a/bin/nix-env -i ~a" nix (space-join packages))])
-  (def hash (digest-spec [from "mukn/nix" "" packages ... "" changes ... "" commands ...]))
-  (def tag (string-append "mukn/nix--" hash))
-  (unless (docker-image-id tag)
-    (apply docker-commit-image from tag
-           mounts: [["/nix/store" "/tmp/nix-store"]] changes: changes commands))
-  tag)
-
 ;; Build a nix image from the image with given "from" tag,
 ;; to an image with "to" tag suffixed by a hash (unless it already exists),
 ;; based on the nix paths and commands, *assuming the nix packages were built locally already*.
 (def (build-nix-image from to changes: (changes []) paths install: (install paths) . commands)
   (def hash (digest-spec [from to "" install ... "" paths ... "" commands ...]))
   (def tag (string-append to "--" hash))
-  (apply docker-commit-image from tag
-         mounts: [["/nix/store" "/tmp/nix-store"]]
-         changes: changes
-         "cd /tmp/nix-store"
-         (space-join ["rsync" "-Ha"
-                      (map path-strip-directory (nix-dependencies paths)) ...
-                      "/nix/store/"])
-         (if (null? install) "" (space-join ["nix-env -i" install ...]))
-         commands))
+  (def dependencies (nix-dependencies paths))
+  (unless (docker-image-id tag)
+    (apply docker-commit-image from tag
+           mounts: [["/nix/store" "/tmp/nix-store"]]
+           changes: changes
+           (if (null? dependencies) ""
+               (space-join ["cd /tmp/nix-store ;"
+                            "for i in" (map path-strip-directory dependencies) ... ";"
+                            "do [ -x /nix/store/$i ] || cp -a $i /nix/store/ ; done"]))
+           (if (null? install) ""
+               (space-join ["nix-env -i" install ...]))
+           commands))
+  tag)
+
+;; Use alpine as the basis for the installation, because the nixos/nix image somehow has nix and
+;; nix-env binaries that immediately fail with "error: Operation not permitted" when invoked(!)
+(define-entry-point (make-nix-image (nixpkgs default-nixpkgs))
+  (help: "Create a docker image for a minimal nix on top of alpine linux"
+   getopt: options/nixpkgs)
+  (def packages (nix-paths nixpkgs: nixpkgs "nix"))
+  (def nix (last packages))
+  (def dependencies (nix-dependencies packages))
+  (build-nix-image "library/alpine" "mukn/nix" [] ;; install packages manually
+    changes: ["ENTRYPOINT []"
+             "CMD [\"/bin/sh\"]"
+             "WORKDIR /root"
+             "ENV PATH /root/.nix-profile/bin:/root/.nix-profile/sbin:/run/wrappers/bin:/nix/var/nix/profiles/default/bin:/nix/var/nix/profiles/default/sbin:/run/current-system/sw/bin:/run/current-system/sw/sbin:/nix/var/nix/profiles/system/sw/bin:/nix/var/nix/profiles/system/sw/sbin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+             "ENV NIX_PATH nixpkgs=/root/nixpkgs:/root/nixpkgs"]
+    install: [] ;; install manually because nix-env isn't in the path yet
+    "mkdir -p /nix/store /root/.config/nix"
+    "cd /tmp/nix-store"
+    (space-join ["cp -a" (map path-strip-directory dependencies) ... "/nix/store/"])
+    (space-join
+     ["(echo sandbox = false"
+      ";"
+      "echo substituters ="
+      "https://cache.nixos.org"
+      "https://hydra.iohk.io"
+      "https://iohk.cachix.org"
+      "https://nixcache.reflex-frp.org"
+      "https://mukn.cachix.org"
+      ";"
+      "echo trusted-public-keys ="
+      "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+      "hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ="
+      "iohk.cachix.org-1:DpRUyj7h7V830dp/i6Nti+NEO2/nhblbov/8MW7Rqoo="
+      "ryantrinkle.com-1:JJiAKaRv9mWgpVAz8dwewnZe0AzzEAzPkagE9SP5NWI="
+      "mukn.cachix.org-1:ujoZLZMpGNQMeZbLBxmOcO7aj+7E5XSnZxwFpuhhsqs="
+      ") > /root/.config/nix/nix.conf"])
+    "addgroup -S nixbld"
+    (space-join ["for i in $(seq -w 1 10); do"
+                 "adduser -G nixbld -h /var/empty -s \"$(which nologin)\""
+                 "-g \"Nix build user $i\" -S \"nixbld${i}\";"
+                 "done"])
+    ;; Initialize the nix environment from nix
+    (format "~a/bin/nix-env -i ~a" nix (space-join packages))))
 
 ;; Return the nix store paths for the given expression;
 ;; also include the recursive dependencies if recursive? is true.
@@ -249,9 +248,6 @@
    ["nix" "path-info"
     (if recursive? ["--recursive"] [])... "--impure" "--expr"
     (space-join ["with import" nixpkgs "{}; [" package-expressions ... "]"])]))
-
-(def (nix-dependencies packages)
-  (run-process coprocess: read-all-as-lines ["nix" "path-info" "--recursive" packages ...]))
 
 (define-entry-point (all-target-paths (nixpkgs default-nixpkgs))
   (help: "Display all nix paths to be installed"
@@ -319,7 +315,7 @@
   (build-all-targets)
   ;; 2. Extract the paths we want
   (def all-paths (all-target-paths nixpkgs))
-  (def user-paths (apply nix-paths nixpkgs: nixpkgs (append user-packages extra-packages)))
+  (def user-paths (apply nix-paths nixpkgs: nixpkgs user-packages))
   (def gambit-paths (nix-paths nixpkgs: nixpkgs "gambit-unstable"))
   (def gerbil-paths (nix-paths nixpkgs: nixpkgs "gerbil-unstable"))
   (def gerbil-package-paths (nix-paths nixpkgs: nixpkgs "gerbilPackages-unstable"))
