@@ -64,7 +64,7 @@
       curl.dev curl.man nghttp2 nghttp2.bin nghttp2.lib nghttp2.dev
       bashInteractive.dev bashInteractive.man
       libssh2 libssh2.dev libkrb5 libkrb5.dev
-      zsh.man attr.man gnumake.man
+      zsh.man attr.man gnumake.man xz.man openssl.man
     )))
 
 (def all-target-packages
@@ -395,9 +395,11 @@
 (backtrace-on-abort? #f)
 (define-multicall-main)
 
-;; To make a release:
-;; pushtag () { for i ; do docker tag mukn/glow mukn/glow:$i ; docker push mukn/glow:$i ; done; }
-;; pushtag latest devel
+#|
+# To make a release:
+pushtag () { for i ; do docker tag mukn/glow mukn/glow:$i ; docker push mukn/glow:$i ; done; }
+pushtag latest devel
 
-;; Cleanup images:
-;; docker image rm --force $(docker image ls | (read ; grep -v alpine) | (while read r t i c s ; do echo $i ; done)) ; docker image ls
+# Cleanup images:
+docker image rm --force $(docker image ls | (read ; grep -v alpine) | (while read r t i c s ; do echo $i ; done)) ; docker image ls
+|#
