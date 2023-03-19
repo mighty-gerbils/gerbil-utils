@@ -49,7 +49,7 @@
       coreutils attr findutils diffutils patch gnused gnumake ;; interactive utilities
       curl openssh rsync cacert ;; basic networking
       racket multimarkdown ;; needed by documentation generation
-      go-ethereum #;solc ;; needed by gerbil-ethereum
+      go-ethereum solc ;; needed by gerbil-ethereum
       go-libp2p-daemon ;; needed by gerbil-libp2p
       unzip patchelf zlib.dev ;; will be downloaded during testing if not present here(!?)
       strace man ;; debugging help
