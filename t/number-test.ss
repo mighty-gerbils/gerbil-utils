@@ -36,6 +36,16 @@
       (check-rep sint<-bytes bytes<-sint #u8(3 219) 987)
       (check-rep sint<-bytes bytes<-sint #u8(130 255) -32001)
       (check-rep sint<-bytes bytes<-sint #u8(1 37 17) 75025))
+    (test-case "normalize-uint, normalize-sint"
+      (defrule (check-normalize normalize (denormal normal) ...)
+        (begin
+          (begin
+            (check-equal? (normalize normal) normal)
+            (check-equal? (normalize denormal) normal)) ...))
+      (check-normalize (cut normalize-uint <> 10)
+                       (65536 0) (1025 1) (-32001 767))
+      (check-normalize (cut normalize-sint <> 10)
+                       (65536 0) (1025 1) (-32001 -257)))
     (test-case "display-integer/fit positive integer with extra width"
       (check-equal? (fit-to-string 5 5) "00005"))
     (test-case "display-integer/fit 0 with extra width"

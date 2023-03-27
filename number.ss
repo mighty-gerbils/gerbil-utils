@@ -52,8 +52,7 @@
     (u8vector-uint-set! bytes 0 n big n-bytes))
   bytes)
 
-(def (nat<-bytes bytes)
-  (def n-bytes (bytes-length bytes))
+(def (nat<-bytes bytes (n-bytes (bytes-length bytes)))
   (if (zero? n-bytes) 0 (u8vector-uint-ref bytes 0 big n-bytes)))
 
 (def (sint-length-in-bytes n)
@@ -65,9 +64,22 @@
     (u8vector-sint-set! bytes 0 n big n-bytes))
   bytes)
 
-(def (sint<-bytes bytes)
-  (def n-bytes (bytes-length bytes))
+(def (sint<-bytes bytes (n-bytes (bytes-length bytes)))
   (if (zero? n-bytes) 0 (u8vector-sint-ref bytes 0 big n-bytes)))
+
+(def (sint? x length-in-bits)
+  (and (exact-integer? x) (< (integer-length x) length-in-bits)))
+
+;; Normalize an integer into an unsigned integer of given length in bits
+(def (normalize-uint x length-in-bits)
+  (extract-bit-field length-in-bits 0 x))
+
+;; Normalize an integer into a signed integer of given length in bits
+(def (normalize-sint x length-in-bits)
+  (cond
+   ((< (integer-length x) length-in-bits) x)
+   ((bit-set? (1- length-in-bits) x) (replace-bit-field length-in-bits 0 x -1))
+   (else (extract-bit-field length-in-bits 0 x))))
 
 ;; Iterate a function with an integer argument ranging from one value
 ;; increasing by one until it reaches another value (excluded)
