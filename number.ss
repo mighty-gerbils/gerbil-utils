@@ -56,6 +56,19 @@
   (def n-bytes (bytes-length bytes))
   (if (zero? n-bytes) 0 (u8vector-uint-ref bytes 0 big n-bytes)))
 
+(def (sint-length-in-bytes n)
+  (if (zero? n) 0 (n-bytes<-n-bits (1+ (integer-length n)))))
+
+(def (bytes<-sint n (n-bytes (sint-length-in-bytes n)))
+  (def bytes (make-bytes n-bytes 0))
+  (when (positive? n-bytes)
+    (u8vector-sint-set! bytes 0 n big n-bytes))
+  bytes)
+
+(def (sint<-bytes bytes)
+  (def n-bytes (bytes-length bytes))
+  (if (zero? n-bytes) 0 (u8vector-sint-ref bytes 0 big n-bytes)))
+
 ;; Iterate a function with an integer argument ranging from one value
 ;; increasing by one until it reaches another value (excluded)
 ;; : <- Integer Integer (<- Integer)

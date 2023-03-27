@@ -21,8 +21,21 @@
       (check-rep nat<-bytes bytes<-nat #u8() 0)
       (check-rep nat<-bytes bytes<-nat #u8(1) 1)
       (check-rep nat<-bytes bytes<-nat #u8(233) 233)
+      (check-rep nat<-bytes bytes<-nat #u8(255) 255)
       (check-rep nat<-bytes bytes<-nat #u8(3 219) 987)
+      (check-rep nat<-bytes bytes<-nat #u8(130 255) 33535)
       (check-rep nat<-bytes bytes<-nat #u8(1 37 17) 75025))
+    (test-case "sint<->bytes"
+      (check-rep sint<-bytes bytes<-sint #u8() 0)
+      (check-rep sint<-bytes bytes<-sint #u8(1) 1)
+      (check-rep sint<-bytes bytes<-sint #u8(0 233) 233)
+      (check-rep sint<-bytes bytes<-sint #u8(233) -23)
+      (check-rep sint<-bytes bytes<-sint #u8(255) -1)
+      (check-rep sint<-bytes bytes<-sint #u8(128) -128)
+      (check-rep sint<-bytes bytes<-sint #u8(0 255) 255)
+      (check-rep sint<-bytes bytes<-sint #u8(3 219) 987)
+      (check-rep sint<-bytes bytes<-sint #u8(130 255) -32001)
+      (check-rep sint<-bytes bytes<-sint #u8(1 37 17) 75025))
     (test-case "display-integer/fit positive integer with extra width"
       (check-equal? (fit-to-string 5 5) "00005"))
     (test-case "display-integer/fit 0 with extra width"
