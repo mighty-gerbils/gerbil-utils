@@ -1,5 +1,7 @@
 ;; -*- Gerbil -*-
 ;; Path configuration for various application files depending on their life-cycle.
+;; Largely based on the XDG Base Directory Specification
+;; https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html
 ;; TODO: Maybe merge config.ss into this file?
 
 (export #t)
@@ -8,7 +10,7 @@
   :std/sugar
   ./base ./config ./filesystem ./path ./shell)
 
-(def application-name (values (lambda () "gerbil-application")))
+(def application-name (values (lambda () "gerbil")))
 (def (application-name/) (string-append (application-name) "/"))
 
 ;; These paths should be defined or redefined somewhere in your application,
