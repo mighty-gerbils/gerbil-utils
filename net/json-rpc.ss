@@ -114,6 +114,9 @@
        (catch (e) (raise (malformed-request method: method params: params e: (error-message e))))))
 
 (def (json-rpc server-url method params
+               auth: (auth #f)
+               headers: (headers #f)
+               cookies: (cookies #f)
                result-decoder: (result-decoder identity)
                param-encoder: (param-encoder identity)
                timeout: (timeout rpc-timeout)
@@ -127,7 +130,9 @@
   (def response-bytes
     (request-response-bytes
      (http-post server-url
-                headers: '(("Content-Type" . "application/json"))
+                auth: auth
+                headers: `(("Content-Type" . "application/json") ,@headers)
+                cookies: cookies
                 data: (string->bytes request-string))))
   (def response-json
     (try (content->json response-bytes) ;; todo: move to decode-json-rpc-response ?
