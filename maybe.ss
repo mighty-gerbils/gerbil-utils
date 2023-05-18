@@ -13,8 +13,9 @@
 ;; The unit element is notably different from the Scheme empty list '() often called "null"
 ;; and recognized by the predicate null?, as well as from the boolean false value #f.
 ;;
-;; (Maybe A) is notably isomorphic to but different from the notional type (OrFalse A)
-;; disjoint union of A and the singleton type containing the boolean false, a.k.a. (Union A '#f).
+;; (Maybe A) is notably isomorphic to, but different from, the type (OrFalse A) from ./orfalse,
+;; but neither is canonically isomorphic to (Option A) from ./option because of the treatment
+;; of the exceptional value, that is uniformly quoted by the Option but excluded by Maybe or OrFalse.
 
 (def (Option<-Maybe x)
   (and (not (void? x)) (some x)))
@@ -27,10 +28,10 @@
 (def (maybe-get/default x (default false)) (if (void? x) (default) x))
 (def (map/maybe f x) (if (void? x) x (f x)))
 (def (list<-maybe x) (if (void? x) [] [x]))
-(def (list-map/maybe f l)
+(def (list-map/maybe f l) ;; : (Maybe (List B)) <- (Fun (Maybe B) <- A) (List A)
   (let loop ((a []) (l l))
     (match l
       ([] (reverse a))
-      ([x . t] (let (fx (f x)) (if (void? fx) (void) (loop (cons fx a) t)))))))
-(def (bind/maybe x f) (if (void? x) x (f x)))
-(def (for-each/maybe f x) (bind/maybe x f))
+      ([h . t] (let (fh (f h)) (unless (void? fh) (loop (cons fh a) t)))))))
+(def (bind/maybe x f) (unless (void? x) (f x)))
+(def (for-each/maybe f x) (unless (void? x) (f x)))

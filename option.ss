@@ -17,7 +17,7 @@
 (def (option-get/default x (default false)) (match x ((some v) v) (else (default))))
 (def (map/option f m) (match m ((some x) (some (f x))) (else m)))
 (def (list<-option x) (match x ((some v) [v]) (else [])))
-(def (list-map/option f l)
+(def (list-map/option f l) ;; : (Option (List B)) <- (Fun (Option B) <- A) (List A)
   (let loop ((a []) (l l))
     (match l
       ([] (some (reverse a)))
