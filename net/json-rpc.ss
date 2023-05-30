@@ -15,7 +15,7 @@
    data)   ;; (Maybe Bytes)
   transparent: #t constructor: :init!)
 (defmethod {:init! json-rpc-error}
-  (lambda (self code: code message: message data: (data (void)))
+  (lambda (self code: code message: (message (void)) data: (data (void)))
     (class-instance-init! self code: code message: message data: data)))
 (def (json-rpc-error<-json json)
   (trivial-object<-json json-rpc-error::t json))
@@ -23,25 +23,26 @@
 (def json-rpc-version "2.0")
 
 (defclass (json-rpc-request jsonable)
-  (jsonrpc   ;; String, must be the same as json-rpc-version ("2.0")
+  (jsonrpc   ;; String, must be the same as json-rpc-version ("2.0"), can undefined for version 1.0
    method    ;; String
    params    ;; Json, array (arguments by position) or object (arguments by name)
    id)       ;; Json, MUST be an number, a string, or JSON null aka Scheme (void). SHOULD be an integer if a number. (void) if no response is required.
   transparent: #t)
 
-;; Type of a successful JSON-RPC response.
-(defclass (result-response jsonable)
-  (jsonrpc ;; String, must be the same as json-rpc-version ("2.0")
-   result  ;; Json
-   id)     ;; Json, must match that of the request
-  transparent: #t)
+(defclass (json-rpc-response jsonable)
+  (jsonrpc   ;; String, must be the same as json-rpc-version ("2.0")
+   result    ;; Json, JSON null (Scheme void) if there is an error
+   error     ;; Json, JSON null (Scheme void) if there is no error
+   id)       ;; Json, MUST be the same as provided in the request.
+  transparent: #t
+  constructor: :init!)
 
-;; Type of a failed JSON-RPC response.
-(defclass (error-response jsonable)
-  (jsonrpc ;; string
-   error   ;; error
-   id)     ;; json
-  transparent: #t)
+(defmethod {:init! json-rpc-response}
+  (lambda (self jsonrpc: (jsonrpc (void))
+           result: (result (void))
+           error: (error (void))
+           id: (id (void)))
+    (class-instance-init! self jsonrpc: jsonrpc result: result error: error id: id)))
 
 ;; Global counter to correlate responses and answers in logs.
 (def id-counter
@@ -88,26 +89,21 @@
 (def (decode-json-rpc-response decoder request-id response-json)
   (def (mal e)
     (raise (malformed-response request-id: request-id response: response-json e: (error-message e))))
-  (def (checking jsonrpc x id)
-    (cond
-     ((not (equal? jsonrpc json-rpc-version))
-      (mal "bad json_rpc_version"))
-     ((not (equal? id request-id))
-      (mal "bad id"))
-     (else x)))
-  (if (hash-key? response-json "result")
-    (let (result-response-json
-          (with-catch mal (cut trivial-object<-json result-response::t response-json)))
-      (match result-response-json
-        ((result-response jsonrpc: jsonrpc result: result-json id: id)
-         (let (result-json (checking jsonrpc result-json id))
-           (with-catch mal (cut decoder result-json))))))
-    (let (error-response-json
-          (with-catch mal (cut trivial-object<-json error-response::t response-json)))
-      (match error-response-json
-        ((error-response jsonrpc: jsonrpc error: error-json id: id)
-         (let (error-json (checking jsonrpc error-json id))
-           (raise (with-catch mal (cut json-rpc-error<-json error-json)))))))))
+  (def response (with-catch mal (cut trivial-object<-json json-rpc-response::t response-json)))
+  (def jsonrpc (@ response jsonrpc))
+  (def result (@ response result))
+  (def error (@ response error))
+  (def id (@ response id))
+  (unless (or (void? jsonrpc) ;; a 1.0 server might fail to include this field
+              (equal? jsonrpc json-rpc-version)) ;; but a recent server must reply with same version
+    (mal "bad json_rpc_version"))
+  (unless (or (void? result) (void? error))
+    (mal "result error conflict"))
+  (unless (equal? id request-id)
+    (mal "bad id"))
+  (if (void? error)
+    (with-catch mal (cut decoder result))
+    (raise (with-catch mal (cut json-rpc-error<-json error)))))
 
 (def (string<-request method params id)
   (try (string<-json (json-rpc-request jsonrpc: json-rpc-version method: method params: params id: id))
