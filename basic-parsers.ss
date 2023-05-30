@@ -170,15 +170,15 @@
 (def (expect-then-eof expecter)
   (lambda (in) (begin0 (expecter in) (expect-eof in))))
 
-(def (parse-port port parser (description port) (where 'parse-port))
+(def (parse-port parser port (description port) (where 'parse-port))
   (with-catch (lambda (e) (parse-error! where "failure parsing" description (error-message e)))
               (lambda () ((expect-then-eof parser) port))))
 
-(def (parse-file file parser (description file) (where 'parse-file))
-  (call-with-input-file file (lambda (port) (parse-port port parser description where))))
+(def (parse-file parser file (description file) (where 'parse-file))
+  (call-with-input-file file (lambda (port) (parse-port parser port description where))))
 
-(def (parse-string string parser (description string) (where 'parse-string))
-  (call-with-input-string string (lambda (port) (parse-port port parser description where))))
+(def (parse-string parser string (description string) (where 'parse-string))
+  (call-with-input-string string (lambda (port) (parse-port parser port description where))))
 
 (def (parse-file-lines parse-line file (description file) (where 'parse-file-lines))
   (parse-file file (cut expect-lines parse-line <>) description where))

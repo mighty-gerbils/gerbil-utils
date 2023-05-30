@@ -113,8 +113,8 @@
   (parameterize ((json-sort-keys #t))
     (write-json x port) (newline port)))
 
-(def (parse-json-file file <-json (description #f))
-  (parse-file file (compose <-json json<-port) description))
+(def (parse-json-file <-json file (description #f))
+  (parse-file (compose <-json json<-port) file description))
 
 ;; json-key=? : StringOrSymbol StringOrSymbol -> Bool
 (def (json-key=? a b)
