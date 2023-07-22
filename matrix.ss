@@ -8,7 +8,7 @@
 
 (import :gerbil/gambit/bits :std/iter)
 
-;; Generic exponentiation. TODO: move to a better place?
+;; Generic exponentiation. TODO: move to a module about monoids?
 (def (generic-expt composer function iterations seed)
   (if (zero? iterations) seed
       (generic-expt composer
