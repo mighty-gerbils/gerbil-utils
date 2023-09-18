@@ -6,9 +6,9 @@
 
 (import
   :gerbil/gambit/ports
-  :std/format :std/misc/list :std/logger :std/misc/number :std/misc/process :std/misc/sync
-  :std/srfi/13 :std/sugar :std/text/json
-  ./base ./basic-parsers ./concurrency ./timestamp ./filesystem ./generator
+  :std/format :std/io :std/misc/list :std/logger :std/misc/number :std/misc/process :std/misc/sync
+  :std/srfi/13 :std/sugar :std/text/json :std/text/basic-parsers :std/misc/ports
+  ./base ./concurrency ./timestamp ./filesystem ./generator
   ./json ./list ./memo ./path ./path-config ./versioning)
 
 (deflogger clan)
@@ -97,16 +97,16 @@
 ;; : (Pair Integer String) <- Port
 (def (read-log-entry port)
   ;; TODO: gracefully handle bad input
-  (cons (expect-timestamp port)
-        (begin (expect-and-skip-any-whitespace port)
-               (read-line port))))
+  (def reader (PeekableStringReader (raw-port port)))
+  (def timestamp (parse-timestamp reader))
+  (def line (parse-line reader))
+  (cons timestamp line))
 
 ;; Call a function on each entry in a log file
 ;; : <- Port (<- (Pair Integer String))
 (def (for-each-port-log-entry! port fun)
   (until (char-port-eof? port)
-    (fun (read-log-entry port))
-    (expect-and-skip-any-whitespace port)))
+    (fun (read-log-entry port))))
 
 ;; Return the list of all entries in a log file port
 ;; : (List (Pair Integer String)) <- Port

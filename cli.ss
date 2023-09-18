@@ -2,7 +2,7 @@
 
 (import
   :std/getopt :std/srfi/13 :std/sugar
-  ./exit ./hash ./json ./with-id)
+  ./exit ./hash ./json)
 
 ;; Given a string argument designating a JSON object
 ;; Json <- String

@@ -56,7 +56,7 @@
 
 (def (shutdown-subprocess subprocess)
   (unregister-subprocess subprocess)
-  (!!rpc.shutdown subprocess))
+  (-> subprocess (!shutdown)))
 
 (def (shutdown-all-subprocesses)
   (for-each shutdown-subprocess (hash-keys (current-subprocesses))))
@@ -75,24 +75,25 @@
 ;; Same principle as Java's "synchronized", C#'s "lock".
 ;; We use an actor because it's simple in Gerbil.
 ;; We could have gone lower level and used a lock. Maybe to do later?
-(defproto applicable
-  (apply arguments))
+(defmessage !apply (arguments))
+
+(defrule (begin/result body ...)
+  (with-catch (cut !error <>) (lambda () (!ok (begin body ...)))))
 
 (def (applicable-actor fun)
-  (let loop ()
-    (<- ((!applicable.apply arguments k)
-         (try
-          (!!value (apply fun arguments) k)
-          (catch (e)
-            (!!error e k)))
-         (loop))
-        ((!rpc.shutdown)
-         (void)))))
+  (let/cc exit
+    (let loop ()
+      (<- ((!apply arguments)
+           (-->? (begin/result (apply fun arguments))))
+          ,(@ping)
+          ,(@shutdown exit)
+          ,(@unexpected warnf))
+      (loop))))
 
 ;; TODO: does this leak resources when this wrapper is garbage collected but maybe not the actor?
 (def (sequentialize/actor name fun)
   (let ((actor (spawn/name/logged name (lambda () (applicable-actor fun)))))
-    (λ arguments (!!applicable.apply actor arguments))))
+    (λ arguments (-> actor (!apply arguments)))))
 
 ;; vyzo: this is a version of sequentialize that uses a plain mutex
 ;; + much more efficient
@@ -110,20 +111,10 @@
 ;;;; Race
 
 ;; Error raised when an exception was expected but a non-exceptional value was raised instead.
-(defstruct (not-an-exception-error Exception) (value) transparent: #t)
+(defstruct (not-an-exception-error <Exception>) (value) transparent: #t)
 
 ;; Error raised when a shutdown message was received and no handler was found.
-(defstruct (shutdown-error Exception) () transparent: #t)
-
-(def (reify-exception thunk)
-  (with-catch
-   (λ (e) (if (exception? e) e (make-not-an-exception-error e)))
-   (λ () (values->list (thunk)))))
-
-(def (unreify-exception x)
-  (cond
-   ((list? x) (apply values x))
-   ((exception? x) (raise x))))
+(defstruct (shutdown-error <Exception>) () transparent: #t)
 
 ;;;; Race between multiple forms, whereby the first to finish wins.
 ;; Forms may call a function to tell whether to shutdown yet (because someone else
@@ -137,30 +128,31 @@
 ;; that returns true if some other task finished first and the current task should abort.
 ;; A <- (List (Tuple Any (A <- (Bool <-))))
 (def (race/list task-list)
-  (unreify-exception
-   (thread-join!
-    (spawn
-     (λ ()
-       (def referee (current-thread))
-       (def done? #f)
-       (def (shutdown?) done?)
-       (def process<-fun
-         (nest (λ-match) ([name fun])
-               (spawn/name name) (λ ())
-               (!!applicable.apply referee)
-               (reify-exception) (λ ()) (fun shutdown?)))
-       (def subprocesses (map process<-fun task-list))
-       (def (shutdown!)
-         (set! done? #t)
-         (for-each (cut !!rpc.shutdown <>) subprocesses))
-       (if (null? subprocesses)
-         [(void)]
-         (<- ((!applicable.apply arguments k)
-              (shutdown!)
-              arguments)
-             (!rpc.shutdown
-              (shutdown!)
-              (make-shutdown-error)))))))))
+  (apply values
+    (with-result
+     (thread-join!
+      (spawn
+       (λ ()
+         (def referee (current-thread))
+         (def done? #f)
+         (def (shutdown?) done?)
+         (def process<-fun
+           (nest (λ-match) ([name fun])
+                 (spawn/name name) (λ ())
+                 (-> referee) (begin/result) (values->list)
+                 (fun shutdown?)))
+         (def subprocesses (map process<-fun task-list))
+         (def (shutdown!)
+           (set! done? #t)
+           (for-each (cut -> <> (!shutdown)) subprocesses))
+         (if (null? subprocesses)
+           (!ok [(void)])
+           (<- ((!apply arguments)
+                (shutdown!)
+                (!ok arguments))
+               (!shutdown
+                (shutdown!)
+                (!error (make-shutdown-error)))))))))))
 
 ;; Parallel version of map
 (def (parallel-map f . ls)
@@ -251,8 +243,8 @@
                      logging: (logging #f)
                      function
                      failure)
-  (if (< 0 max-retries)
-    (function
+  (function
+   (if (< 0 max-retries)
      (lambda args
        (let* ((retry-window (min retry-window max-window))
               (sleep-duration (* (random-real) retry-window)))
@@ -265,8 +257,8 @@
                          description: description
                          logging: logging
                          function
-                         failure))))
-    (function failure)))
+                         failure)))
+     failure)))
 
 (def (simple-client send! make-message)
   (lambda (request)

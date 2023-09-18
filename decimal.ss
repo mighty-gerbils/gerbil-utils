@@ -3,8 +3,9 @@
 (import
   :gerbil/gambit/bits :gerbil/gambit/exact
   :scheme/base-impl
-  :std/assert :std/error :std/iter :std/misc/number :std/srfi/13 :std/sugar
-  ./base ./basic-parsers ./basic-printers ./number ./string)
+  :std/assert :std/parser/base :std/text/basic-parsers :std/text/char-set :std/io
+  :std/error :std/iter :std/misc/number :std/srfi/13 :std/sugar
+  ./base ./basic-printers ./number ./string)
 
 ;; : Bool <- Any
 (def (decimal? x)
@@ -22,12 +23,12 @@
   (def l (integer-part (round (log n 5))))
   (= n (expt 5 l)))
 
-(defrule (repeat n body ...)
+(defrule (repeat n body ...) ;; TODO put body ... in tail position?
   (let loop ((i n)) (when (<= 1 i) body ... (loop (1- i)))))
 (def (write-n-chars n char port)
   (repeat n (write-char char port)))
 
-;; `expect-decimal` expects and parses a decimal number on the port.
+;; `parse-decimal` expects and parses a decimal number on the port.
 ;; The character parameters `decimal-mark` and `group-separator` provide
 ;; support for different (typically cultural) numerical conventions.
 ;; For convenience, a `group-separator` of #t will be treated as the comma character.
@@ -39,15 +40,15 @@
 ;; when `exponent-allowed` is a string.
 ;; Side-effects the port, and returns the decimal number, or raises an exception.
 ;; It is up to the caller to ignore and leading or trailing whitespace and check for eof
-;; before and/or after calling `expect-decimal`.
+;; before and/or after calling `parse-decimal`.
 ;; : Decimal <- Port sign-allowed?:Bool decimal-mark:Char group-separator:(Or Char Bool) exponent-allowed:(or Bool String)
-(def (expect-decimal
-      port
+(def (parse-decimal
+      pre-reader
       sign-allowed?: (sign-allowed? #t)
       decimal-mark: (decimal-mark #\.)
       group-separator: (group-separator_ #f)
       exponent-allowed: (exponent-allowed_ #f))
-  (assert! (input-port? port))
+  (def reader (PeekableStringReader (open-buffered-string-reader pre-reader)))
   (assert! (boolean? sign-allowed?))
   (assert! (char? decimal-mark))
   (assert! (or (boolean? group-separator_) (char? group-separator_)))
@@ -63,25 +64,26 @@
   (def exponent 0)
   (def exponent-sign 1)
   (def valid? #f) ;; have we seen at least one digit
-  (def c (peek-char port))
-  (def (bad) (raise (parse-error 'expect-decimal "Unexpected character" port)))
-  (def (next) (read-char port) (set! c (peek-char port)))
-  (def (expect-sign) (case c ((#\+) (next) 1) ((#\-) (next) -1) (else 1)))
+  (def (peek) (PeekableStringReader-peek-char reader))
+  (def c (peek))
+  (def (bad) (raise-parse-error 'parse-decimal "Unexpected character" #f pre-reader))
+  (def (next) (PeekableStringReader-read-char reader) (set! c (peek)))
+  (def (parse-sign) (case c ((#\+) (next) 1) ((#\-) (next) -1) (else 1)))
   (let/cc ret
-    (when (eof-object? c) (parse-error! 'expect-decimal "Unexpected EOF" port))
-    (when sign-allowed? (set! sign (expect-sign)))
+    (when (eof-object? c) (raise-parse-error 'parse-decimal "Unexpected EOF" #!eof pre-reader))
+    (when sign-allowed? (set! sign (parse-sign)))
     (def (done) (ret (* sign (/ numerator denominator) (expt 10 (* exponent-sign exponent)))))
-    (def (expect-left-digit-or-group-separator)
+    (def (parse-left-digit-or-group-separator)
       (cond
        ((char-ascii-digit c) =>
         (lambda (d)
           (set! numerator (+ (* numerator 10) d))
           (set! valid? #t)
           (next)
-          (expect-left-digit-or-group-separator)))
+          (parse-left-digit-or-group-separator)))
        ((and group-separator (eqv? group-separator c))
         (next)
-        (expect-left-digit-or-group-separator))
+        (parse-left-digit-or-group-separator))
        (else (maybe-decimal-mark))))
     (def (maybe-decimal-mark)
       (cond
@@ -89,12 +91,12 @@
         (next)
         (if valid? ;; if we have seen a left digit
           (maybe-right-digit)
-          (expect-right-digit)))
+          (parse-right-digit)))
        (valid?
         (maybe-exponent-marker))
        (else
         (bad))))
-    (def (expect-right-digit)
+    (def (parse-right-digit)
       (cond
        ((char-ascii-digit c) =>
         (lambda (d)
@@ -122,9 +124,9 @@
         (maybe-exponent-sign))
        (else (done))))
     (def (maybe-exponent-sign)
-      (set! exponent-sign (expect-sign))
-      (expect-exponent-digit))
-    (def (expect-exponent-digit)
+      (set! exponent-sign (parse-sign))
+      (parse-exponent-digit))
+    (def (parse-exponent-digit)
       (cond
        ((char-ascii-digit c) =>
         (lambda (d)
@@ -143,7 +145,7 @@
           (maybe-exponent-digit)))
        (else
         (done))))
-    (expect-left-digit-or-group-separator)))
+    (parse-left-digit-or-group-separator)))
 
 ;; Decimal <- String sign-allowed?:Bool decimal-mark:Char group-separator:(Or Char Bool) exponent-allowed:(or Bool String) allow-leading-whitespace?:Bool allow-trailing-whitespace?:Bool start:Nat end:(OrFalse Nat)
 (def (decimal<-string s
@@ -160,17 +162,18 @@
   (call-with-input-string
    (if (and (zero? start) (= end l)) s (substring s start end))
    (lambda (port)
+     (def reader (PeekableStringReader (open-buffered-string-reader port)))
      (when allow-leading-whitespace?
-       (expect-and-skip-any-whitespace port))
+       (parse-and-skip-any-whitespace reader))
      (begin0
-         (expect-decimal port
-                         sign-allowed?: sign-allowed?
-                         decimal-mark: decimal-mark
-                         group-separator: group-separator
-                         exponent-allowed: exponent-allowed)
+         (parse-decimal reader
+                        sign-allowed?: sign-allowed?
+                        decimal-mark: decimal-mark
+                        group-separator: group-separator
+                        exponent-allowed: exponent-allowed)
        (when allow-trailing-whitespace?
-         (expect-and-skip-any-whitespace port))
-       (expect-eof port)))))
+         (parse-and-skip-any-whitespace reader))
+       (parse-eof reader)))))
 
 ;; Given an integer d of the form 2^m*5^n (reduced denominator of a decimal number),
 ;; compute c such that c*d = c*(2^m*5^n) = 10^max(m,n).
@@ -232,7 +235,7 @@
   (/ digits (expt 10 exponent)))
 
 ;; Attempted print operation would lose precision. See precision-loss-behavior.
-(defstruct (disallowed-loss-of-precision Exception) () transparent: #t)
+(defstruct (disallowed-loss-of-precision <Exception>) () transparent: #t)
 
 ;; Given
 ;; - a decimal number,

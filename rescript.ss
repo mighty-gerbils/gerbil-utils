@@ -4,7 +4,7 @@
 (export superscriptize subscriptize upsidedown leftright mathbb smallcaps fbchange)
 
 (import :std/iter :std/misc/hash :std/srfi/13 :std/sugar
-        :clan/base :clan/ports :clan/with-id)
+        :clan/base :clan/ports)
 
 (def (make-script-table original translated reverse?: (reverse? #f))
   (def h (hash))

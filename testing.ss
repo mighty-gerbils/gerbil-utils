@@ -11,9 +11,9 @@
   :gerbil/gambit/random
   :gerbil/expander
   :std/format :std/getopt :std/iter :std/misc/process :std/misc/repr
-  :std/sort :std/sugar :std/test :std/text/hex
+  :std/sort :std/stxutil :std/sugar :std/test :std/text/hex
   ./base ./exit ./filesystem ./git-fu ./io ./multicall
-  ./path ./path-config ./ports ./source ./syntax ./versioning ./with-id)
+  ./path ./path-config ./ports ./source ./versioning)
 
 ;; Given a directory name (with no trailing /), is it a test directory named "t"?
 (def (test-dir? x)

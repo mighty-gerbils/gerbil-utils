@@ -3,7 +3,7 @@
 
 (import
   :gerbil/gambit/exceptions
-  :std/sort :std/test
+  :std/sort :std/test :std/values
   ../base ../generator ../list ../vector)
 
 (def stupid-list [1 2 3 4 5])

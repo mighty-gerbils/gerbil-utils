@@ -6,88 +6,22 @@
 (import
   :gerbil/gambit/ports
   :std/iter :std/misc/alist :std/misc/hash :std/misc/list-builder
-  :std/misc/ports :std/misc/plist :std/misc/rtd
-  :std/sort :std/srfi/43 :std/sugar :std/text/json
-  ./base ./basic-parsers ./list ./files ./subprocess)
-
-(def (trivial-json<-object object)
-  (match (class->list object)
-    ([type . plist]
-     (list->hash-table
-      `(#|(__class . ,(symbol->string (type-name type)))|# ,@(plist->alist plist))))))
-(def (trivial-object<-json klass json)
-  (def (find-key s) (or (##find-interned-keyword s) (error "invalid json key for class" s klass)))
-  (apply make-class-instance klass (alist->plist (map (cut map/car find-key <>) (hash->list json)))))
-
-(def (trivial-json<-struct struct)
-  (defvalues (strukt fields) (cons->values (struct->list struct)))
-  (def names (cdr (assoc fields: (type-descriptor-plist strukt))))
-  (def json (make-hash-table))
-  (def f (if (json-symbolic-keys) identity symbol->string))
-  (for ((name names) (v fields)) (hash-put! json (f name) v))
-  json)
-
-(def (trivial-struct<-json strukt json (defaults #f))
-  (unless defaults (set! defaults (hash)))
-  (def names (list->vector (cdr (assoc fields: (type-descriptor-plist strukt)))))
-  (def positions (invert-hash<-vector names))
-  (def (pos<-field f)
-    (def s (cond
-            ((symbol? f) f)
-            ((string? f) (##find-interned-symbol f))
-            (else #f)))
-    (or (hash-get positions s)
-        (error "invalid json key for struct" f strukt json)))
-  (def n (vector-length names))
-  (def fields (make-vector n #f))
-  (def bound? (make-vector n #f))
-  (for (((values k v) (in-hash json)))
-    (let (p (pos<-field k))
-      (when (vector-ref bound? p) (error "field multiply defined" k strukt json))
-      (vector-set! bound? p #t)
-      (vector-set! fields p v)))
-  (def unbounds
-    (with-list-builder (c)
-     (for ((i (in-naturals))
-           (b? bound?)
-           (name names))
-       (cond
-        (b? (void))
-        ((hash-key? defaults name) (vector-set! fields i (hash-ref defaults name)))
-        (else (c name))))))
-  (unless (null? unbounds)
-    (error "unbound fields" unbounds strukt json))
-  (apply make-struct-instance strukt (vector->list fields)))
-
-;; Mixin for a trivial method that just lists all slots
-(defclass jsonable ())
-(defmethod {:json jsonable} trivial-json<-object)
-
-(def (pretty-json object)
-  (filter-with-process
-   ["jq" "-M" "."]
-   (λ (port) (write-json object port))
-   read-all-as-string))
-
-(def (pretty-print-json object (port (current-output-port)))
-  (display (pretty-json object) port)
-  (newline port))
-
-(def (json<-string x)
-  (call-with-input-string
-   x (lambda (port)
-       (begin0 (json<-port port)
-         (expect-and-skip-any-whitespace port)
-         (expect-eof port)))))
+  :std/misc/ports :std/misc/plist :std/misc/rtd :std/misc/walist
+  :std/sort :std/srfi/43 :std/sugar :std/text/json :std/text/basic-parsers
+  ./base ./list ./files)
 
 (def (string<-json object)
   (parameterize ((json-sort-keys #t))
     (json-object->string object)))
 
+(def (json<-string str)
+  (parameterize ((json-symbolic-keys #f))
+    (string->json-object str)))
+
 ;; TODO: rename to safe-read-json or read-json/string-keys or something
 (def (json<-port port)
   (parameterize ((json-symbolic-keys #f))
-    (read-json port)))
+    (port->json-object port)))
 
 ;; For better performance when skipping, parse json lazily.
 (def (lazy-json<-string string (decode identity))
@@ -96,7 +30,7 @@
      (begin0 (json<-string string)
        (set! string #f))))) ;; reclaim storage (or will gambit do it based on lifespan analysis?)
 
-(def (expect-lazy-json-line port (decode identity))
+(def (read-lazy-json-line port (decode identity))
   (lazy-json<-string (read-line port)))
 
 (def (read-file-json file . settings)
@@ -113,8 +47,8 @@
   (parameterize ((json-sort-keys #t))
     (write-json x port) (newline port)))
 
-(def (parse-json-file <-json file (description #f))
-  (parse-file (compose <-json json<-port) file description))
+(def (parse-json-file <-json file)
+  (<-json (call-with-input-file file port->json-object)))
 
 ;; json-key=? : StringOrSymbol StringOrSymbol -> Bool
 (def (json-key=? a b)
@@ -134,18 +68,11 @@
     ((hash-table? j)
      (hash-ref/default j k
        (lambda () (hash-ref/default j (toggle k) d))))
-    ((Alist? j)
-     (let ((e (assoc k (Alist-value j) json-key=?)))
+    ((walist? j)
+     (let ((e (assoc k (walist->alist j) json-key=?)))
        (if e (cdr e) (d))))
     (else (error "json-object-ref: expected a hash-table or Alist struct, given" j))))
 
 ;; json-object-get : JsonObject StringOrSymbol Json -> Json
 (def (json-object-get j k (d #f))
   (json-object-ref j k (lambda () d)))
-
-;; TODO: have a strict mode in std/text/json that will reject (string<-json (hash ("a" 1) (a 2)))
-
-(defstruct Alist (value) transparent: #t)
-(defmethod {:write-json Alist}
-  (lambda (self port)
-    (write-json-alist (Alist-value self) port)))

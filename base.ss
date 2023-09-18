@@ -50,19 +50,6 @@
 
 (defrule (when-match expr pattern body ...) (match expr (pattern body ...) (else (void))))
 
-;; From CL's ALEXANDRIA library
-(defrules if-let ()
-  ((_ () then else) then)
-  ((_ ((ids exprs) ...) then else)
-   (let ((ids exprs) ...)
-     (if (and ids ...)
-       then
-       else)))
-  ((_ (id expr) then else)
-   (let ((id expr)) (if id then else))))
-
-(defrule (when-let bindings body ...) (if-let bindings (begin body ...) (void)))
-
 ;; Force left-to-right evaluation of the arguments of a function call
 ;; NB: the function itself might be evaluated after.
 (defsyntax (left-to-right stx)
@@ -166,21 +153,6 @@
   (λ (data nil cons) ((reduce (map data (curry curry cons)) identity compose) nil)))
 
 
-;;;; Multiple values
-(defrules first-value ()
-  ((_ form) (with ((values x . _) form) x))
-  ((_ form forms ...) (error "syntax error"))
-  (_ (lambda (x . _) x)))
-
-(defrule (nth-value n form) (with ((values . x) form) (list-ref x n)))
-
-(def (list->values l) (apply values l))
-
-(defrule (values->vector form) (list->vector (values->list form)))
-(def (vector->values v) (list->values (vector->list v)))
-
-(defrule (values->cons form) (let-values (((a b) form)) (cons a b)))
-(def (cons->values x) (values (car x) (cdr x)))
 
 
 ;;;; Stupid error non-handling
@@ -193,7 +165,7 @@
 ;; As opposed to std/exception#exception it is transparent, which means that
 ;; if you (raise e) where e is an Exception, you can compare it with equal?,
 ;; which you can't do with any subclass of std/exception#exception.
-(defstruct Exception () transparent: #t)
+(defstruct <Exception> () transparent: #t)
 
 ;; Use Undefined where the language requires you to cover a case that is actually
 ;; not defined and cannot possibly be observed by end-users.
@@ -201,10 +173,10 @@
 ;; NB: IF THIS IS EVER VISIBLE TO END-USERS during normal operation of an application,
 ;; this is an implementation error and YOU LOSE.
 ;; Any <- Any ...
-(defstruct (Undefined Exception) (args) transparent: #t)
+(defstruct (Undefined <Exception>) (args) transparent: #t)
 (def (undefined . args) (raise (Undefined args)))
 
-(defstruct (Invalid Exception) (args) transparent: #t)
+(defstruct (Invalid <Exception>) (args) transparent: #t)
 (def (invalid . args) (raise (Invalid args)))
 
 
@@ -212,7 +184,7 @@
 ;; BEFORE release, probably even before your branch is merged into production
 ;; code. IF THIS CODE APPEARS IN PRODUCTION, YOU LOSE.
 ;; Any <- Any ...
-(defstruct (NotImplementedYet Exception) (args) transparent: #t)
+(defstruct (NotImplementedYet <Exception>) (args) transparent: #t)
 (def (NIY . args) (raise (NotImplementedYet args)))
 
 

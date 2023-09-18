@@ -6,10 +6,9 @@
 (import
   :std/format :std/generic :std/getopt :std/iter
   :std/misc/hash :std/misc/list :std/misc/list-builder
-  :std/sort :std/srfi/13 :std/sugar
-  ./debug
-  (for-syntax ./syntax)
-  ./base ./exit ./list ./number ./shell ./source ./syntax ./versioning ./with-id)
+  :std/sort :std/srfi/13 :std/stxutil :std/sugar
+  (for-syntax :std/stxutil)
+  ./base ./exit ./list ./number ./shell ./source ./versioning)
 
 (def current-program (make-parameter []))
 (def entry-points (make-hash-table))

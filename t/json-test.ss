@@ -2,17 +2,18 @@
 
 (import
   :gerbil/gambit/bytes :gerbil/gambit/exceptions
-  :std/error :std/srfi/1 :std/sugar :std/text/hex :std/text/json :std/test
+  :std/error :std/srfi/1 :std/sugar :std/text/hex :std/text/json :std/test :std/misc/walist
+  :std/text/json/util
   ../base ../json)
 
-(defstruct (json-rpc-error Exception)
+(defstruct (json-rpc-error <Exception>)
   (code    ;; SInt16
    message ;; String
    data)   ;; (Maybe Bytes)
   transparent: #t)
-(defmethod {:json json-rpc-error} trivial-json<-struct)
+(defmethod {:json json-rpc-error} trivial-struct->json-object)
 (def (json-rpc-error<-json json)
-  (trivial-struct<-json json-rpc-error::t json (hash (data (void)))))
+  (trivial-json-object->struct json-rpc-error::t json (hash (data (void)))))
 
 (def json-test
   (test-suite "test suite for clan/json"
@@ -38,9 +39,9 @@
       (check-equal? (json-object-ref (hash (a "apple") (b "banana")) 'a) "apple")
       (check-equal? (json-object-ref (hash (a "apple") (b "banana")) "b") "banana")
       (check-equal? (json-object-ref (hash (a "apple") (b "banana")) 'b) "banana")
-      (check-equal? (json-object-ref (Alist '(("a" . "apple") ("b" . "banana"))) "a") "apple")
-      (check-equal? (json-object-ref (Alist '(("a" . "apple") ("b" . "banana"))) 'a) "apple")
-      (check-equal? (json-object-ref (Alist '(("a" . "apple") ("b" . "banana"))) "b") "banana")
-      (check-equal? (json-object-ref (Alist '(("a" . "apple") ("b" . "banana"))) 'b) "banana")
-      (check-equal? (json-object-get (Alist '(("a" . "apple") ("b" . "banana"))) 'b) "banana")
-      (check-equal? (json-object-get (Alist '(("a" . "apple") ("b" . "banana"))) "c") #f))))
+      (check-equal? (json-object-ref (walist '(("a" . "apple") ("b" . "banana"))) "a") "apple")
+      (check-equal? (json-object-ref (walist '(("a" . "apple") ("b" . "banana"))) 'a) "apple")
+      (check-equal? (json-object-ref (walist '(("a" . "apple") ("b" . "banana"))) "b") "banana")
+      (check-equal? (json-object-ref (walist '(("a" . "apple") ("b" . "banana"))) 'b) "banana")
+      (check-equal? (json-object-get (walist '(("a" . "apple") ("b" . "banana"))) 'b) "banana")
+      (check-equal? (json-object-get (walist '(("a" . "apple") ("b" . "banana"))) "c") #f))))

@@ -8,35 +8,34 @@
 
 (import
   :gerbil/gambit/ports
-  :std/misc/ports :std/misc/process
-  ../base ../basic-parsers ../timestamp)
+  :std/io :std/misc/ports :std/misc/process :std/text/basic-parsers
+  ../base ../timestamp)
 
 (def space19 (make-string 19 #\space))
 
 (def space8pre "        PRE ")
 
-(def (parse-s3-ls-output-line line)
-  (call-with-input-string line
-    (λ (port)
-      (let ((s19 (read-string 19 port)))
-        (cond
-         ((equal? s19 space19)
-          ((expect-literal-string space8pre) port)
-          ['directory (read-line port)])
-         (else
-          (let* ((tai-timestamp
-                  (tai-timestamp<-string s19 "~Y-~m-~d ~k:~M:~S"))
-                 (size
-                  (begin (expect-and-skip-any-whitespace port)
-                         (expect-natural port)))
-                 (name
-                  (begin ((expect-one-of (looking-for #\space)) port)
-                         (read-line port))))
-            ['file name size tai-timestamp])))))))
+(def (parse-s3-ls-output-line reader)
+  (def s19 ((parse-n-chars 19) reader))
+  (if (equal? s19 space19)
+    (begin
+      ((parse-literal-string space8pre) reader)
+      ['directory (parse-line reader)])
+    (let* ((tai-timestamp
+            (tai-timestamp<-string s19 "~Y-~m-~d ~k:~M:~S"))
+           (size
+            (begin (parse-and-skip-any-whitespace reader)
+                   (parse-natural reader)))
+           (name
+            (begin ((parse-one-of (looking-for #\space)) reader)
+                   (parse-line reader))))
+      ['file name size tai-timestamp])))
 
 (def (aws-s3-ls . paths)
   (run-process ["aws" "s3" "ls" . paths]
-               coprocess: (λ (port) (map parse-s3-ls-output-line (read-all-as-lines port)))))
+               coprocess: (λ (port)
+                            ((parse-repeated parse-s3-ls-output-line parse-eof)
+                             (PeekableStringReader (open-buffered-string-reader port))))))
 
 (def (aws-s3-ls-R . paths)
   (apply aws-s3-ls "--recursive" paths))

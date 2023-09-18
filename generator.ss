@@ -70,7 +70,7 @@
 
 ;; The empty generating function and default failure continuation for generating functions,
 ;; that only generates eof.
-;; type Eof = (Exception '#!eof)
+;; type Eof = (<Exception> '#!eof)
 ;; _ ... <-[Eof] _ ...
 (def eof! (keep-raising #!eof))
 

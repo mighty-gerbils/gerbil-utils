@@ -9,7 +9,7 @@
   :std/net/request
   :std/pregexp :std/sort :std/srfi/1 :std/sugar
   ./base ./exit ./filesystem ./io ./list
-  ./path ./path-config ./ports ./rpm-versioning ./source ./syntax ./with-id)
+  ./path ./path-config ./ports ./rpm-versioning ./source ./syntax)
 
 ;; TODO: move that to another file?
 ;; TODO: support doing it in another directory?

@@ -5,22 +5,23 @@
 
 (import
   :gerbil/gambit/exact
-  :scheme/base-impl :scheme/char
+  :scheme/base-impl :scheme/char :std/parser/base
   :std/assert :std/error :std/misc/list :std/misc/number :std/misc/string :std/srfi/13 :std/sugar
-  ./base ./basic-parsers ./files ./number)
+  :std/io :std/text/basic-parsers
+  ./base ./files ./number)
 
-(def (expect-srt-time-offset port)
-  (def hours ((expect-n-digits 2) port))
-  ((expect-char #\:) port)
-  (def minutes ((expect-n-digits 2) port))
+(def (parse-srt-time-offset reader)
+  (def hours ((parse-n-digits 2) reader))
+  ((parse-one-char #\:) reader)
+  (def minutes ((parse-n-digits 2) reader))
   (unless (< minutes 60)
-    (parse-error! 'expect-srt-time-offset "bad minutes"))
-  ((expect-char #\:) port)
-  (def seconds ((expect-n-digits 2) port))
+    (raise-parse-error 'parse-srt-time-offset "bad minutes" #f))
+  ((parse-one-char #\:) reader)
+  (def seconds ((parse-n-digits 2) reader))
   (unless (< seconds 60)
-    (parse-error! 'expect-srt-time-offset "bad minutes"))
-  ((expect-char #\,) port)
-  (def milliseconds ((expect-n-digits 3) port))
+    (raise-parse-error 'parse-srt-time-offset "bad minutes" #f))
+  ((parse-one-char #\,) reader)
+  (def milliseconds ((parse-n-digits 3) reader))
   (+ milliseconds (* 1000 (+ seconds (* 60 (+ minutes (* 60 hours)))))))
 
 (def (display-srt-time-offset offset (port (current-output-port)))
@@ -38,7 +39,7 @@
   (display-integer/fit milliseconds 3 port))
 
 (def (srt-time-offset<-string s)
-  (call-with-input-string s (λ (p) (begin0 (expect-srt-time-offset p) (expect-eof p)))))
+  (call-with-input-string s (λ (p) (begin0 (parse-srt-time-offset p) (parse-eof p)))))
 
 (def (string<-srt-time-offset o)
   (call-with-output-string [] (curry display-srt-time-offset o)))
@@ -47,28 +48,29 @@
 ;;(assert-equal (srt-time-offset<-string "42:02:41,406") 151361406)
 ;;(assert-equal (string<-srt-time-offset 151361406) "42:02:41,406")
 
-(def (parse-srt-entry port)
-  (expect-and-skip-any-whitespace port)
-  (def id (expect-natural port))
-  (expect-eol port)
-  (def start-offset (expect-srt-time-offset port))
-  ((expect-literal-string " --> ") port)
-  (def end-offset (expect-srt-time-offset port))
-  (expect-eol port)
+(def (parse-srt-entry reader)
+  (parse-and-skip-any-whitespace reader)
+  (def id (parse-natural reader))
+  (parse-eol reader)
+  (def start-offset (parse-srt-time-offset reader))
+  ((parse-literal-string " --> ") reader)
+  (def end-offset (parse-srt-time-offset reader))
+  (parse-eol reader)
   (def text
     (with-list-builder (c)
       (let loop ()
-        (let ((l (expect-line port)))
+        (let ((l (parse-line reader)))
           (unless (or (eof-object? l)
                       (string-null? l))
             (c l) (loop))))))
   [id start-offset end-offset . text])
 
 (def (parse-srt-port port)
-  ((expect-maybe-char (integer->char #xfeff)) port) ;; Skip any leading UTF-8 BOM.
+  (def reader (PeekableStringReader (open-buffered-string-reader port)))
+  ((parse-maybe-char (integer->char #xfeff)) reader) ;; Skip any leading UTF-8 BOM.
   (with-list-builder (c)
-    (until (char-port-eof? port)
-      (c (parse-srt-entry port)))))
+    (until (string-reader-eof? reader)
+      (c (parse-srt-entry reader)))))
 
 (def (renumber-srt srt)
   (def id 0)

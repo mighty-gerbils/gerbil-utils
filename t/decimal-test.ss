@@ -2,9 +2,9 @@
 
 (import
   :gerbil/gambit/exceptions
-  :std/misc/string :std/srfi/13
+  :std/misc/string :std/parser/base :std/srfi/13
   :std/test
-  ../base ../basic-parsers ../decimal)
+  ../base ../decimal)
 
 (def decimal-test
   (test-suite "test suite for clan/decimal"

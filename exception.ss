@@ -10,17 +10,17 @@
   :std/format :std/misc/repr :std/sugar
   ./base)
 
-;; String <- Exception
+;; String <- <Exception>
 (def (string<-exception e)
   (cond
    ((exception? e) (call-with-output-string (cut display-exception e <>)))
    ((string? e) e)
-   ((Exception? e) (repr e))
+   ((<Exception>? e) (repr e))
    (else (repr e))))
 
 ;; The exception and continuation are valid for use with display-exception-in-context
 ;; and display-continuation-backtrace
-;; with-catch/cont : [Exception Continuation -> A] [-> A] -> A
+;; with-catch/cont : [<Exception> Continuation -> A] [-> A] -> A
 (def (with-catch/cont handler thunk)
   (let/esc outside
     (def E (current-exception-handler))

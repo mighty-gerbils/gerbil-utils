@@ -7,8 +7,8 @@
 (import
   :gerbil/gambit/exact :gerbil/gambit/threads
   :scheme/base
-  :std/assert :std/format :std/misc/number :std/srfi/19 :std/sugar
-  ./base ./basic-parsers ./number)
+  :std/assert :std/format :std/misc/number :std/srfi/19 :std/sugar :std/text/basic-parsers
+  ./base ./number)
 
 ;; We deal with several time representations:
 ;;
@@ -249,7 +249,7 @@
 
 ;; Display and parse a timestamp
 (def display-timestamp display)
-(def expect-timestamp expect-natural)
+(def parse-timestamp parse-natural)
 
 
 ;; Partial support for tai, which is a TAI timestamp at second resolution only

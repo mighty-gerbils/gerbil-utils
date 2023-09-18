@@ -30,17 +30,13 @@
 
 ;;; Some infrastructure for call limiters:
 
-(defproto limiter-service
-  call:
-  (get-ticket param) ;; ticket <- param
-  event:
-  (return-ticket ticket)) ;; <- ticket
+(defmessage !get-ticket (param)) ;; ticket <- param
+(defmessage !return-ticket (ticket)) ;; <- ticket
 
 ;; Given an call-limiter actor, a limiter-dependent parameter and a thunk,
 ;; execute the thunk while holding a ticket reserved from the call-limiter with given parameter.
 (def (call-limiter server param fun . args)
-  ;;(DBG "cl" server param fun args)
-  (let ((ticket (!!limiter-service.get-ticket server param)))
+  (let ((ticket (with-result (->> server (!get-ticket param)))))
     (match ticket
       (['sleep nanoseconds]
        ;; Sleep and retry after some time
@@ -49,7 +45,7 @@
       (['ticket _ _ _]
        (try
         (apply fun args)
-        (finally (!!limiter-service.return-ticket server ticket))))
+        (finally (-> server (!return-ticket ticket)))))
       (_ (error "call-limiter mismatch" ticket server param fun args)))))
 
 ;; Given a limiter function, a name and some arguments,
@@ -57,27 +53,26 @@
 ;; with given name and rest of arguments,
 ;; that registers itself to the current rpc server.
 (def (call-limiter-loop name . options)
-  ;;(DBG "cll" name options)
   (defvalues (update-timestamp get-ticket return-ticket)
     (apply make-limiter name: name now: (current-tai-timestamp) options))
-  (rpc-register (current-rpc-server) name)
-  (let loop ()
-    (<- ((!limiter-service.get-ticket param k)
-         (try
-          (let ((now (current-tai-timestamp)))
-            (update-timestamp now)
-            (!!value (get-ticket now param) k))
-          (catch (e)
-            (log-error "request error" e)
-            (!!error (error-message e) k)))
-         (loop))
-        ((!limiter-service.return-ticket ticket)
-         (let ((now (current-tai-timestamp)))
-           (update-timestamp now)
-           (return-ticket now ticket))
-         (loop))
-        ((!rpc.shutdown)
-         (void)))))
+  (register-actor! name)
+  (let/cc exit
+    (while #t
+      (<- ((!get-ticket param)
+           (try
+            (let ((now (current-tai-timestamp)))
+              (update-timestamp now)
+              (--> (!ok (get-ticket now param))))
+            (catch (e)
+              (log-error "request error" e)
+              (--> (!error (error-message e))))))
+          ((!return-ticket ticket)
+           (let ((now (current-tai-timestamp)))
+             (update-timestamp now)
+             (return-ticket now ticket)))
+          ,(@ping)
+          ,(@shutdown exit)
+          ,(@unexpected warnf)))))
 
 (def +limiter-server-address+ (values "/tmp/limiter-server.sock"))
 
@@ -93,13 +88,12 @@
    (begin
      ;;(let ((n name) (opts [options ...]))
      ;;  (DBG "dcl" n opts))
-     (bind-protocol! 'name limiter-service::proto)
      (defonce (limiter-actor)
        (spawn/name 'name call-limiter-loop 'name options ...))
      (push! ['name limiter-actor] registered-limiters)
      (def (limiter-end-point)
        (if (use-limiter-server)
-         (rpc-connect (current-rpc-server) 'name +limiter-server-address+)
+         (connect-to-server! 'name)
          (limiter-actor)))
      (def (name param fun . args) (apply call-limiter (limiter-end-point) param fun args)))))
 
@@ -131,7 +125,9 @@
 (define-entry-point (run-limiter-server (address #f))
   (help: "Run the limiter server that enforces exchange access limits"
    getopt: [(optional-argument 'address help: "socket address on which to listen")])
-  (current-rpc-server (start-rpc-server! (or address +limiter-server-address+)))
+  (current-actor-server (start-actor-server!
+                         addresses:
+                         [(or address [unix: "localhost" +limiter-server-address+])]))
   (serve-limiters))
 
 ;; Given a number of tokens that regenerate only every given period,

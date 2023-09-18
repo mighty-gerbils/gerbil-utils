@@ -3,8 +3,8 @@
 
 (import
   :gerbil/gambit/ports
-  :std/iter :std/misc/number :std/srfi/13
-  ./basic-parsers ./list)
+  :std/iter :std/misc/number :std/srfi/13 :std/text/char-set
+  ./list)
 
 ;; TODO: write a string-substitute function in the style of http://clhs.lisp.se/Body/f_sbs_s.htm
 ;; and/or of SRFI 13 (that will be contributed to std/misc/string);
@@ -31,7 +31,7 @@
 ;; Given a string, return it with any beginning or ending whitespace trimmed off
 ;; String <- String
 (def (string-trim-spaces string)
-  (string-trim-both string char-ascii-whitespace?))
+  (string-trim-both string char-strict-whitespace?))
 
 ;; Given a list of strings, return a list of the same strings where those
 ;; shorter than the longest one have been right-padded with spaces.

@@ -8,7 +8,8 @@
 (import
   :gerbil/gambit/exceptions :gerbil/gambit/ports
   :std/format :std/getopt :std/misc/list :std/misc/ports :std/srfi/13 :std/sugar :std/pregexp
-  :clan/base :clan/basic-parsers :clan/files
+  :std/text/basic-parsers
+  :clan/base :clan/files
   :clan/multicall :clan/path :clan/source :clan/timestamp)
 
 ;; Initialize paths from the environment
@@ -113,7 +114,7 @@
     (call-with-input-process
      [path: "git" arguments: ["show" "-s" "--pretty=format:%ct" latest-commit-hash]
             directory: source-dir show-console: #f]
-     expect-natural))
+     (cut parse-port parse-natural <> "git output" 'commit-unix-time)))
 
   (def package-date (string<-unix-time commit-unix-time "~Y-~m-~d"))
   (def package-version (if stable package-date (string-append "unstable-" package-date)))
@@ -145,7 +146,7 @@
          (pregexp-string-replacer " git-version = \"" "[-.0-9A-Za-z]+" "\";" git-version)
          (pregexp-string-replacer " stampYmd = " "[0-9]+" ";" package-ymd)
          (pregexp-string-replacer " stampHms = " "[0-9]+" ";" package-hms)
-         (pregexp-string-replacer "    rev = \"" "[0-9a-f]+" "\";" latest-commit-hash)])...
+         (pregexp-string-replacer "  rev = \"" "[0-9a-f]+" "\";" latest-commit-hash)])...
       (pregexp-string-replacer "    owner = \"" "[-.0-9A-Za-z]+" "\";" owner)
       (pregexp-string-replacer "    repo = \"" "[-.0-9A-Za-z]+" "\";" repo-name)
       (pregexp-string-replacer "    sha256 = \"" "[0-9a-zA-Z+/=-]+" "\";" nix-source-hash)])))

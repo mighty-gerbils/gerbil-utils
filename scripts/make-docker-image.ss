@@ -60,8 +60,8 @@
 (def extra-packages
   (map stringify
     '(stdenv
-      openssl openssl.dev openssl.bin libressl libressl.dev libressl.man
-      curl.dev curl.man nghttp2 nghttp2.bin nghttp2.lib nghttp2.dev
+      openssl.out openssl.dev openssl.bin libressl libressl.dev libressl.man
+      curl.dev curl.man nghttp2 nghttp2.lib nghttp2.dev
       bashInteractive.dev bashInteractive.man
       libssh2 libssh2.dev libkrb5 libkrb5.dev
       zsh.man attr.man gnumake.man xz.man openssl.man
@@ -190,7 +190,7 @@
                             "for i in" (map path-strip-directory dependencies) ... ";"
                             "do [ -x /nix/store/$i ] || cp -a $i /nix/store/ ; done"]))
            (if (null? install) ""
-               (space-join ["nix-env -i" install ...]))
+               (space-join ["nix-env --show-trace -i" install ...]))
            commands))
   tag)
 

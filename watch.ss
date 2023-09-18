@@ -26,8 +26,8 @@
 (import
   :gerbil/gambit/ports :gerbil/gambit/threads
   :std/actor :std/format :std/logger :std/misc/list :std/misc/ports :std/misc/process
-  :std/pregexp :std/srfi/13 :std/sugar
-  ./base ./basic-parsers ./timestamp ./ffi ./files ./json ./list ./logger ./path-config)
+  :std/pregexp :std/srfi/13 :std/sugar :std/text/basic-parsers
+  ./base ./timestamp ./ffi ./files ./json ./list ./logger ./path-config)
 
 ;; Class Daemon-Status-Register
 (defclass daemon-status-register ())
@@ -128,9 +128,9 @@
    (and port)
    (with-list-builder (c))
    (let loop ()
-     (expect-and-skip-any-whitespace port))
+     (parse-and-skip-any-whitespace port))
    (unless (eof-object? (peek-char port))
-     (c (expect-natural port))
+     (c (parse-natural port))
      (loop))))
 
 ;; TODO: make it portable beyond Linux. At least make it error out outside Linux.

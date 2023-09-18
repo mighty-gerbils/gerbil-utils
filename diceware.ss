@@ -9,8 +9,10 @@
 
 (import
   :gerbil/gambit/random
-  :std/assert :std/format :std/iter :std/misc/list :std/misc/ports :std/pregexp :std/srfi/13 :std/sugar
-  ./base ./basic-parsers ./basic-printers ./basic-parsers ./number ./random)
+  :std/assert :std/format :std/iter :std/misc/list :std/misc/ports
+  :std/pregexp :std/srfi/13 :std/sugar
+  :std/text/basic-parsers
+  ./base ./basic-printers ./number ./random)
 
 (def diceware-file (getenv "DICEWARE_FILE" #f))
 
@@ -33,7 +35,8 @@
 ;; return the index for an entry in a diceware dictionary.
 ;; : Integer <- String
 (def (diceware-index<-string string)
-  (call-with-input-string (string-map (cut char+ <> -1) string) (cut expect-natural <> 6)))
+  (parse-string (cut parse-natural <> 6)
+                (string-map (cut char+ <> -1) string)))
 
 ;; Given an index in a diceware dictionary and the number of dice for the dictionary,
 ;; return the index for the entry as a string of dice numbers from 1 to 6.

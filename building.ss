@@ -4,9 +4,10 @@
 (import
   :gerbil/gambit/misc :gerbil/gambit/os :gerbil/gambit/system
   :std/format :std/getopt :std/iter :std/make
-  :std/misc/list :std/misc/ports :std/misc/string :std/misc/process
+  :std/misc/list :std/misc/ports :std/misc/process :std/misc/string
   :std/pregexp :std/srfi/1 :std/srfi/13 :std/sugar
-  ./exit ./filesystem ./git-fu ./multicall ./path ./path-config ./ports ./source ./versioning ./with-id)
+  ./exit ./filesystem ./git-fu ./multicall ./nix-fu
+  ./path ./path-config ./ports ./source ./versioning)
 
 (def (all-gerbil-modules exclude: (exclude '("main.ss"))
                          exclude-dirs: (exclude-dirs '("run" "t" ".git" "_darcs")))
@@ -63,9 +64,6 @@
   (match (shell-command cmd #t)
     ([ret . path] (and (zero? ret) (string-trim-eol path)))))
 (def (which? cmd) ($ (string-append "which " cmd)))
-
-(def (gerbil-is-nix?)
-  (string-prefix? "/nix/store/" _gx#gerbil-libdir))
 
 (def (pkg-config-options pkg-config-libs nix-deps)
   ;; If running a nix gxi from outside a nix build, we'll query nix-shell for pkg-config information

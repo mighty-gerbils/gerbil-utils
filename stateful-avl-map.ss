@@ -5,7 +5,7 @@
 (export #t)
 
 (import
-  :std/iter :std/misc/list :std/misc/repr :std/sugar
+  :std/iter :std/misc/list :std/misc/repr :std/sugar :std/values
   ./base ./generator)
 
 ;; NB: this field order makes the representation naturally sorted.

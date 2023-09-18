@@ -2,8 +2,8 @@
 
 (export #t)
 (import
-  :std/assert :std/misc/list :std/pregexp :std/srfi/13 :std/sugar
-  ./base ./basic-parsers ./order ./pred)
+  :std/assert :std/misc/list :std/pregexp :std/srfi/13 :std/sugar :std/values :std/text/char-set
+  ./base ./order ./pred)
 
 (def (valid-rpm-version-component? string start: (start 0) end: (end (string-length string)))
   (and

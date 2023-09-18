@@ -16,34 +16,6 @@
 (def (list-map list fun)
   (map fun list))
 
-;; : (List (List X)) <- Nat (List X)
-(def (group-by n list)
-  (cond
-   ((null? list) [])
-   ((length<=n? list n) [list])
-   (else (let-values (((head tail) (split-at list n))) (cons head (group-by n tail))))))
-
-;; Given a list l of X, a key function f from X to Y, and a presumably empty table of Y to a list of X
-;; (by default an empty hash-table), add the elements in l to t, then return the list for each added
-;; key y in t of the list of elements xs with that same key y (for the equality predicate of t).
-;; Otherwise preserve the order of appearance of keys and elements for each key.
-;; : (List (List X)) <- (List X) (Fun Y <- X) ? (Table (List X) <- Y)
-(def (grouping l f (t (make-hash-table)))
-  (def ys (with-list-builder (c)
-            (for-each! l
-              (lambda (x)
-                (def y (f x))
-                (def p (hash-get t y))
-                (if p
-                  (hash-put! t y (cons x p))
-                  (begin
-                    (hash-put! t y (list x))
-                    (c y)))))))
-  (map (lambda (y) (reverse (hash-get t y))) ys))
-
-;; : (Cons C B) <- (C <- A) (Cons A B)
-(def (map/car f x) (match x ([a . b] [(f a) . b])))
-
 ;; Given a predicate, a list and a value to return in the special case that the list is empty,
 ;; return the special case if the list is empty, otherwise, the smallest element in the list,
 ;; where the predicate returns true when its first argument is smaller than its second argument.

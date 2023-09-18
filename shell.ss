@@ -4,8 +4,8 @@
 (export #t)
 
 (import
-  :std/srfi/13
-  ./base ./basic-parsers ./syntax)
+  :std/srfi/13 :std/stxutil :std/text/char-set
+  ./base)
 
 (def (easy-shell-character? x)
   (or (char-ascii-alphanumeric? x) (string-index "%+,-./:=@^_~" x)))
