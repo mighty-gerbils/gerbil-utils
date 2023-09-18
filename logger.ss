@@ -95,9 +95,8 @@
 ;; Read from a log port a log entry as a cons of a timestamp and
 ;; (skipping leading whitespace) a string containing the rest of the line.
 ;; : (Pair Integer String) <- Port
-(def (read-log-entry port)
+(def (parse-log-entry reader)
   ;; TODO: gracefully handle bad input
-  (def reader (PeekableStringReader (raw-port port)))
   (def timestamp (parse-timestamp reader))
   (def line (parse-line reader))
   (cons timestamp line))
@@ -105,8 +104,9 @@
 ;; Call a function on each entry in a log file
 ;; : <- Port (<- (Pair Integer String))
 (def (for-each-port-log-entry! port fun)
-  (until (char-port-eof? port)
-    (fun (read-log-entry port))))
+  (def reader (PeekableStringReader (raw-port port)))
+  (until (string-reader-eof? reader)
+    (fun (parse-log-entry reader))))
 
 ;; Return the list of all entries in a log file port
 ;; : (List (Pair Integer String)) <- Port
