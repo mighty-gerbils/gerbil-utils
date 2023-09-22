@@ -161,21 +161,6 @@
 
 ;;;; Basic error cases
 
-(defsyntax (exception-context stx)
-  (syntax-case stx ()
-    ((macro)
-     #'(exception-context macro))
-    ((_ here)
-     (with-syntax ((where
-                    (cond
-                     ((or (AST-source #'here)
-                          (AST-source stx))
-                      => (lambda (locat)
-                           (call-with-output-string "" (cut ##display-locat locat #t <>))))
-                     (else
-                      (expander-context-id (core-context-top))))))
-       #'(quote where)))))
-
 ;; Use Undefined where the language requires you to cover a case that is actually
 ;; not defined and cannot possibly be observed by end-users.
 ;; A typical use is for unimplemented methods of abstract classes.
