@@ -5,7 +5,7 @@
   #t)
 
 (import
-  :gerbil/gambit/random
+  :gerbil/gambit
   :std/misc/list :std/misc/number :std/srfi/1 :std/sugar
   ./base)
 

@@ -3,7 +3,7 @@
   output-contents force-current-outputs writeln call-with-output with-output call-with-input with-input)
 
 (import
-  :gerbil/gambit/ports
+  :gerbil/gambit
   (only-in :std/misc/ports ;; import the symbols to reexport
            output-contents force-current-outputs writeln
            call-with-output with-output call-with-input with-input))

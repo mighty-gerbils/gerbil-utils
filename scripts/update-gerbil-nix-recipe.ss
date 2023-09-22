@@ -6,7 +6,7 @@
 ;; and properly edit their messages, based on what was or wasn't already upstreamed.
 
 (import
-  :gerbil/gambit/exceptions :gerbil/gambit/ports
+  :gerbil/gambit
   :std/format :std/getopt :std/misc/list :std/misc/ports :std/srfi/13 :std/sugar :std/pregexp
   :std/text/basic-parsers
   :clan/base :clan/files
@@ -263,7 +263,7 @@
    (unless gerbil-off
      (update-recipe
       name: "gerbil"
-      repo: (or gerbil-repo "vyzo/gerbil")
+      repo: (or gerbil-repo "mighty-gerbils/gerbil")
       recipe-path: (recipe-path "gerbil" (if stable "default" "unstable"))
       checkouts-dir: checkouts-dir
       source-dir: gerbil-dir

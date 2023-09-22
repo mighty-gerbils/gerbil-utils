@@ -1,12 +1,12 @@
 (export json-test)
 
 (import
-  :gerbil/gambit/bytes :gerbil/gambit/exceptions
+  :gerbil/gambit
   :std/error :std/srfi/1 :std/sugar :std/text/hex :std/text/json :std/test :std/misc/walist
   :std/text/json/util
   ../base ../json)
 
-(defstruct (json-rpc-error <Exception>)
+(defstruct json-rpc-error
   (code    ;; SInt16
    message ;; String
    data)   ;; (Maybe Bytes)

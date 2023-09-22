@@ -53,8 +53,7 @@
 
 (import
   (for-syntax :std/stxutil)
-  :gerbil/gambit/bytes
-  :scheme/base-ports
+  :gerbil/gambit
   :std/assert :std/error :std/iter :std/misc/list :std/srfi/1 :std/srfi/43 :std/stxparam :std/sugar
   ./bytestring)
 

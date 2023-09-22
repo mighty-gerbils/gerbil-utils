@@ -8,11 +8,12 @@
 (export #t)
 
 (import
-  :gerbil/gambit/random
-  :std/assert :std/format :std/iter :std/misc/list :std/misc/ports
+  :gerbil/gambit
+  :std/assert :std/format :std/iter
+  :std/misc/list :std/misc/number :std/misc/ports
   :std/pregexp :std/srfi/13 :std/sugar
-  :std/text/basic-parsers
-  ./base ./basic-printers ./number ./random)
+  :std/text/basic-parsers :std/text/basic-printers
+  ./base ./random)
 
 (def diceware-file (getenv "DICEWARE_FILE" #f))
 
@@ -45,7 +46,7 @@
   ;; (assert! (< -1 index (expt 6 n-dice)))
   (!> index
       (cut + <> (expt 6 n-dice)) ;; add a 1 in front to ensure leading 0s
-      (cut string<-integer-base <> 6) ;; convert to base 6
+      (cut display-integer/base <> 6 #f) ;; convert to base 6
       (cut string-drop <> 1) ;; drop the 1 in front from two steps ago
       (cut string-map (cut char+ <> +1) <>))) ;; add 1 to each digit
 

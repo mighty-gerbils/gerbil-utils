@@ -4,7 +4,8 @@
 (export #t)
 (import (only-in :std/sugar defrule)
         :std/error
-        (for-syntax :std/misc/repr))
+        (for-syntax :std/misc/repr)
+        (for-syntax :gerbil/expander))
 
 ;;;; Basic syntax for control flow
 
@@ -160,12 +161,20 @@
 
 ;;;; Basic error cases
 
-;; This is NOT the root of all exception, even less of the system's exceptions,
-;; only of exceptions defined in gerbil-utils and programs above it.
-;; As opposed to std/exception#exception it is transparent, which means that
-;; if you (raise e) where e is an Exception, you can compare it with equal?,
-;; which you can't do with any subclass of std/exception#exception.
-(defstruct <Exception> () transparent: #t)
+(defsyntax (exception-context stx)
+  (syntax-case stx ()
+    ((macro)
+     #'(exception-context macro))
+    ((_ here)
+     (with-syntax ((where
+                    (cond
+                     ((or (AST-source #'here)
+                          (AST-source stx))
+                      => (lambda (locat)
+                           (call-with-output-string "" (cut ##display-locat locat #t <>))))
+                     (else
+                      (expander-context-id (core-context-top))))))
+       #'(quote where)))))
 
 ;; Use Undefined where the language requires you to cover a case that is actually
 ;; not defined and cannot possibly be observed by end-users.
@@ -173,19 +182,30 @@
 ;; NB: IF THIS IS EVER VISIBLE TO END-USERS during normal operation of an application,
 ;; this is an implementation error and YOU LOSE.
 ;; Any <- Any ...
-(defstruct (Undefined <Exception>) (args) transparent: #t)
-(def (undefined . args) (raise (Undefined args)))
+(deferror-class Undefined ())
+(defrules undefined ()
+  ((_ . args)
+   (raise (Undefined where: (exception-context args) irritants: (list . args) message: "undefined")))
+  (_ undefined_))
+(def (undefined_ . args) (undefined args))
 
-(defstruct (Invalid <Exception>) (args) transparent: #t)
-(def (invalid . args) (raise (Invalid args)))
-
+(defclass (Invalid Exception) (args) transparent: #t)
+(defrules invalid ()
+  ((_ . args)
+   (raise (Invalid where: (exception-context args) irritants: (list . args) message: "invalid")))
+  (_ undefined_))
+(def (invalid_ . args) (invalid args))
 
 ;; Use NIY when you need a TEMPORARY filler for code that MUST be implemented
 ;; BEFORE release, probably even before your branch is merged into production
 ;; code. IF THIS CODE APPEARS IN PRODUCTION, YOU LOSE.
 ;; Any <- Any ...
-(defstruct (NotImplementedYet <Exception>) (args) transparent: #t)
-(def (NIY . args) (raise (NotImplementedYet args)))
+(defclass (NotImplementedYet Exception) (args) transparent: #t)
+(defrules NIY ()
+  ((_ . args)
+   (raise (NotImplementedYet where: (exception-context args) irritants: (list . args) message: "Not Implemented Yet")))
+  (_ not-implemented-yet))
+(def (not-implemented-yet . args) (NIY args))
 
 
 ;;;; Basic types

@@ -56,7 +56,6 @@
 (export #t)
 
 (import
-  :gerbil/gambit/threads
   :std/actor :std/coroutine :std/iter
   :std/misc/list :std/misc/number :std/misc/pqueue :std/misc/queue :std/sugar
   ./base ./list ./peekable-iterator ./vector)
@@ -70,7 +69,7 @@
 
 ;; The empty generating function and default failure continuation for generating functions,
 ;; that only generates eof.
-;; type Eof = (<Exception> '#!eof)
+;; type Eof = (Exception '#!eof)
 ;; _ ... <-[Eof] _ ...
 (def eof! (keep-raising #!eof))
 

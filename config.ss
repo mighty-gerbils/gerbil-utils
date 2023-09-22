@@ -5,7 +5,7 @@
 
 (import
   :std/iter :std/sugar
-  :gerbil/gambit/os
+  :gerbil/gambit
   :std/srfi/1 :std/srfi/13
   ./base ./path)
 

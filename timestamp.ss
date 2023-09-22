@@ -5,10 +5,11 @@
 (export #t)
 
 (import
-  :gerbil/gambit/exact :gerbil/gambit/threads
-  :scheme/base
+  :gerbil/gambit
+  :std/srfi/141
+  :std/misc/number
   :std/assert :std/format :std/misc/number :std/srfi/19 :std/sugar :std/text/basic-parsers
-  ./base ./number)
+  ./base)
 
 ;; We deal with several time representations:
 ;;

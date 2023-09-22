@@ -1,7 +1,7 @@
 (export #t (for-syntax #t))
 (import
   (for-syntax :std/iter :std/srfi/1)
-  :gerbil/gambit/bytes
+  :gerbil/gambit
   <expander-runtime> :gerbil/expander :std/misc/ports :std/sugar :std/text/hex
   ./path)
 

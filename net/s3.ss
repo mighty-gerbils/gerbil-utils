@@ -7,7 +7,7 @@
 (export #t)
 
 (import
-  :gerbil/gambit/ports
+  :gerbil/gambit
   :std/io :std/misc/ports :std/misc/process :std/text/basic-parsers
   ../base ../timestamp)
 

@@ -4,7 +4,7 @@
 (export #t)
 
 (import
-  :gerbil/gambit/continuations :gerbil/gambit/exceptions :gerbil/gambit/ports :gerbil/gambit/threads
+  :gerbil/gambit
   :std/format :std/misc/list :std/misc/repr :std/sugar
   ./base ./exception ./ports ./versioning)
 

@@ -1,13 +1,10 @@
 (export symdict-test)
 
 (import :std/test
-        :gerbil/gambit/exceptions
+        :std/error
+        :clan/testing
         ../symdict
         ../assq)
-
-(def (error-with-message? message)
-  (lambda (e)
-    (and (error-exception? e) (equal? (error-exception-message e) message))))
 
 (def symdict-test
   (test-suite "test suite for pure/dict/symdict"

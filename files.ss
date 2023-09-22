@@ -5,7 +5,7 @@
   #t)
 
 (import
-  :gerbil/gambit/bytes :gerbil/gambit/ports :gerbil/gambit/random
+  :gerbil/gambit
   :std/format :std/misc/ports :std/sugar :std/pregexp
   ./base ./path ./ports ./temporary-files)
 

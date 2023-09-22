@@ -6,21 +6,21 @@
   thunk-with-logged-exceptions)
 
 (import
-  :gerbil/gambit/continuations :gerbil/gambit/exceptions :gerbil/gambit/threads
+  :gerbil/gambit
+  :std/error
   :std/format :std/misc/repr :std/sugar
   ./base)
 
-;; String <- <Exception>
+;; String <- Any
 (def (string<-exception e)
   (cond
-   ((exception? e) (call-with-output-string (cut display-exception e <>)))
+   ((Exception? e) (call-with-output-string (cut display-exception e <>)))
    ((string? e) e)
-   ((<Exception>? e) (repr e))
    (else (repr e))))
 
 ;; The exception and continuation are valid for use with display-exception-in-context
 ;; and display-continuation-backtrace
-;; with-catch/cont : [<Exception> Continuation -> A] [-> A] -> A
+;; with-catch/cont : [Exception Continuation -> A] [-> A] -> A
 (def (with-catch/cont handler thunk)
   (let/esc outside
     (def E (current-exception-handler))
@@ -49,13 +49,3 @@
 
 ;; TODO: for end-user reporting, use error contexts as ported from quux or cl-scripting.
 ;; Maybe also port that to Gerbil main, and use it in std/test ?
-
-(define error-exception::type
-  (object-type (with-catch identity (cut error "foo"))))
-
-(bind-method! error-exception::type ':wr
-  (lambda (obj we)
-    (##default-wr we obj)
-    (##wr-str we " #;")
-    (##wr we (cons* 'error (error-exception-message obj) (error-exception-parameters obj))))
-  #t)

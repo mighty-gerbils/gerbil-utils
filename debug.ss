@@ -6,7 +6,7 @@
 
 (import
   (for-syntax ./syntax :std/misc/repr)
-  :gerbil/gambit/ports :gerbil/gambit/threads
+  :gerbil/gambit
   :std/format :std/misc/repr :std/sugar
   ./base ./concurrency)
 

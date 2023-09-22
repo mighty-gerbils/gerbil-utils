@@ -1,6 +1,6 @@
 (export #t)
 
-(import :gerbil/gambit/ports)
+(import :gerbil/gambit)
 
 ;; Lexicographically compare two lists of using the function element<? to compare elements.
 ;; element<? is a strict total order; the resulting order on X and Y will also be strict."

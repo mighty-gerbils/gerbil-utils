@@ -5,7 +5,7 @@
 (export #t)
 
 (import
-  :gerbil/gambit/exceptions :gerbil/gambit/ports
+  :gerbil/gambit
   :std/crypto/digest :std/format :std/getopt :std/iter :std/misc/list
   :std/misc/ports :std/misc/process :std/misc/string
   :std/pregexp :std/sort :std/srfi/1 :std/srfi/13 :std/sugar :std/text/hex

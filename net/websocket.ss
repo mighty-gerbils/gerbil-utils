@@ -5,10 +5,7 @@
 #| TODO: port this to the newest gerbil, write a server and write tests.
 And/or implement QUIC instead.
 
-(import :gerbil/gambit/threads
-        :gerbil/gambit/ports
-        :gerbil/gambit/os
-        :gerbil/gambit/bits
+(import :gerbil/gambit
         :std/srfi/13
         :std/actor
         :std/error

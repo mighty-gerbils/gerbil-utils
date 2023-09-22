@@ -8,8 +8,9 @@
         try-tcp-connect
         tcp-connect/retry)
 
-(import :gerbil/gambit/exceptions :gerbil/gambit/ports :gerbil/gambit/threads
-        (only-in :scheme/base-ports u8-ready?)
+(import :gerbil/gambit
+        :std/error
+        (only-in :scheme/base u8-ready?)
         :std/format :std/pregexp :std/sugar
         :clan/base
         (only-in :clan/concurrency retry/function)

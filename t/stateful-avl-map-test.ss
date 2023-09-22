@@ -2,8 +2,8 @@
 (export #t)
 
 (import
-  :std/iter :std/misc/list :std/sort :std/srfi/1 :std/test
-  ../base ../generator ../list ../number ../random ../roman ../stateful-avl-map)
+  :std/iter :std/misc/list :std/misc/number :std/sort :std/srfi/1 :std/test
+  ../base ../generator ../list ../random ../roman ../stateful-avl-map)
 
 ;; NB: these functions assume no repeated / shadowed keys in alist-s, which is the case in these tests.
 (def N number-comparer)

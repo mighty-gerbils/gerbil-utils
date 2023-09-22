@@ -4,8 +4,7 @@
 (export (except-out #t errorf warnf infof debugf verbosef))
 
 (import
-  :gerbil/gambit/bytes :gerbil/gambit/continuations
-  :gerbil/gambit/random :gerbil/gambit/threads
+  :gerbil/gambit
   :std/actor :std/assert :std/error :std/format :std/logger
   :std/misc/bytes :std/misc/completion :std/misc/list :std/misc/repr :std/sugar
   ./base ./error ./exception)
@@ -110,11 +109,8 @@
 
 ;;;; Race
 
-;; Error raised when an exception was expected but a non-exceptional value was raised instead.
-(defstruct (not-an-exception-error <Exception>) (value) transparent: #t)
-
 ;; Error raised when a shutdown message was received and no handler was found.
-(defstruct (shutdown-error <Exception>) () transparent: #t)
+(deferror-class ShutdownError ())
 
 ;;;; Race between multiple forms, whereby the first to finish wins.
 ;; Forms may call a function to tell whether to shutdown yet (because someone else
@@ -152,7 +148,7 @@
                 (!ok arguments))
                (!shutdown
                 (shutdown!)
-                (!error (make-shutdown-error)))))))))))
+                (!error (ShutdownError)))))))))))
 
 ;; Parallel version of map
 (def (parallel-map f . ls)

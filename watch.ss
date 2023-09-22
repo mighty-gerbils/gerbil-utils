@@ -24,7 +24,7 @@
 (export #t)
 
 (import
-  :gerbil/gambit/ports :gerbil/gambit/threads
+  :gerbil/gambit
   :std/actor :std/format :std/logger :std/misc/list :std/misc/ports :std/misc/process
   :std/pregexp :std/srfi/13 :std/sugar :std/text/basic-parsers
   ./base ./timestamp ./ffi ./files ./json ./list ./logger ./path-config)

@@ -1,12 +1,14 @@
 (export dicteq-test)
 
 (import :std/test
-        :gerbil/gambit/exceptions
-        ../dicteq ../assq)
+        :std/error
+        :clan/testing
+        ../assq
+        ../dicteq)
 
 (def (error-with-message? message)
   (lambda (e)
-    (and (error-exception? e) (equal? (error-exception-message e) message))))
+    (and (Error? e) (equal? (Error-message e) message))))
 
 (def dicteq-test
   (test-suite "test suite for pure/dict/dicteq"

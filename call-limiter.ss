@@ -20,11 +20,10 @@
   call-limiter-loop)
 
 (import
-  :gerbil/gambit/threads
   :std/actor :std/format :std/getopt :std/logger
   :std/misc/list :std/misc/number :std/misc/pqueue :std/sort
   :std/srfi/1 :std/srfi/19 :std/sugar
-  ./base ./concurrency ./error ./timestamp ./multicall ./number)
+  ./base ./concurrency ./error ./timestamp ./multicall)
 
 (deflogger clan)
 

@@ -5,7 +5,7 @@
 (export (except-out #t errorf warnf infof debugf verbosef))
 
 (import
-  :gerbil/gambit/exceptions :gerbil/gambit/os
+  :gerbil/gambit
   :std/error :std/format :std/logger
   ./base ./exception)
 

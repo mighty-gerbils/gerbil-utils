@@ -9,7 +9,7 @@
 ;; NB: For bootstrapping reasons, version.ss depends on this and many things may depend on version.ss,
 ;; so we make sure we don't depend on anything in clan.
 (import
-  :gerbil/gambit/system
+  :gerbil/gambit
   :std/format :std/iter :std/misc/list :std/misc/ports
   :std/misc/process :std/misc/string :std/pregexp :std/srfi/1)
 (extern namespace: #f gerbil-greeting)

@@ -11,7 +11,8 @@
   )
 
 (import
-  :gerbil/gambit/exceptions :gerbil/gambit/ports
+  :gerbil/gambit
+  :std/error
   :std/sugar
   ;; :std/os/error ; for commented out make-temporary-file
   ./base ./random)
@@ -26,7 +27,7 @@
   (and (os-exception? e)
        (or (and file-exists-exception-code
                 (eqv? file-exists-exception-code (os-exception-code e)))
-           (and (equal? "File exists" (err-code->string (os-exception-code e)))
+           (and (equal? "File exists" (##os-err-code->string (os-exception-code e)))
                 (begin (set! file-exists-exception-code (os-exception-code e)) #f)))))
 
 (def (make-temporary-file-template

@@ -1,7 +1,7 @@
 
 (export tcp-integrationtest)
 
-(import :gerbil/gambit/ports :gerbil/gambit/threads
+(import :gerbil/gambit
         :std/iter :std/sugar :std/test :std/text/json
         :clan/concurrency :clan/json :clan/timestamp
         ../tcp)

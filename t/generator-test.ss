@@ -2,7 +2,6 @@
 (export generator-test)
 
 (import
-  :gerbil/gambit/exceptions
   :std/sort :std/test :std/values
   ../base ../generator ../list ../vector)
 

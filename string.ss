@@ -2,7 +2,7 @@
 (export #t)
 
 (import
-  :gerbil/gambit/ports
+  :gerbil/gambit
   :std/iter :std/misc/number :std/srfi/13 :std/text/char-set
   ./list)
 

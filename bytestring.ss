@@ -2,9 +2,8 @@
 (export #t)
 
 (import
-  :gerbil/gambit/bytes
-  :scheme/base-ports
-  :std/assert :std/iter :std/misc/list :std/srfi/43 :std/sugar)
+  :gerbil/gambit
+  :std/assert :std/error :std/iter :std/misc/list :std/srfi/43 :std/sugar)
 
 (def (byte? x)
   (and (fixnum? x) (<= 0 x 255)))

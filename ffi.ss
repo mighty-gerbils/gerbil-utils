@@ -11,7 +11,7 @@
 (export #t)
 
 (import
-  :gerbil/gambit/exceptions :gerbil/gambit/ports
+  :gerbil/gambit
   :std/misc/process :std/sugar
   ./base)
 

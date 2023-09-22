@@ -4,7 +4,6 @@
 (export #t)
 
 (import
-  :gerbil/gambit/exceptions
   :std/format :std/getopt :std/logger :std/iter
   :std/misc/list :std/misc/process :std/srfi/1 :std/sugar
   :clan/base :clan/error :clan/list
@@ -51,8 +50,8 @@
    (catch (getopt-error? exn)
      (getopt-display-help exn "random-run" (current-error-port))
      (exit 1))
-   (catch (uncaught-exception? exn)
-     (display-exception (uncaught-exception-reason exn) (current-error-port))
+   (catch (exn)
+     (display-exception exn (current-error-port))
      (exit 1))))
 
 (def main random-run)

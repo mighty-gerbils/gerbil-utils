@@ -2,7 +2,7 @@
 (export #t)
 
 (import
-  :gerbil/gambit/misc :gerbil/gambit/os :gerbil/gambit/system
+  :gerbil/gambit
   :std/format :std/getopt :std/iter :std/make
   :std/misc/list :std/misc/ports :std/misc/process :std/misc/string
   :std/pregexp :std/srfi/1 :std/srfi/13 :std/sugar

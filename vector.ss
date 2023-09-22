@@ -4,8 +4,8 @@
 (export #t)
 
 (import
-  :std/iter :std/misc/list :std/sugar
-  ./base ./list ./number)
+  :std/iter :std/misc/list :std/misc/number :std/sugar
+  ./base ./list)
 
 ;;; Assuming a sorted vector, a predicate on vector elements that is "increasing",
 ;;; i.e. if true, true on all subsequent elements, and optionally

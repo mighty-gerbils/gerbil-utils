@@ -4,11 +4,11 @@
 (export #t)
 
 (import
-  :gerbil/gambit/exact
-  :scheme/base-impl :scheme/char :std/parser/base
+  :gerbil/gambit
+  :std/srfi/141 :scheme/char :std/parser/base
   :std/assert :std/error :std/misc/list :std/misc/number :std/misc/string :std/srfi/13 :std/sugar
-  :std/io :std/text/basic-parsers
-  ./base ./files ./number)
+  :std/io :std/text/basic-parsers :std/text/basic-printers
+  ./base ./files)
 
 (def (parse-srt-time-offset reader)
   (def hours ((parse-n-digits 2) reader))

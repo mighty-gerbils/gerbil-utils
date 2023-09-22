@@ -3,7 +3,7 @@
 (export #t)
 
 (import
-  :gerbil/gambit/exact)
+  :gerbil/gambit)
 
 ;; Convert one digit to a roman numeral, given strings for one unit, five units and ten units.
 (def (roman-numeral<-digit digit (i "I") (v "V") (x "X"))

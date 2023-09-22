@@ -4,7 +4,7 @@
 (export #t)
 
 (import
-  :gerbil/gambit/bits :gerbil/gambit/bytes :gerbil/gambit/exceptions :gerbil/gambit/os :gerbil/gambit/ports
+  :gerbil/gambit
   :std/misc/list :std/pregexp :std/srfi/1 :std/sugar
   ./base ./list ./path)
 

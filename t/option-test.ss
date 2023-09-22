@@ -1,8 +1,8 @@
 (export option-test)
 
 (import
-  :gerbil/gambit/exceptions
   :std/test
+  :std/error
   ./test-support
   ../option)
 
@@ -10,7 +10,7 @@
   (test-suite "test suite for clan/option"
     (test-case "test option-ref"
       (check-equal? (option-ref (some 1)) 1)
-      (check-equal? (with-catch error-exception-message (cut option-ref #f)) "no value")
+      (check-equal? (with-catch Error-message (cut option-ref #f)) "no value")
       (check-equal? (option-ref (some 5)) 5))
     (test-case "test option-get"
       (check-equal? (option-get (some 1)) 1)

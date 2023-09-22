@@ -1,7 +1,7 @@
 (export #t)
 
 (import
-  :gerbil/gambit/bytes
+  :gerbil/gambit
   :std/iter)
 
 (def (bytes-reverse b)

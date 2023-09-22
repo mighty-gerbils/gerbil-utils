@@ -6,7 +6,7 @@
 
 (export #t)
 
-(import :gerbil/gambit/bits :std/iter)
+(import :gerbil/gambit :std/iter)
 
 ;; Generic exponentiation. TODO: move to a module about monoids?
 (def (generic-expt composer function iterations seed)

@@ -4,7 +4,6 @@
 (export #t)
 
 (import
-  :gerbil/gambit/threads
   :std/misc/hash
   ./base ./assert)
 

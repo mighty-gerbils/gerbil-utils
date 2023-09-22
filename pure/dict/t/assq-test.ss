@@ -1,12 +1,9 @@
 (export assq-test)
 
 (import :std/test
-        :gerbil/gambit/exceptions
+        :std/error
+        :clan/testing
         ../assq)
-
-(def (error-with-message? message)
-  (lambda (e)
-    (and (error-exception? e) (equal? (error-exception-message e) message))))
 
 (def assq-test
   (test-suite "test suite for pure/dict/assq"

@@ -1,7 +1,6 @@
 (export timestamp-test)
 
 (import
-  :gerbil/gambit/exceptions
   :std/misc/number :std/test
   ../base ../timestamp)
 

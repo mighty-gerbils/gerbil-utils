@@ -3,7 +3,7 @@
 (export #t)
 
 (import
-  :gerbil/gambit/ports
+  :gerbil/gambit
   :std/format :std/iter
   :std/misc/list :std/misc/ports :std/misc/process :std/misc/string
   :std/net/request

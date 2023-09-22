@@ -1,8 +1,8 @@
 (export maybe-test)
 
 (import
-  :gerbil/gambit/exceptions
   :std/test
+  :std/error
   ./test-support
   ../option ../maybe)
 
@@ -18,7 +18,7 @@
                    [(some #f) #f]]))
     (test-case "test maybe-ref"
       (check-equal? (maybe-ref 1) 1)
-      (check-equal? (with-catch error-exception-message (cut maybe-ref (void))) "no value")
+      (check-equal? (with-catch Error-message (cut maybe-ref (void))) "no value")
       (check-equal? (maybe-ref (some 5)) (some 5)))
     (test-case "test maybe-get"
       (check-equal? (maybe-get 1) 1)

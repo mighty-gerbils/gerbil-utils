@@ -8,7 +8,7 @@
   end? peek next! fini!)
 
 (import
-  :gerbil/gambit/threads
+  :gerbil/gambit
   :std/coroutine :std/generic :std/iter :std/sugar
   ./base)
 

@@ -5,7 +5,7 @@
 (export (except-out #t errorf warnf infof debugf verbosef))
 
 (import
-  :gerbil/gambit/ports
+  :gerbil/gambit
   :std/format :std/io :std/misc/list :std/logger :std/misc/number :std/misc/process :std/misc/sync
   :std/srfi/13 :std/sugar :std/text/json :std/text/basic-parsers :std/misc/ports
   ./base ./concurrency ./timestamp ./filesystem ./generator

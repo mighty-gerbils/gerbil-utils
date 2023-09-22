@@ -8,10 +8,20 @@
 (export #t)
 
 (import
-  :gerbil/gambit/random
+  :gerbil/gambit
   :gerbil/expander
-  :std/format :std/getopt :std/iter :std/misc/process :std/misc/repr
-  :std/sort :std/stxutil :std/sugar :std/test :std/text/hex
+  :std/error
+  :std/format
+  :std/getopt
+  :std/iter
+  :std/misc/bytes
+  :std/misc/process
+  :std/misc/repr
+  :std/sort
+  :std/stxutil
+  :std/sugar
+  :std/test
+  :std/text/hex
   ./base ./exit ./filesystem ./git-fu ./io ./multicall
   ./path ./path-config ./ports ./source ./versioning)
 
@@ -113,12 +123,12 @@
 
 (def (0x<-random-source (rs default-random-source))
   (def (bytes<-6u32 l)
-    (call-with-output-u8vector (lambda (port) (for-each (lambda (x) (write-integer-bytes x 4 port)) l))))
+    (call-with-output-u8vector (lambda (port) (for-each (lambda (x) (write-nat-u8vector x 4 port)) l))))
   (!> rs random-source-state-ref vector->list bytes<-6u32 hex-encode))
 
 (def (random-source<-0x! 0x (rs default-random-source))
   (def (6u32<-bytes b) (call-with-input-u8vector
-                        b (lambda (port) (for/collect (_ (in-range 6)) (read-integer-bytes 4 port)))))
+                        b (lambda (port) (for/collect (_ (in-range 6)) (read-nat-u8vector 4 port)))))
   (!> 0x hex-decode 6u32<-bytes list->vector (cut random-source-state-set! rs <>)))
 
 ;; Call this function at the beginning of any test involving randomness.
@@ -136,3 +146,7 @@
   (def up-to-date? (git-up-to-date-with-branch?))
   (printf "Checkout~a up-to-date with branch ~a\n" (if up-to-date? "" " not") (git-origin-branch))
   (silent-exit up-to-date?))
+
+(def (error-with-message? message)
+  (lambda (e)
+    (and (Error? e) (equal? (Error-message e) message))))
