@@ -31,7 +31,7 @@
 
 (def (path-is-script? x)
   (and (path-is-executable-file? x)
-  (ignore-errors (equal? #u8(35 33) #| #! |# (call-with-input-file x (cut read-bytes 2 <>))))))
+  (ignore-errors (equal? #u8(35 33) #| #! |# (call-with-input-file x (cut read-u8vector 2 <>))))))
 
 ;; Given a path to a file that exists on the filesystem, return
 ;; a normalized absolute or relative path to it, whichever is shortest

@@ -75,7 +75,7 @@
 ;; supposing the first byte is compared signed and the rest unsigned.
 ;; : Int <- In
 (def (read-varint in)
-  (let ((x (read-byte in)))
+  (let ((x (read-u8 in)))
     (if (< x 128)
       (cond
        ((< x 64) x)
@@ -107,31 +107,31 @@
 ;; : <- Int Out
 (def (write-varint n out)
   (if (negative? n)
-    (if (>= n -64) (write-byte (bitwise-and 255) out)
+    (if (>= n -64) (write-u8 (bitwise-and 255) out)
         (let ((l (integer-length-in-u8 n)))
           (if (<= 63)
             (begin
-              (write-byte (- 192 l) out)
+              (write-u8 (- 192 l) out)
               (write-nat-u8vector n l out))
             (begin
-              (write-byte 128 out)
+              (write-u8 128 out)
               (write-varint (- l) out)
               (write-nat-u8vector n l out)))))
-    (if (<= n 63) (write-byte n out)
+    (if (<= n 63) (write-u8 n out)
         (let ((l (integer-length-in-u8 n)))
           (if (<= l 63)
             (begin
-              (write-byte (+ l 63) out)
+              (write-u8 (+ l 63) out)
               (write-nat-u8vector n l out))
             (begin
-              (write-byte 127 out)
+              (write-u8 127 out)
               (write-varint l out)
               (write-nat-u8vector n l out)))))))
 
 ;; Encoding and decoding natural integers into self-delimited byte streams, preserving lexicographic order.
 ;; : Nat <- In
 (def (read-varnat in)
-  (let ((x (read-byte in)))
+  (let ((x (read-u8 in)))
     (cond
      ((< x 128) x)
      ((< x 255) (let* ((l (- x 127))
@@ -148,13 +148,13 @@
 
 ;; : <- Nat Out
 (def (write-varnat n out)
-  (if (<= n 127) (write-byte n out)
+  (if (<= n 127) (write-u8 n out)
       (let ((l (integer-length-in-u8 n)))
         (if (<= l 127)
           (begin
-            (write-byte (+ l 127) out)
+            (write-u8 (+ l 127) out)
             (write-nat-u8vector n l out))
             (begin
-              (write-byte 255 out)
+              (write-u8 255 out)
               (write-varnat l out)
               (write-nat-u8vector n l out))))))

@@ -195,6 +195,26 @@
            help: "git checkout directory for gerbil-ethereum")
    (option 'gerbil-ethereum-repo "--gerbil-ethereum-repo"
            help: "git repository for gerbil-ethereum")
+   (option 'gerbil-leveldb-dir "--gerbil-leveldb-dir"
+           help: "git checkout directory for gerbil-leveldb")
+   (option 'gerbil-leveldb-repo "--gerbil-leveldb-repo"
+           help: "git repository for gerbil-leveldb")
+   (option 'gerbil-lmdb-dir "--gerbil-lmdb-dir"
+           help: "git checkout directory for gerbil-lmdb")
+   (option 'gerbil-lmdb-repo "--gerbil-lmdb-repo"
+           help: "git repository for gerbil-lmdb")
+   (option 'gerbil-mysql-dir "--gerbil-mysql-dir"
+           help: "git checkout directory for gerbil-mysql")
+   (option 'gerbil-mysql-repo "--gerbil-mysql-repo"
+           help: "git repository for gerbil-mysql")
+   (option 'gerbil-libxml-dir "--gerbil-libxml-dir"
+           help: "git checkout directory for gerbil-libxml")
+   (option 'gerbil-libxml-repo "--gerbil-libxml-repo"
+           help: "git repository for gerbil-libxml")
+   (option 'gerbil-libyaml-dir "--gerbil-libyaml-dir"
+           help: "git checkout directory for gerbil-libyaml")
+   (option 'gerbil-libyaml-repo "--gerbil-libyaml-repo"
+           help: "git repository for gerbil-libyaml")
    (option 'glow-dir "-W" "--glow-dir"
            help: "git checkout directory for glow")
    (option 'glow-repo "-w" "--glow-repo"
@@ -234,6 +254,16 @@
                      gerbil-persist-repo: (gerbil-persist-repo #f)
                      gerbil-ethereum-dir: (gerbil-ethereum-dir #f)
                      gerbil-ethereum-repo: (gerbil-ethereum-repo #f)
+                     gerbil-leveldb-dir: (gerbil-leveldb-dir #f)
+                     gerbil-leveldb-repo: (gerbil-leveldb-repo #f)
+                     gerbil-lmdb-dir: (gerbil-lmdb-dir #f)
+                     gerbil-lmdb-repo: (gerbil-lmdb-repo #f)
+                     gerbil-mysql-dir: (gerbil-mysql-dir #f)
+                     gerbil-mysql-repo: (gerbil-mysql-repo #f)
+                     gerbil-libxml-dir: (gerbil-libxml-dir #f)
+                     gerbil-libxml-repo: (gerbil-libxml-repo #f)
+                     gerbil-libyaml-dir: (gerbil-libyaml-dir #f)
+                     gerbil-libyaml-repo: (gerbil-libyaml-repo #f)
                      glow-dir: (glow-dir #f)
                      glow-repo: (glow-repo #f)
                      smug-gerbil-dir: (smug-gerbil-dir #f)
@@ -273,7 +303,7 @@
    (unless (or gerbil-off stable)
      (update-recipe
       name: "gerbil-utils"
-      repo: (or gerbil-utils-repo "fare/gerbil-utils")
+      repo: (or gerbil-utils-repo "mighty-gerbils/gerbil-utils")
       recipe-path: (recipe-path "gerbil" "gerbil-utils")
       checkouts-dir: checkouts-dir
       source-dir: gerbil-utils-dir
@@ -283,7 +313,7 @@
    (unless (or gerbil-off stable)
      (update-recipe
       name: "gerbil-crypto"
-      repo: (or gerbil-crypto-repo "fare/gerbil-crypto")
+      repo: (or gerbil-crypto-repo "mighty-gerbils/gerbil-crypto")
       recipe-path: (recipe-path "gerbil" "gerbil-crypto")
       checkouts-dir: checkouts-dir
       source-dir: gerbil-crypto-dir
@@ -293,7 +323,7 @@
    (unless (or gerbil-off stable)
      (update-recipe
       name: "gerbil-poo"
-      repo: (or gerbil-poo-repo "fare/gerbil-poo")
+      repo: (or gerbil-poo-repo "mighty-gerbils/gerbil-poo")
       recipe-path: (recipe-path "gerbil" "gerbil-poo")
       checkouts-dir: checkouts-dir
       source-dir: gerbil-poo-dir
@@ -303,7 +333,7 @@
    (unless (or gerbil-off stable)
      (update-recipe
       name: "gerbil-persist"
-      repo: (or gerbil-persist-repo "fare/gerbil-persist")
+      repo: (or gerbil-persist-repo "mighty-gerbils/gerbil-persist")
       recipe-path: (recipe-path "gerbil" "gerbil-persist")
       checkouts-dir: checkouts-dir
       source-dir: gerbil-persist-dir
@@ -313,13 +343,63 @@
    (unless (or gerbil-off stable)
      (update-recipe
       name: "gerbil-ethereum"
-      repo: (or gerbil-ethereum-repo "fare/gerbil-ethereum")
+      repo: (or gerbil-ethereum-repo "mighty-gerbils/gerbil-ethereum")
       recipe-path: (recipe-path "gerbil" "gerbil-ethereum")
       checkouts-dir: checkouts-dir
       source-dir: gerbil-ethereum-dir
       nixpkgs-dir: nixpkgs-dir
       stable: stable
       cmdopts: ["--gerbil-ethereum-dir" "--gerbil-ethereum-repo" "--gerbil-off" "--stable"]))
+   (unless (or gerbil-off stable)
+     (update-recipe
+      name: "gerbil-leveldb"
+      repo: (or gerbil-leveldb-repo "mighty-gerbils/gerbil-leveldb")
+      recipe-path: (recipe-path "gerbil" "gerbil-leveldb")
+      checkouts-dir: checkouts-dir
+      source-dir: gerbil-leveldb-dir
+      nixpkgs-dir: nixpkgs-dir
+      stable: stable
+      cmdopts: ["--gerbil-leveldb-dir" "--gerbil-leveldb-repo" "--gerbil-off" "--stable"]))
+   (unless (or gerbil-off stable)
+     (update-recipe
+      name: "gerbil-lmdb"
+      repo: (or gerbil-lmdb-repo "mighty-gerbils/gerbil-lmdb")
+      recipe-path: (recipe-path "gerbil" "gerbil-lmdb")
+      checkouts-dir: checkouts-dir
+      source-dir: gerbil-lmdb-dir
+      nixpkgs-dir: nixpkgs-dir
+      stable: stable
+      cmdopts: ["--gerbil-lmdb-dir" "--gerbil-lmdb-repo" "--gerbil-off" "--stable"]))
+   (unless (or gerbil-off stable)
+     (update-recipe
+      name: "gerbil-mysql"
+      repo: (or gerbil-mysql-repo "mighty-gerbils/gerbil-mysql")
+      recipe-path: (recipe-path "gerbil" "gerbil-mysql")
+      checkouts-dir: checkouts-dir
+      source-dir: gerbil-mysql-dir
+      nixpkgs-dir: nixpkgs-dir
+      stable: stable
+      cmdopts: ["--gerbil-mysql-dir" "--gerbil-mysql-repo" "--gerbil-off" "--stable"]))
+   (unless (or gerbil-off stable)
+     (update-recipe
+      name: "gerbil-libxml"
+      repo: (or gerbil-libxml-repo "mighty-gerbils/gerbil-libxml")
+      recipe-path: (recipe-path "gerbil" "gerbil-libxml")
+      checkouts-dir: checkouts-dir
+      source-dir: gerbil-libxml-dir
+      nixpkgs-dir: nixpkgs-dir
+      stable: stable
+      cmdopts: ["--gerbil-libxml-dir" "--gerbil-libxml-repo" "--gerbil-off" "--stable"]))
+   (unless (or gerbil-off stable)
+     (update-recipe
+      name: "gerbil-libyaml"
+      repo: (or gerbil-libyaml-repo "mighty-gerbils/gerbil-libyaml")
+      recipe-path: (recipe-path "gerbil" "gerbil-libyaml")
+      checkouts-dir: checkouts-dir
+      source-dir: gerbil-libyaml-dir
+      nixpkgs-dir: nixpkgs-dir
+      stable: stable
+      cmdopts: ["--gerbil-libyaml-dir" "--gerbil-libyaml-repo" "--gerbil-off" "--stable"]))
    (unless (or gerbil-off stable)
      (update-recipe
       name: "smug-gerbil"

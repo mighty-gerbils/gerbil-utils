@@ -32,7 +32,7 @@
                            ;; constant than hardcoding 2?
                            (set! len (input-port-byte-position port 0 2))
                            (output-port-byte-position port 0 0)
-                           (write-bytes (random-bytes len) port))
+                           (write-u8vector (random-bytes len) port))
                          (finally (when (port? port) (close-port port)))))
                       (rename-file path target)))))) ;; should be atomic, at least on Unix
 

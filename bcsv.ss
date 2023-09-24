@@ -1,13 +1,13 @@
 ;; Decoding CSV, with byte buffers instead of character strings
 ;; Adapted from :std/text/csv
-;; Problem: read-byte and Gerbil's peek-u8 are not quite super-optimized like Gambit's
+;; Problem: read-u8 and Gerbil's peek-u8 are not quite super-optimized like Gambit's
 ;; read-char and peek-char, so this is actually 7x slower than the character-based version.
+;; Next: see whether this all makes sense anymore with the new StringReader interface.
 ;; TODO: see Bradley Lucier's CSV code, initially from Phil Bewig:
 ;; https://gist.github.com/gambiteer/06fd167594763a095c3e628bfbd37161
 ;; https://mailman.iro.umontreal.ca/pipermail/gambit-list/2007-February/thread.html
 ;; Maybe generate an ad-hoc optimized parser for each family of parameters?
 ;; Maybe do our own buffering?
-
 
 ;; CSV is intrinsically an underspecified lossy format,
 ;; and even popular PC applications lose heavily
@@ -136,10 +136,10 @@
   (or (<= #x20 b #x7E) (= b 10) (= b 13)))
 
 (def (accept pred port)
-  (and (pred (peek-u8 port)) (read-byte port)))
+  (and (pred (peek-u8 port)) (read-u8 port)))
 
 (def (accept= c port)
-  (and (eqv? c (peek-u8 port)) (read-byte port)))
+  (and (eqv? c (peek-u8 port)) (read-u8 port)))
 
 (def (accept-eof port)
   (accept= #!eof port))
@@ -203,7 +203,7 @@
         (add (current-bytes))
         (end-of-field))))
      (else
-      (quoted-field-byte (read-byte port)))))
+      (quoted-field-byte (read-u8 port)))))
   (def (quoted-field-byte c)
     (add-byte c)
     (accept-field-quoted))
@@ -238,7 +238,7 @@
        (else
         (raise-io-error 'read-bcsv-line "unexpected quote in middle of field"))))
      (else
-      (add-byte (read-byte port))
+      (add-byte (read-u8 port))
       (accept-field-unquoted))))
   (def (end-of-field)
     (when {skip-whitespace?} (accept-spaces port))
@@ -254,7 +254,7 @@
   (def (add-byte c)
     (unless (or {allow-binary?} (byte-ascii-text? c))
       (raise-io-error 'read-bcsv-line "binary data not allowed" c))
-    (write-byte c ss))
+    (write-u8 c ss))
   (def (current-bytes)
     (get-output-u8vector ss))
   (def (done)
@@ -315,7 +315,7 @@
       ([first . rest]
        (write-bcsv-field first port)
        (unless (null? rest)
-         (write-byte {separator} port))
+         (write-u8 {separator} port))
        (loop rest))
       ([] (display {eol} port)))))
 
@@ -331,12 +331,12 @@
 (def/opt (write-bcsv-bytes-safely bytes port)
   (if (bytes-needs-quoting? bytes)
     (w/opt write-quoted-bytes bytes port)
-    (write-bytes bytes port)))
+    (write-u8vector bytes port)))
 
 (def/opt (write-quoted-bytes bytes port)
-  (write-byte {quote} port)
+  (write-u8 {quote} port)
   (for (i (in-range 0 (bytes-length bytes)))
     (when (= c {quote})
-      (write-byte c port))
-    (write-byte c port))
-  (write-byte {quote} port))
+      (write-u8 c port))
+    (write-u8 c port))
+  (write-u8 {quote} port))
