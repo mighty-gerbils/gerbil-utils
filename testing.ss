@@ -10,20 +10,23 @@
 (import
   :gerbil/gambit
   :gerbil/expander
+  (only-in :gerbil/runtime/init add-load-path)
   :std/error
   :std/format
   :std/getopt
   :std/iter
   :std/misc/bytes
+  :std/misc/path
   :std/misc/process
   :std/misc/repr
   :std/sort
+  :std/source
   :std/stxutil
   :std/sugar
   :std/test
   :std/text/hex
   ./base ./exit ./filesystem ./git-fu ./io ./multicall
-  ./path ./path-config ./ports ./source ./versioning)
+  ./path-config ./ports ./versioning)
 
 ;; Given a directory name (with no trailing /), is it a test directory named "t"?
 (def (test-dir? x)
@@ -80,8 +83,7 @@
          (test-report-summary!)
          (eqv? 'OK (test-result)))))
 
-(def (%set-test-environment! script-path add-load-path)
-  ;;(write [script-path: script-path add-load-path: add-load-path])(newline)
+(def (%set-test-environment! script-path)
   (set-current-ports-encoding-standard-unix!)
   (def src (path-directory (path-maybe-normalize script-path)))
   (current-directory src)
@@ -95,9 +97,9 @@
 (defrule (%init-test-environment! ctx)
    (begin
      (def here (this-source-file ctx))
-     (with-id ctx (add-load-path main)
+     (with-id ctx (main)
        (define-multicall-main ctx)
-       (%set-test-environment! here add-load-path))))
+       (%set-test-environment! here))))
 
 (defsyntax (init-test-environment! stx)
   (syntax-case stx ()

@@ -123,7 +123,7 @@
   (assert! (boolean? {loose-quote?}))
   (assert! (boolean? {skip-whitespace?}))
   (assert! (valid-eol? {eol}))
-  (assert! (not (member (bytes-ref {eol} 0) [{separator} {quote}])))
+  (assert! (not (member (u8vector-ref {eol} 0) [{separator} {quote}])))
   (assert! (boolean? {accept-lf?}))
   (assert! (boolean? {accept-cr?}))
   (assert! (boolean? {accept-crlf?}))
@@ -200,7 +200,7 @@
        ({loose-quote?}
         (accept-field-unquoted))
        (else
-        (add (current-bytes))
+        (add (current-u8vector))
         (end-of-field))))
      (else
       (quoted-field-byte (read-u8 port)))))
@@ -212,10 +212,10 @@
       (let ((spaces (accept-spaces port)))
         (cond
          ((accept= {separator} port)
-          (add (current-bytes))
+          (add (current-u8vector))
           (accept-fields))
          ((or (accept-eol port) (accept-eof port))
-          (add (current-bytes))
+          (add (current-u8vector))
           (done))
          (else
           (for-each add-byte spaces)
@@ -224,10 +224,10 @@
   (def (accept-field-unquoted-no-skip)
     (cond
      ((accept= {separator} port)
-      (add (current-bytes))
+      (add (current-u8vector))
       (accept-fields))
      ((or (accept-eol port) (accept-eof port))
-      (add (current-bytes))
+      (add (current-u8vector))
       (done))
      ((accept= {quote} port)
       (cond
@@ -255,7 +255,7 @@
     (unless (or {allow-binary?} (byte-ascii-text? c))
       (raise-io-error 'read-bcsv-line "binary data not allowed" c))
     (write-u8 c ss))
-  (def (current-bytes)
+  (def (current-u8vector)
     (get-output-u8vector ss))
   (def (done)
     (reverse! fields))
@@ -289,10 +289,10 @@
 (def/opt (byte-bcsv-space? b)
   (and (or (eqv? b #x20) (eqv? b #x09)) (not (eqv? b {separator}))))
 
-(def/opt (bytes-needs-quoting? x)
-  (and (< 0 (bytes-length x))
-       (or (w/opt byte-bcsv-space? (bytes-ref x 0))
-           (w/opt byte-bcsv-space? (bytes-ref x (1- (bytes-length x))))
+(def/opt (u8vector-needs-quoting? x)
+  (and (< 0 (u8vector-length x))
+       (or (w/opt byte-bcsv-space? (u8vector-ref x 0))
+           (w/opt byte-bcsv-space? (u8vector-ref x (1- (u8vector-length x))))
            (vector-index byte-needs-quoting? x))
        #t))
 
@@ -323,19 +323,19 @@
   (match field
     ((? not) (void))
     ((? number?) (display field port))
-    ((? bytes?) (w/opt write-bcsv-bytes-safely field port))
-    ((? string?) (w/opt write-bcsv-bytes-safely (b field) port))
-    ((? symbol?) (w/opt write-bcsv-bytes-safely (b (symbol->string field)) port))
+    ((? u8vector?) (w/opt write-bcsv-u8vector-safely field port))
+    ((? string?) (w/opt write-bcsv-u8vector-safely (b field) port))
+    ((? symbol?) (w/opt write-bcsv-u8vector-safely (b (symbol->string field)) port))
     (else (error "invalid CSV field" field))))
 
-(def/opt (write-bcsv-bytes-safely bytes port)
-  (if (bytes-needs-quoting? bytes)
-    (w/opt write-quoted-bytes bytes port)
-    (write-u8vector bytes port)))
+(def/opt (write-bcsv-u8vector-safely u8vector port)
+  (if (u8vector-needs-quoting? u8vector)
+    (w/opt write-quoted-u8vector u8vector port)
+    (write-u8vector u8vector port)))
 
-(def/opt (write-quoted-bytes bytes port)
+(def/opt (write-quoted-u8vector u8vector port)
   (write-u8 {quote} port)
-  (for (i (in-range 0 (bytes-length bytes)))
+  (for (i (in-range 0 (u8vector-length u8vector)))
     (when (= c {quote})
       (write-u8 c port))
     (write-u8 c port))

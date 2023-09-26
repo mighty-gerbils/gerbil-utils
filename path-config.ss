@@ -7,8 +7,9 @@
 (export #t)
 
 (import
+  :std/misc/path
   :std/sugar
-  ./base ./config ./filesystem ./path ./shell)
+  ./base ./config ./filesystem ./shell)
 
 (def application-name (values (lambda () "gerbil")))
 (def (application-name/) (string-append (application-name) "/"))

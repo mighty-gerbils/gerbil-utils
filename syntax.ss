@@ -1,9 +1,14 @@
 (export #t (for-syntax #t))
 (import
-  (for-syntax :std/iter :std/srfi/1)
+  (for-syntax :std/iter
+              :std/srfi/1)
   :gerbil/gambit
-  <expander-runtime> :gerbil/expander :std/misc/ports :std/sugar :std/text/hex
-  ./path)
+  <expander-runtime>
+  :gerbil/expander
+  :std/misc/path
+  :std/misc/ports
+  :std/sugar
+  :std/text/hex)
 
 ;;; TODO: move as much as possible out of having to depend on the expander.
 ;;; TODO: Use generic function to extend the behavior here of functionality that has to work on ASTs.
@@ -65,43 +70,3 @@
 
 (def (formals<-nat n)
   (for/collect (i (in-range n)) (gensym))))
-
-(defsyntax (syntax-eval stx)
-  (syntax-case stx () ((_ expr) #'(let () (defsyntax (foo _) expr) (foo)))))
-
-(defsyntax (syntax-call stx)
-  (syntax-case stx ()
-    ((ctx expr) #'(ctx expr ctx))
-    ((_ expr ctx stxs ...)
-     #'(let ()
-         (defsyntax (foo stx)
-           (datum->syntax (stx-car (stx-cdr stx)) (apply expr (syntax->list (stx-cdr stx)))))
-         (foo ctx stxs ...)))))
-
-(defrule (def-syntax-call (macro ctx formals ...) body)
-  (defsyntax (macro stx)
-    (syntax-case stx ()
-      ((_ ctx formals ...)
-       (datum->syntax (stx-car (stx-cdr stx))
-         (apply (lambda (ctx formals ...) body)
-           (stx-car (stx-cdr stx)) (syntax->datum (stx-cdr (stx-cdr stx))))))
-      ((ctx formals ...) #'(ctx ctx formals ...)))))
-
-;;; Locations follow the Gambit convention: it's a vector of two values.
-;;; The first value is either a string which is filename, or a list containing a symbol.
-;;; The second value is a fixnum, either non-negative (+ (* 65536 column) line),
-;;; or if the previous formula had overflows, negative file position.
-(def (stx-source-file stx)
-  (alet (loc (stx-source stx)) (vector-ref loc 0)))
-
-(def (stx-source-position stx)
-  (alet (loc (stx-source stx)) (vector-ref loc 1)))
-
-(def (stx-source-directory stx)
-  (alet (file (stx-source-file stx)) (path-directory file)))
-
-(def (stx-source-path stx . relpath)
-  (alet (dir (stx-source-directory stx)) (apply subpath dir relpath)))
-
-(def (stx-source-content stx . relpath)
-  (alet (path (apply stx-source-path stx relpath)) (read-file-u8vector path)))

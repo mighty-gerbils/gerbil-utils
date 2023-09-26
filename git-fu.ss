@@ -4,12 +4,21 @@
 
 (import
   :gerbil/gambit
-  :std/format :std/iter
-  :std/misc/list :std/misc/ports :std/misc/process :std/misc/string
+  :std/format
+  :std/iter
+  :std/misc/list
+  :std/misc/path
+  :std/misc/ports
+  :std/misc/process
+  :std/misc/string
   :std/net/request
-  :std/pregexp :std/sort :std/srfi/1 :std/sugar
+  :std/pregexp
+  :std/sort
+  :std/source
+  :std/srfi/1
+  :std/sugar
   ./base ./exit ./filesystem ./io ./list
-  ./path ./path-config ./ports ./rpm-versioning ./source ./syntax)
+  ./path-config ./ports ./rpm-versioning ./syntax)
 
 ;; TODO: move that to another file?
 ;; TODO: support doing it in another directory?

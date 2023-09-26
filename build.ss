@@ -3,7 +3,13 @@
 
 (import
   :gerbil/expander
-  :std/getopt :std/misc/list :std/misc/process :std/srfi/1 :std/sugar)
+  (only-in :gerbil/runtime/init add-load-path)
+  :std/getopt
+  :std/misc/list
+  :std/misc/process
+  :std/source
+  :std/srfi/1
+  :std/sugar)
 
 (def srcdir (path-normalize (path-directory (this-source-file))))
 (current-directory srcdir)
@@ -14,13 +20,14 @@
 (def (files)
   (cons* "t/test-support.ss" ;; temporary, until dependents are updated
          [exe: "scripts/random-run.ss" bin: "random-run"]
-         (clan/building#all-gerbil-modules)))
+         (clan/building#all-gerbil-modules
+          exclude-dirs: '("run" "t" ".git" "_darcs" "scripts"))))
 
 ;; In your build file, you can (import :clan/building) and use (init-build-environment! ...),
 ;; and later use (define-entry-point ...).
 ;; But in this build, file we have to bootstrap without imported macros.
 (clan/building#%set-build-environment!
- srcdir add-load-path
+ srcdir
  name: "Gerbil-utils"
  spec: files)
 

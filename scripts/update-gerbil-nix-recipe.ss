@@ -7,10 +7,20 @@
 
 (import
   :gerbil/gambit
-  :std/format :std/getopt :std/misc/list :std/misc/ports :std/srfi/13 :std/sugar :std/pregexp
+  :std/format
+  :std/getopt
+  :std/misc/list
+  :std/misc/path
+  :std/misc/ports
+  :std/source
+  :std/srfi/13
+  :std/sugar
+  :std/pregexp
   :std/text/basic-parsers
-  :clan/base :clan/files
-  :clan/multicall :clan/path :clan/source :clan/timestamp)
+  :clan/base
+  :clan/files
+  :clan/multicall
+  :clan/timestamp)
 
 ;; Initialize paths from the environment
 (defonce (default-checkouts-dir)

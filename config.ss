@@ -4,10 +4,13 @@
 ;; TODO: Maybe merge this file into config.ss?
 
 (import
-  :std/iter :std/sugar
   :gerbil/gambit
-  :std/srfi/1 :std/srfi/13
-  ./base ./path)
+  :std/iter
+  :std/misc/path
+  :std/srfi/1
+  :std/srfi/13
+  :std/sugar
+  ./base)
 
 (def (user-home)
   (or (getenv (cond-expand (windows "DEFAULTUSERPROFILE") (else "HOME")) #f)

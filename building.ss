@@ -3,11 +3,12 @@
 
 (import
   :gerbil/gambit
-  :std/format :std/getopt :std/iter :std/make
-  :std/misc/list :std/misc/ports :std/misc/process :std/misc/string
+  (only-in :gerbil/runtime/init add-load-path)
+  :std/format :std/getopt :std/iter :std/make :std/source
+  :std/misc/list :std/misc/path :std/misc/ports :std/misc/process :std/misc/string
   :std/pregexp :std/srfi/1 :std/srfi/13 :std/sugar
   ./exit ./filesystem ./git-fu ./multicall ./nix-fu
-  ./path ./path-config ./ports ./source ./versioning)
+  ./path-config ./ports ./versioning)
 
 (def (all-gerbil-modules exclude: (exclude '("main.ss"))
                          exclude-dirs: (exclude-dirs '("run" "t" ".git" "_darcs")))
@@ -25,7 +26,7 @@
 (def %nix-deps #f)
 
 (def (%set-build-environment!
-      script-path add-load-path
+      script-path
       name: (name #f)
       repo: (repo #f)
       deps: (deps '())
@@ -53,9 +54,9 @@
 (defrule (%init-build-environment! ctx args ...)
   (begin
     (def here (this-source-file ctx))
-    (with-id ctx (main add-loadpath)
+    (with-id ctx (main)
       (define-multicall-main ctx)
-      (%set-build-environment! here add-load-path args ...))))
+      (%set-build-environment! here args ...))))
 
 (defsyntax (init-build-environment! stx)
   (syntax-case stx () ((ctx args ...) #'(%init-build-environment! ctx args ...))))

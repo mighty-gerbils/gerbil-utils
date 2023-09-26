@@ -6,8 +6,14 @@
 
 (import
   :gerbil/gambit
-  :std/format :std/misc/ports :std/sugar :std/pregexp
-  ./base ./path ./ports ./temporary-files)
+  :std/format
+  :std/misc/path
+  :std/misc/ports
+  :std/sugar
+  :std/pregexp
+  ./base
+  ./ports
+  ./temporary-files)
 
 ;; Atomically replace a file by one produced from the contents using output-contents
 ;; If salt? is true, also salt the previous contents of the file.

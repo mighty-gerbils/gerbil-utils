@@ -1,15 +1,3 @@
-(export #t)
-
-(import (for-syntax ./syntax)
-        ./syntax)
-
-(def-syntax-call (this-source-location x) (stx-source x))
-(def-syntax-call (this-source-file x) (stx-source-file x))
-(def-syntax-call (this-source-position x) (stx-source-position x))
-(def-syntax-call (this-source-directory x) (stx-source-directory x))
-(def-syntax-call (this-source-path x relpath) (stx-source-path x relpath))
-(def-syntax-call (this-source-content x relpath) (stx-source-content x relpath))
-
 ;; At a test's runtime, locate test files from a package's separately-installed source code,
 ;; wherein the test files are not part of the binary installation of the package being tested.
 ;;
@@ -37,7 +25,11 @@
 ;; By running tests across package boundaries, we assume that the packages are part of a common
 ;; collection or hierarchy of packages, wherein the developers will address any namespace conflict.
 ;;
-(import ./base ./path ./path-config)
+(import
+  :std/misc/path
+  ./base
+  ./path-config)
+
 ;; : String <- String String
 (def (find-source-file package test-path)
   (def (try p) (ignore-errors (and (file-exists? p) p)))
@@ -45,3 +37,6 @@
       (try (subpath (or (getenv "GERBIL_PATH" #f) (path-expand "~/.gerbil"))
                     "pkg" package test-path))
       (error 'find-source-file package test-path)))
+
+;; TODO: experiment with:
+;; (parameterize ((current-expander-phi (1+ (current-expander-phi))) (eval-syntax ...))

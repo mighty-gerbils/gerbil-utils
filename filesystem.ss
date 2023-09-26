@@ -5,8 +5,13 @@
 
 (import
   :gerbil/gambit
-  :std/misc/list :std/pregexp :std/srfi/1 :std/sugar
-  ./base ./list ./path)
+  :std/misc/list
+  :std/misc/path
+  :std/pregexp
+  :std/srfi/1
+  :std/sugar
+  ./base
+  ./list)
 
 ;; TODO: distinguish between properties of paths and properties of files denoted by those paths.
 ;; So path-is-absolute? vs path-denotes-symlink?

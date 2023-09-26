@@ -6,12 +6,24 @@
 
 (import
   :gerbil/gambit
-  :std/crypto/digest :std/format :std/getopt :std/iter :std/misc/list
-  :std/misc/ports :std/misc/process :std/misc/string
-  :std/pregexp :std/sort :std/srfi/1 :std/srfi/13 :std/sugar :std/text/hex
+  :std/crypto/digest
+  :std/format
+  :std/getopt
+  :std/iter
+  :std/misc/list
+  :std/misc/path
+  :std/misc/ports
+  :std/misc/process
+  :std/misc/string
+  :std/pregexp
+  :std/sort
+  :std/source
+  :std/srfi/1
+  :std/srfi/13
+  :std/sugar
+  :std/text/hex
   :clan/base :clan/cli :clan/config :clan/debug :clan/exit :clan/files :clan/memo :clan/multicall
-  :clan/path :clan/path-config :clan/ports :clan/shell :clan/source :clan/string :clan/syntax
-  :clan/net/simple-http-client
+  :clan/path-config :clan/ports :clan/shell :clan/string :clan/syntax
   :clan/poo/cli)
 
 (set! application-name (lambda () "make-docker-image"))

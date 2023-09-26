@@ -4,13 +4,13 @@
   :gerbil/gambit
   :std/iter)
 
-(def (bytes-reverse b)
-  (def l (bytes-length b))
-  (def r (make-bytes l 0))
+(def (u8vector-reverse b)
+  (def l (u8vector-length b))
+  (def r (make-u8vector l 0))
   (for (i (in-range l))
-    (bytes-set! r i (bytes-ref b (- l i 1))))
+    (u8vector-set! r i (u8vector-ref b (- l i 1))))
   r)
 
-(def (bytes-prefix? pre b)
-  (and (<= (bytes-length pre) (bytes-length b))
-       (equal? pre (subu8vector b 0 (bytes-length pre)))))
+(def (u8vector-prefix? pre b)
+  (and (<= (u8vector-length pre) (u8vector-length b))
+       (equal? pre (subu8vector b 0 (u8vector-length pre)))))
