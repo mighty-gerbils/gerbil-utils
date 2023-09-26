@@ -11,6 +11,7 @@
   :std/srfi/1
   :std/sugar
   ./base
+  ./io
   ./list)
 
 ;; TODO: distinguish between properties of paths and properties of files denoted by those paths.
@@ -34,9 +35,10 @@
    (and (eq? 'regular (file-info-type i))
         (not (zero? (bitwise-and #o111 (file-info-mode i)))))))
 
+;; Does the path point to an executable file that starts with "#!" ?
 (def (path-is-script? x)
   (and (path-is-executable-file? x)
-  (ignore-errors (equal? #u8(35 33) #| #! |# (call-with-input-file x (cut read-u8vector 2 <>))))))
+       (with-catch false (cut equal? 8993 (call-with-input-file x unmarshal-uint16)))))
 
 ;; Given a path to a file that exists on the filesystem, return
 ;; a normalized absolute or relative path to it, whichever is shortest
