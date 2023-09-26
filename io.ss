@@ -26,9 +26,8 @@
 (def (unmarshal-n-u8 size port)
   (if (zero? size)
     #u8()
-    (let ((bs (read-u8vector size port)))
-      (assert! (not (eof-object? bs)))
-      (assert! (= size (u8vector-length bs)))
+    (let ((bs (make-u8vector size)))
+      (assert! (= size (read-u8vector bs port)))
       bs)))
 
 ;; : <- UInt16 Out
