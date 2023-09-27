@@ -42,17 +42,3 @@
 
 ;; TODO: experiment with:
 ;; (parameterize ((current-expander-phi (1+ (current-expander-phi))) (eval-syntax ...))
-
-(import (for-syntax :std/stxutil
-                    :std/misc/path
-                    :std/misc/ports)
-        :std/sugar)
-
-;; TODO: fix it in std/source
-(defsyntax-call (this-source-path ctx relpath)
-  (alet (dir (stx-source-directory ctx)) (subpath dir relpath)))
-
-(defsyntax-call (this-source-content ctx relpath)
-  (alet (dir (stx-source-directory ctx))
-    (alet (path (subpath dir ctx relpath))
-      (read-file-u8vector path))))

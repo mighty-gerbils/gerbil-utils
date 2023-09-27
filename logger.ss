@@ -115,7 +115,7 @@
 ;; Call a function on each entry in a log file
 ;; : <- Port (<- (Pair Integer String))
 (def (for-each-port-log-entry! port fun)
-  (def reader (PeekableStringReader (raw-port port)))
+  (def reader (PeekableStringReader (open-string-reader port)))
   (until (string-reader-eof? reader)
     (fun (parse-log-entry reader))))
 

@@ -2,8 +2,7 @@
 
 (import
   :std/test
-  (only-in :std/source this-source-file)
-  (only-in ../source this-source-path)
+  (only-in :std/source this-source-file this-source-path)
   ../filesystem)
 
 (def filesystem-test
