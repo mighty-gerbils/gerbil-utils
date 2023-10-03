@@ -1,16 +1,25 @@
 ;; -*- Gerbil -*-
 ;;;; Utilities to generate random data
 
-(export
-  #t)
+(export #t)
 
 (import
-  :gerbil/gambit
-  :std/misc/list :std/misc/number :std/srfi/1 :std/sugar
-  ./base)
+  (only-in :gerbil/gambit random-source-randomize! default-random-source)
+  (only-in :std/misc/list-builder with-list-builder)
+  (only-in :std/misc/number decrement!)
+  (only-in :std/misc/bytes nat-length-in-u8 u8vector->nat)
+  (only-in :std/crypto/etc random-bytes)
+  (only-in ./base nest λ))
+
+;; cryptographically random integers
+(def (random-nat end)
+  ;; Instead of skew or retries from (nat-length-in-u8 (1- end)) bytes,
+  ;; take 8 more bytes and consider the skew negligible.
+  (def n (u8vector->nat (random-bytes (+ (nat-length-in-u8 end) 7))))
+  (modulo n end))
 
 (def (random-char bag)
-  (string-ref bag (random-integer (string-length bag))))
+  (string-ref bag (random-nat (string-length bag))))
 (def (generate-list n generate-element)
   (if (zero? n) '() (cons (generate-element) (generate-list (- n 1) generate-element))))
 (def (n-random-chars n bag)
@@ -34,7 +43,7 @@
    (with-list-builder (collect _))
    (let loop ((end (if n (min n len) len))))
    (when (< 0 end))
-   (let* ((i (random-integer end))
+   (let* ((i (random-nat end))
           (max (- end 1)))
      (collect (vector-ref vec i))
      (vector-set! vec i (vector-ref vec max))
@@ -46,4 +55,4 @@
      ((zero? n) sum)
      (else
       (decrement! n)
-      (loop (+ sum 1 (random-integer sides)))))))
+      (loop (+ sum 1 (random-nat sides)))))))
