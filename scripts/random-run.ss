@@ -38,7 +38,7 @@
           (randomized-arguments (shuffle-list arguments-to-randomize))
           (do-it (λ (logger)
                    (for (args (if number-at-once
-                                (group-by number-at-once randomized-arguments)
+                                (group-n-consecutive number-at-once randomized-arguments)
                                 [randomized-arguments]))
                      (let ((command (append prefix args)))
                        (logger command)
