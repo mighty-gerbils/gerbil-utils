@@ -2,10 +2,10 @@
 ;;;; Basic utilities
 
 (export #t)
-(import (only-in :std/sugar defrule)
-        :std/error
-        (for-syntax :std/misc/repr)
-        (for-syntax :gerbil/expander))
+(import
+  (for-syntax (only-in :std/misc/repr repr))
+  (only-in :std/sugar defrule)
+  (only-in :std/error deferror-class defraise/context Exception exception-context))
 
 ;;;; Basic syntax for control flow
 
@@ -168,18 +168,14 @@
 ;; this is an implementation error and YOU LOSE.
 ;; Any <- Any ...
 (deferror-class Undefined ())
-(defrules undefined ()
-  ((_ . args)
-   (raise (Undefined where: (exception-context args) irritants: (list . args) message: "undefined")))
-  (_ undefined_))
-(def (undefined_ . args) (undefined args))
+(defraise/context (raise-undefined where irritants)
+  (Undefined "undefined" irritants: irritants))
+(def (undefined . args) (raise-undefined undefined args))
 
-(defclass (Invalid Exception) (args) transparent: #t)
-(defrules invalid ()
-  ((_ . args)
-   (raise (Invalid where: (exception-context args) irritants: (list . args) message: "invalid")))
-  (_ undefined_))
-(def (invalid_ . args) (invalid args))
+(deferror-class Invalid ())
+(defraise/context (raise-invalid where irritants)
+  (Invalid "invalid" irritants: irritants))
+(def (invalid . args) (raise-invalid invalid args))
 
 ;; Use NIY when you need a TEMPORARY filler for code that MUST be implemented
 ;; BEFORE release, probably even before your branch is merged into production

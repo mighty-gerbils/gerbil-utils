@@ -6,17 +6,21 @@
   thunk-with-logged-exceptions)
 
 (import
-  :gerbil/gambit
-  :std/error
-  :std/format :std/misc/repr :std/sugar
+  (only-in :gerbil/gambit display-exception-in-context)
+  (only-in :std/error Exception?)
+  (only-in :std/format fprintf)
+  (only-in :std/misc/repr repr)
+  (only-in :std/sugar try catch defrule)
   ./base)
 
 ;; String <- Any
 (def (string<-exception e)
-  (cond
-   ((Exception? e) (call-with-output-string (cut display-exception e <>)))
-   ((string? e) e)
-   (else (repr e))))
+  (try
+   (cond
+    ((Exception? e) (call-with-output-string (cut display-exception e <>)))
+    ((string? e) e)
+    (else (repr e)))
+   (catch (_) "#<unprintable exception>")))
 
 ;; The exception and continuation are valid for use with display-exception-in-context
 ;; and display-continuation-backtrace
