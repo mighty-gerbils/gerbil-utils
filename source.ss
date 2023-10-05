@@ -26,9 +26,10 @@
 ;; collection or hierarchy of packages, wherein the developers will address any namespace conflict.
 ;;
 (import
-  :std/misc/path
-  ./base
-  ./path-config)
+  (only-in :std/srfi/141 floor/)
+  (only-in :std/misc/path subpath)
+  (only-in ./base ignore-errors)
+  (only-in ./path-config source-path))
 
 (export #t)
 
@@ -39,6 +40,19 @@
       (try (subpath (or (getenv "GERBIL_PATH" #f) (path-expand "~/.gerbil"))
                     "pkg" package test-path))
       (error 'find-source-file package test-path)))
+
+;; Explain position returned from Gambit location
+;; <- Integer
+(def (explain-position n)
+  (if (positive? n)
+    (let-values (((q r) (floor/ n 65536)))
+      [line: (1+ r) column: q])
+    [file-position: (- n)]))
+
+;; Explain Gambit location
+(def (explain-location l)
+  (match l
+    ((vector input position) [(explain-position position) ... in: input])))
 
 ;; TODO: experiment with:
 ;; (parameterize ((current-expander-phi (1+ (current-expander-phi))) (eval-syntax ...))
