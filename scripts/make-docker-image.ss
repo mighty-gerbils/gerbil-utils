@@ -79,7 +79,7 @@
   (map stringify
     '(stdenv
       openssl.out openssl.dev openssl.bin libressl libressl.dev libressl.man
-      curl.dev curl.man nghttp2 nghttp2.lib nghttp2.dev
+      curl.dev curl.man nghttp2 nghttp2.lib nghttp2.dev nghttp2.man
       bashInteractive.dev bashInteractive.man
       libssh2 libssh2.dev libkrb5 libkrb5.dev
       zsh.man attr.man gnumake.man xz.man openssl.man
