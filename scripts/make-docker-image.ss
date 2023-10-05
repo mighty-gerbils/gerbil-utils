@@ -5,26 +5,32 @@
 (export #t)
 
 (import
-  :gerbil/gambit
-  :std/crypto/digest
-  :std/format
-  :std/getopt
-  :std/iter
-  :std/misc/list
-  :std/misc/path
-  :std/misc/ports
-  :std/misc/process
-  :std/misc/string
-  :std/pregexp
-  :std/sort
-  :std/source
-  :std/srfi/1
-  :std/srfi/13
-  :std/sugar
-  :std/text/hex
-  :clan/base :clan/cli :clan/config :clan/debug :clan/exit :clan/files :clan/memo :clan/multicall
-  :clan/path-config :clan/ports :clan/shell :clan/string :clan/syntax
-  :clan/poo/cli)
+  (only-in :std/crypto/digest make-digest digest::sha256 digest-update! digest-final!)
+  (only-in :std/format format fprintf)
+  (only-in :std/getopt argument optional-argument rest-arguments)
+  (only-in :std/iter for)
+  (only-in :std/misc/list length=n? when/list)
+  (only-in :std/misc/path subpath path-simplify path-parent)
+  (only-in :std/misc/ports read-all-as-lines)
+  (only-in :std/misc/process run-process run-process/batch)
+  (only-in :std/net/request.ss http-get-content)
+  (only-in :std/misc/string string-trim-prefix string-trim-eol)
+  (only-in :std/pregexp pregexp-match)
+  (only-in :std/source this-source-directory)
+  (only-in :std/srfi/1 lset-difference any first second third remove append-map)
+  (only-in :std/srfi/13 string-suffix?)
+  (only-in :std/stxutil stringify)
+  (only-in :std/text/hex hex-encode)
+  (only-in :clan/exit backtrace-on-abort?)
+  (only-in :clan/files clobber-file)
+  (only-in :clan/filesystem path-is-directory?)
+  (only-in :clan/memo define-memo-function)
+  (only-in :clan/multicall define-multicall-main define-entry-point set-default-entry-point!)
+  (only-in :clan/path-config cache-path set-path-config-root! application-name)
+  (only-in :clan/ports output-contents)
+  (only-in :clan/shell escape-shell-token)
+  (only-in :clan/string string-substitute)
+  (only-in :clan/poo/cli make-options))
 
 (set! application-name (lambda () "make-docker-image"))
 
