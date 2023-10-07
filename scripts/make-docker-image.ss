@@ -19,7 +19,6 @@
   (only-in :std/source this-source-directory)
   (only-in :std/srfi/1 lset-difference any first second third remove append-map)
   (only-in :std/srfi/13 string-suffix?)
-  (only-in :std/stxutil stringify)
   (only-in :std/text/hex hex-encode)
   (only-in :clan/exit backtrace-on-abort?)
   (only-in :clan/files clobber-file)
@@ -62,7 +61,7 @@
 ;; A list of nixpkgs packages needed for convenience on the docker image
 ;; : (List String)
 (def user-packages
-  (map stringify
+  (map as-string
     '(zsh su screen less git xz nix bashInteractive ;; interactive environment
       coreutils attr findutils diffutils patch gnused gnumake ;; interactive utilities
       curl openssh rsync cacert ;; basic networking
@@ -76,7 +75,7 @@
 ;; These are still somehow downloaded during the Glow build&test even if we explicitly include them,
 ;; but in a different configuration than is available via nixpkgs. WTF???
 (def extra-packages
-  (map stringify
+  (map as-string
     '(stdenv
       openssl.out openssl.dev openssl.bin libressl libressl.dev libressl.man
       curl.dev curl.man nghttp2 nghttp2.lib nghttp2.dev nghttp2.man
@@ -87,7 +86,7 @@
 
 (def all-target-packages
   [user-packages ... extra-packages ...
-   "gambit-unstable" "gerbil-unstable" "gerbilPackages-unstable"])
+   "gerbil-unstable" "gerbilPackages-unstable"])
 
 ;; Initialize paths from the environment
 (def here (this-source-directory))
@@ -327,26 +326,22 @@
         (clobber-file origin "unknown\n"))))))
 
 (define-entry-point (make-images (nixpkgs default-nixpkgs))
-  (help: "Create image for all packages before gambit"
+  (help: "Create image for all packages before gerbil"
    getopt: options/nixpkgs)
   ;; 1. Install all the required packages
   (build-all-targets)
   ;; 2. Extract the paths we want
   (def all-paths (all-target-paths nixpkgs))
   (def user-paths (apply nix-paths nixpkgs: nixpkgs user-packages))
-  (def gambit-paths (nix-paths nixpkgs: nixpkgs "gambit-unstable"))
   (def gerbil-paths (nix-paths nixpkgs: nixpkgs "gerbil-unstable"))
   (def gerbil-package-paths (nix-paths nixpkgs: nixpkgs "gerbilPackages-unstable"))
   (def dependency-paths
-    (lset-difference equal? all-paths (append gambit-paths gerbil-paths gerbil-package-paths)))
+    (lset-difference equal? all-paths (append gerbil-paths gerbil-package-paths)))
   ;; 3. Create successive images
   (def mukn/nix (make-nix-image nixpkgs))
   (def mukn/dependencies (build-nix-image mukn/nix "mukn/dependencies"
                                           install: user-paths dependency-paths))
-  (def mukn/gambit (build-nix-image mukn/dependencies "mukn/gambit"
-                                    changes: ["ENV GAMBOPT t8,f8,-8,i8,dRr"] gambit-paths
-                                    "gsi -e '(display (* 6 7)) (newline)'"))
-  (def mukn/gerbil (build-nix-image mukn/gambit "mukn/gerbil"
+  (def mukn/gerbil (build-nix-image mukn/dependencies "mukn/gerbil"
                                     changes: ["ENV GERBIL_LOADPATH /root/.nix-profile/gerbil/lib"]
                                     gerbil-paths
                                     "gxi -e '(displayln (* 6 7))'"))
@@ -361,7 +356,7 @@
                       "ENTRYPOINT []"
                       "CMD [\"/bin/sh\"]")
   ;;(run-process/batch ["docker" "tag" mukn/glow ])
-  (def images [mukn/glow mukn/gerbil mukn/gambit mukn/dependencies mukn/nix])
+  (def images [mukn/glow mukn/gerbil mukn/dependencies mukn/nix])
 
   ;; 5. Erase the docker directory
   (clean-docker-directory)

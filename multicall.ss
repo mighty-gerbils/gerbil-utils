@@ -53,20 +53,20 @@
   (def rest (when/list rest-name (extract rest-name)))
   (append positional rest))
 
-(def (stringify<? x y)
-  (string<? (stringify x) (stringify y)))
+(def (as-string<? x y)
+  (string<? (as-string x) (as-string y)))
 
 (def (getopt-parse->function-arguments gopt h)
   (def positionals (getopt-parse->positional-arguments! gopt h))
   (append positionals
-          (foldr (lambda (kv l) (cons* (keywordify (car kv)) (cdr kv) l)) '()
-                 (hash->list/sort h stringify<?))))
+          (foldr (lambda (kv l) (cons* (make-keyword (car kv)) (cdr kv) l)) '()
+                 (hash->list/sort h as-string<?))))
 
 (def (call-with-getopt-parse gopt hash fun)
   (apply fun (getopt-parse->function-arguments gopt hash)))
 
 (def (entry-points-getopt-spec (h entry-points))
-  (for/collect (([name . e] (hash->list/sort h stringify<?)))
+  (for/collect (([name . e] (hash->list/sort h as-string<?)))
     (apply command name help: (entry-point-help e)
            (getopt-spec (entry-point-getopt e)))))
 
@@ -77,7 +77,7 @@
 (def (register-entry-point function
                            id: (id #f) name: (name #f) help: (help #f)
                            getopt: (getopt #f))
-  (let (name (symbolify (or name (string-filter easy-shell-character? (stringify id)))))
+  (let (name (make-symbol (or name (string-filter easy-shell-character? (as-string id)))))
     (hash-put! entry-points name (make-entry-point name function help getopt))))
 
 ;; TODO: syntax to specify not just help, but getopt, etc.
@@ -97,13 +97,13 @@
   (def gopt (apply getopt (entry-points-getopt-spec)))
   (def program (current-program-string (cdr (current-program))))
   (if command
-    (getopt-display-help-topic gopt (symbolify command) program)
+    (getopt-display-help-topic gopt (make-symbol command) program)
     (getopt-display-help gopt program)))
 
 (define-entry-point (meta)
   (help: "Print meta-information for completion purposes"
    getopt: [])
-  (displayln (string-join (sort (map stringify (hash-keys entry-points)) string<?) " ")))
+  (displayln (string-join (sort (map as-string (hash-keys entry-points)) string<?) " ")))
 
 ;; TODO: add a flag for short?
 (define-entry-point (version complete: (complete #f) layer: (layer #f))
@@ -113,7 +113,7 @@
   (show-version complete: complete layer: layer))
 
 (def (call-entry-point/internal command args)
-  (match (hash-get entry-points (symbolify command))
+  (match (hash-get entry-points (make-symbol command))
     (#f (raise (format "Unknown command ~s. Try command help.\n" command)))
     ((entry-point _name fun _help getopt)
      (parameterize ((current-program (cons command (current-program))))
@@ -126,8 +126,6 @@
        ([] (call-entry-point/internal multicall-default []))
        ([command . args] (call-entry-point/internal command args))))))
 
-(defsyntax (define-multicall-main stx)
-  (syntax-case stx ()
-    ((_ ctx) (with-syntax ((main (identifierify #'ctx "main")))
-               #'(begin (define main call-entry-point))))
-    ((d) #'(d d))))
+(defrules define-multicall-main ()
+  ((_ ctx) (with-id ctx (main) (define main call-entry-point)))
+  ((d) (d d)))

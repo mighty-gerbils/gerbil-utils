@@ -48,13 +48,13 @@
 
 ;; Given a test file, return the name
 (def (test-symbol module-name)
-  (symbolify module-name "#" (path-strip-directory module-name)))
+  (make-symbol module-name "#" (path-strip-directory module-name)))
 
 (def (find-file-test test-file pkgdir package-prefix)
   (def module-name
-    (stringify package-prefix "/"
+    (as-string package-prefix "/"
                (path-enough (path-strip-extension (path-simplify test-file)) pkgdir)))
-  (import-module (symbolify ":" module-name) #t #t)
+  (import-module (make-symbol ":" module-name) #t #t)
   (eval (test-symbol module-name)))
 
 ;; TODO: this was in std/make. Define and export it somewhere in std.

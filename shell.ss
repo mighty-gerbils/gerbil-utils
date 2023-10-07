@@ -38,4 +38,4 @@
           (unless alpha? (write-char #\_ p))
           (write-char c p))
         (set! alpha? caa?))
-      (string-upcase (apply stringify args))))))
+      (string-upcase (as-string args))))))
