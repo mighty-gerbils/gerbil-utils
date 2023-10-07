@@ -100,7 +100,7 @@
 
 ;; (Generating A) <- (List A)
 (def (generating<-list list)
-  (generating<-for-each (curry for-each! list)))
+  (generating<-for-each (cut for-each <> list)))
 
 ;; (List A) <- (Generating A)
 (def (list<-generating generating)
@@ -108,11 +108,11 @@
 
 ;; (Generating A) <- (Vector A) Nat (Or Nat '#f)
 (def (generating<-vector vector start: (start 0) end: (end #f))
-  (generating<-for-each (λ (y) (vector-for-each! vector y start: start end: end))))
+  (generating<-for-each (λ (y) (subvector-for-each y vector start: start end: end))))
 
 ;; (Generating A) <- (Vector A) Nat (Or Nat '#f)
 (def (generating-reverse<-vector vector start: (start 0) end: (end #f))
-  (generating<-for-each (λ (yield) (vector-reverse-for-each! vector yield start: start end: end))))
+  (generating<-for-each (λ (yield) (subvector-reverse-for-each yield vector start: start end: end))))
 
 ;; (Vector A) <- (Generating A)
 (def (vector<-generating generating)

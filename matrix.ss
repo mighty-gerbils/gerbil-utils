@@ -6,22 +6,23 @@
 
 (export #t)
 
-(import :gerbil/gambit :std/iter)
+(import :gerbil/gambit :std/iter :std/misc/number :std/sugar)
 
 ;; Generic exponentiation. TODO: move to a module about monoids?
 (def (generic-expt composer function iterations seed)
   (if (zero? iterations) seed
       (generic-expt composer
 		    (composer function function)
-		    (arithmetic-shift iterations -1)
+		    (half iterations)
 		    (if (odd? iterations)
 			(composer function seed)
 			seed))))
 
 ;; Accessing a IxJ matrix M's element at column i line j
-(def (Mref I J M i j) (vector-ref M (+ i (* J j))))
-(def (Mset! I J M i j v) (vector-set! M (+ i (* I j)) v))
-(def Mref-set! Mset!)
+(defrule (Mpos I J i j) (+ (* J i) j))
+(defrule (Mref I J M i j) (vector-ref M (Mpos I J i j)))
+(defrule (Mset! I J M i j v) (vector-set! M (Mpos I J i j) v))
+(defrule (Mref-set! I J M i j v) (Mset! I J M i j v))
 
 ;; zero matrix of any rectangular shape
 (def (matrix0 I J) (make-vector (* I J) 0))
@@ -33,14 +34,18 @@
   M)
 
 ;; matrix addition for any shape
-(def (matrix+ a b)
-  (vector-map (lambda (_ x y) (+ x y)) a b))
+(def (matrix+ A B)
+  (vector-map + A B))
+
+;; matrix-scale multiplication by a scalar
+(def (matrix-scale k M)
+  (vector-map (cut * k <>) M))
 
 ;; matrix multiplication (composition) with shape I J K
 (def (matrix* I J K A B)
   (def M (matrix0 I K))
-  (for (k (in-range K))
-    (for (i (in-range I))
+  (for (i (in-range I))
+    (for (k (in-range K))
       (Mset! I K M i k
              (for/fold (sum 0) (j (in-range J))
                (+ sum (* (Mref I J A i j) (Mref J K B j k)))))))
