@@ -1,9 +1,10 @@
 #!/usr/bin/env gxi
 ;; -*- Gerbil -*-
-;;;; Automatically update gerbil and gambit recipes for nixpkgs from source.
-;; TODO: also automatically make a new commit to nixpkgs (and let the user use git rebase -i
-;; to merge the extra ones together), or somehow automatically detect which can be amended,
-;; and properly edit their messages, based on what was or wasn't already upstreamed.
+;; Automatically update gerbil and gambit recipes for nixpkgs from source.
+;; TODO: also automatically make a new commit to nixpkgs
+;; (and let the user use git rebase -i to merge the extra ones together), or
+;; somehow automatically detect which can be amended, and
+;; properly edit their messages, based on what was or wasn't already upstreamed.
 
 (import
   :gerbil/gambit
@@ -135,8 +136,10 @@
   (def nix-source-hash
     (call-with-input-process
      [path: "nix-prefetch-git"
-            arguments: ["--url" repo-url "--rev" latest-commit-hash]
-            show-console: #f stderr-redirection: #f]
+      ;; TODO: enable this flag & update nix recipe next time gambit breaks gerbil
+      arguments: [#; "--fetch-submodules"
+                  "--url" repo-url "--rev" latest-commit-hash]
+      show-console: #f stderr-redirection: #f]
      (λ (port)
        (cadr (pregexp-match
               "\"sha256\": \"([0-9a-z]+)\"," (read-all-as-string port))))))
