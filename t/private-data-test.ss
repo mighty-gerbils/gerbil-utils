@@ -13,6 +13,15 @@
 
 (def private-data-test
   (test-suite "test suite for clan/private-data"
+    (test-case "test new-struct-functions"
+      (defstruct bar (z))
+      (define-values (make-foo call-with-foo foo?) (new-struct-functions bar (x y)))
+      (def a (make-foo 10 20))
+      (check (object->string a) => (format "#<bar #~d>" (object->serial-number a)))
+      (check (bar? a) => #f)
+      (check (foo? a) => #t)
+      (check (foo? (bar 3)) => #f)
+      (check (call-with-foo + a) => 30))
     (test-case "test hidden password"
       (defprivate-struct password (string))
       (def p "foobar")

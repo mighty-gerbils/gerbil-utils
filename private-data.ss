@@ -5,7 +5,7 @@
 
 (import :std/misc/ports)
 
-(export PrivateDataError PrivateDataError? defprivate-struct)
+(export PrivateDataError PrivateDataError? defprivate-struct new-struct-functions)
 
 (deferror-class PrivateDataError ())
 
@@ -21,7 +21,7 @@
              irritants: [x (type-of e)])))
    thunk))
 
-(defrule (new-struct-funs name (slots ...))
+(defrule (new-struct-functions name (slots ...))
   (let ()
     (defstruct name (slots ...))
     (with-id name ((name? #'name "?")
@@ -32,7 +32,7 @@
 (defrule (defprivate-struct name (slots ...))
   (with-id name ((name? #'name "?")
                  (with-name "with-" #'name))
-    (define-values (name call-with-name name?) (new-struct-funs name (slots ...)))
+    (define-values (name call-with-name name?) (new-struct-functions name (slots ...)))
     (def (call-with-private fun x where (msg ""))
       (call-with-private-data where x msg (cut call-with-name fun x)))
     (defrule (with-name ((vars (... ...)) x . msg?) body (... ...))
