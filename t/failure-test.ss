@@ -12,7 +12,7 @@
       (check (match ((cut <> "foo") failure) ((failure) 2)) => 2)
       (check (failure? (failure "foo")) => #t)
       (check (failure? (some "foo")) => #f)
-      (check (option? (failure "foo")) => #f) ;; failure is not an option
+      (check (option? (failure "foo")) => #f) ;; failure is not an option!
       (check (result? (some "foo")) => #t)
       (check (result? (failure "foo")) => #t)
       (check (result? "foo") => #f)
