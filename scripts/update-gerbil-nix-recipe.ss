@@ -70,6 +70,28 @@
       ((not (pair? (cdr sf))) (format "~a\n  suggested fix: ~a" s (car sf)))
       (else                   (format "~a\n  suggested fixes: ~a" s sf)))))
 
+(def (get-version-ymd-hms source-dir latest-commit-hash)
+  ;; Extract version string
+  (def git-version
+    (call-with-input-process
+     [path: "git" arguments: ["describe" "--tags" "--always" latest-commit-hash]
+            directory: source-dir show-console: #f]
+     ;; strip the leading v: nix can't find the version if there is a v
+     (λ (port) (pregexp-replace "^v(.*)$" (read-line port) "\\1"))))
+
+  (def commit-unix-time
+    (call-with-input-process
+     [path: "git" arguments: ["show" "-s" "--pretty=format:%ct" latest-commit-hash]
+            directory: source-dir show-console: #f]
+     (cut parse-port parse-natural <> "git output" 'commit-unix-time)))
+
+  (def package-date (string<-unix-time commit-unix-time "~Y-~m-~d"))
+  (def package-version (if stable package-date (string-append "unstable-" package-date)))
+  (def package-ymd (string<-unix-time commit-unix-time "~Y~m~d"))
+  (def package-hms (string<-unix-time commit-unix-time "~H~M~S"))
+
+  (values git-version package-ymd package-hms))
+
 ;; cmdopts contains the command-line options that could be changed/added to either
 ;;   fix the source-dir directly, or stop it from attempting to update this recipe
 (def (update-recipe
@@ -113,32 +135,21 @@
             directory: source-dir show-console: #f]
      (λ (port) (pregexp-replace "^([0-9a-z]+) .*$" (read-line port) "\\1"))))
 
-  ;; Extract version string
-  (def git-version
-    (call-with-input-process
-     [path: "git" arguments: ["describe" "--tags" "--always" "FETCH_HEAD"]
-            directory: source-dir show-console: #f]
-     ;; strip the leading v: nix can't find the version if there is a v
-     (λ (port) (pregexp-replace "^v(.*)$" (read-line port) "\\1"))))
+  (define-values (git-version package-ymd package-hms)
+    (get-version-ymd-hms source-dir latest-commit-hash))
 
-  (def commit-unix-time
-    (call-with-input-process
-     [path: "git" arguments: ["show" "-s" "--pretty=format:%ct" latest-commit-hash]
-            directory: source-dir show-console: #f]
-     (cut parse-port parse-natural <> "git output" 'commit-unix-time)))
-
-  (def package-date (string<-unix-time commit-unix-time "~Y-~m-~d"))
-  (def package-version (if stable package-date (string-append "unstable-" package-date)))
-  (def package-ymd (string<-unix-time commit-unix-time "~Y~m~d"))
-  (def package-hms (string<-unix-time commit-unix-time "~H~M~S"))
+  (define-values (gambit-git-version gambit-ymd gambit-hms)
+    (if (equal? name "gerbil")
+      (values "4.9.5-40-g24201248" "20230917" "182043") ;; TODO: something clever
+      (values #f #f #f)))
 
   ;; Extract the new hash using nix-prefetch-git (sha256 as a 52(?) character base-36 string).
   (def nix-source-hash
     (call-with-input-process
      [path: "nix-prefetch-git"
       ;; TODO: enable this flag & update nix recipe next time gambit breaks gerbil
-      arguments: [#; "--fetch-submodules"
-                  "--url" repo-url "--rev" latest-commit-hash]
+      arguments: ["--fetch-submodules"
+                  "--url" (string-append "file://" source-dir) "--rev" latest-commit-hash]
       show-console: #f stderr-redirection: #f]
      (λ (port)
        (cadr (pregexp-match
@@ -160,6 +171,10 @@
          (pregexp-string-replacer " stampYmd = " "[0-9]+" ";" package-ymd)
          (pregexp-string-replacer " stampHms = " "[0-9]+" ";" package-hms)
          (pregexp-string-replacer "  rev = \"" "[0-9a-f]+" "\";" latest-commit-hash)])...
+      (when/list (equal? name "gerbil")
+        [(pregexp-string-replacer " gambit-git-version = \"" "[-.0-9A-Za-z]+" "\";" gambit-git-version)
+         (pregexp-string-replacer " gambit-stampYmd = " "[0-9]+" ";" gambit-ymd)
+         (pregexp-string-replacer " gambit-stampHms = " "[0-9]+" ";" gambit-hms)])...
       (pregexp-string-replacer "    owner = \"" "[-.0-9A-Za-z]+" "\";" owner)
       (pregexp-string-replacer "    repo = \"" "[-.0-9A-Za-z]+" "\";" repo-name)
       (pregexp-string-replacer "    sha256 = \"" "[0-9a-zA-Z+/=-]+" "\";" nix-source-hash)])))
