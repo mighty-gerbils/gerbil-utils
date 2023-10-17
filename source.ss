@@ -52,7 +52,8 @@
 ;; Explain Gambit location
 (def (explain-location l)
   (match l
-    ((vector input position) [(explain-position position) ... in: input])))
+    ((vector input position) [(explain-position position) ... in: input])
+    (else l)))
 
 ;; TODO: experiment with:
 ;; (parameterize ((current-expander-phi (1+ (current-expander-phi))) (eval-syntax ...))

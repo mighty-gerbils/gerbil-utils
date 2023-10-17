@@ -4,31 +4,32 @@
 (import
   :std/error
   :std/sugar
+  ./source
   ./option)
 
 (defclass (Failure Exception) (error) transparent: #t)
 (def failure? Failure?)
+(def (failure_ e) (Failure error: e))
 
 (defsyntax-for-match failure
-  (lambda (stx)
-    (syntax-case stx () ; match pattern
-      ((_) #'(Failure))
-      ((_ e) #'(Failure error: e))))
-  (lambda (stx)
-    (syntax-case stx () ; expr
-      ((_ e)
-       #'(Failure error: e))
-      ((_ . arg)
-       (error "failure takes one argument"))
-      (_ (lambda (e) #'(Failure error: e))))))
+  (syntax-rules () ((_ e) (Failure error: e)) ((_) (Failure)) )
+  (syntax-rules () ((_ e) (Failure error: e))
+                ((ctx . a) (syntax-error "failure takes one argument" (ctx . a)))
+                (_ failure_)))
 
 ;; A Result is (some x) or (failure e)
 ;; (deftype (Result V E) (Or (Some V) (Failure E)))
 ;; : Bool <- Any
-(def (result? x) (or (some? x) (Failure? x)))
+(def (result? x) (or (some? x) (failure? x)))
 
 ;; : (Result A Err) <- (A <- Unit)
 (def (call/result thunk)
-  (with-catch (cut Failure error: <>) (cut some (thunk))))
+  (with-catch failure (cut some (thunk))))
 
 (defrule (with-result body ...) (call/result (lambda () body ...)))
+
+(def (run-result r)
+  (match r
+    ((some r) r)
+    ((failure f) (raise f))
+    (#f (raise (failure #f)))))
