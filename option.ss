@@ -11,6 +11,13 @@
 ;; (deftype (Option A) (Union (Some A) '#f))
 ;; Note however that most (all?) of the functions below are agnostic as to what the 'absent' value is,
 ;; and will therefore also work for the Either / Error monad.
+;;
+;; (Option A) is notably isomorphic to, but different from the type (OptionList A)
+;; where (OptionList A) = (Union (Pair A '()) '()) is the type of lists of A of length a most one,
+;; (which is also the deterministic degenerate case of the non-determinism List monad).
+;; But (Option A) is not isomorphic to either (Maybe A) or (OrFalse A) due to the treatment
+;; of the exceptional value, that is uniformly quoted by Option but excluded by Maybe or OrFalse.
+
 (def (option? x) (or (some? x) (not x))) ;; an Option is canonically (some x) or #f
 (def (option-ref x) (match x ((some v) v) (else (error "no value" x))))
 (def (option-get x (default #f)) (match x ((some v) v) (else default)))

@@ -13,7 +13,7 @@
 ;; The unit element is notably different from the Scheme empty list '() often called "null"
 ;; and recognized by the predicate null?, as well as from the boolean false value #f.
 ;;
-;; (Maybe A) is notably isomorphic to, but different from, the type (OrFalse A) from ./orfalse,
+;; (Maybe A) is notably isomorphic to, but different from the type (OrFalse A) from ./orfalse,
 ;; but neither is canonically isomorphic to (Option A) from ./option because of the treatment
 ;; of the exceptional value, that is uniformly quoted by the Option but excluded by Maybe or OrFalse.
 
