@@ -1,7 +1,9 @@
 #!/usr/bin/env gxi
 ;; -*- Gerbil -*-
 ;;;; Make docker images for Gerbil, etc.
-;;;; Note: you may first need to `docker login registry.gitlab.com`
+;;;; Note: you may first need to `docker login registry.gitlab.com` for gitlab
+;;;; Or `docker login ghcr.io` for github
+;;;; Or `docker login docker.io` for docker
 (export #t)
 
 (import
@@ -371,6 +373,9 @@
     (error "Integration test failed"))
   ;; 9. Push the docker image
   (run-process/batch ["docker" "push" "mukn/glow:devel"])
+  ;; 10. Also push to ghcr.io
+  (run-process/batch ["docker" "tag" "mukn/glow:devel" "ghcr.io/glow-lang/glow:devel"])
+  (run-process/batch ["docker" "push" "ghcr.io/glow-lang/glow:devel"])
   (newline)
   (apply values images))
 
