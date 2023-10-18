@@ -70,7 +70,7 @@
       ((not (pair? (cdr sf))) (format "~a\n  suggested fix: ~a" s (car sf)))
       (else                   (format "~a\n  suggested fixes: ~a" s sf)))))
 
-(def (get-version-ymd-hms source-dir latest-commit-hash)
+(def (get-version-ymd-hms source-dir latest-commit-hash stable)
   ;; Extract version string
   (def git-version
     (call-with-input-process
@@ -86,11 +86,11 @@
      (cut parse-port parse-natural <> "git output" 'commit-unix-time)))
 
   (def package-date (string<-unix-time commit-unix-time "~Y-~m-~d"))
-  (def package-version (if stable package-date (string-append "unstable-" package-date)))
+  (def package-version (if stable git-version (string-append "unstable-" package-date)))
   (def package-ymd (string<-unix-time commit-unix-time "~Y~m~d"))
   (def package-hms (string<-unix-time commit-unix-time "~H~M~S"))
 
-  (values git-version package-ymd package-hms))
+  (values git-version package-version package-ymd package-hms))
 
 ;; cmdopts contains the command-line options that could be changed/added to either
 ;;   fix the source-dir directly, or stop it from attempting to update this recipe
@@ -135,8 +135,8 @@
             directory: source-dir show-console: #f]
      (λ (port) (pregexp-replace "^([0-9a-z]+) .*$" (read-line port) "\\1"))))
 
-  (define-values (git-version package-ymd package-hms)
-    (get-version-ymd-hms source-dir latest-commit-hash))
+  (define-values (git-version package-version package-ymd package-hms)
+    (get-version-ymd-hms source-dir latest-commit-hash stable))
 
   (define-values (gambit-git-version gambit-ymd gambit-hms)
     (if (equal? name "gerbil")
