@@ -21,7 +21,7 @@
   (cons* "t/test-support.ss" ;; temporary, until dependents are updated
          [exe: "scripts/random-run.ss" bin: "random-run"]
          (clan/building#all-gerbil-modules
-          exclude-dirs: '("run" "t" ".git" "_darcs" "scripts"))))
+          exclude-dirs: [clan/building#default-exclude-dirs ... "scripts"])))
 
 ;; In your build file, you can (import :clan/building) and use (init-build-environment! ...),
 ;; and later use (define-entry-point ...).

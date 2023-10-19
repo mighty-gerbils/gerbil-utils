@@ -10,8 +10,11 @@
   ./exit ./filesystem ./git-fu ./multicall ./nix-fu
   ./path-config ./ports ./versioning)
 
-(def (all-gerbil-modules exclude: (exclude '("main.ss"))
-                         exclude-dirs: (exclude-dirs '("run" "t" ".git" "_darcs")))
+(def default-exclude '("main.ss"))
+(def default-exclude-dirs '("run" "t" ".git" "_darcs" ".gerbil"))
+
+(def (all-gerbil-modules exclude: (exclude default-exclude)
+                         exclude-dirs: (exclude-dirs default-exclude-dirs))
   ((cut lset-difference equal? <> exclude)
    (find-files "" (lambda (x) (and (path-extension-is? x ".ss") (not (path-is-script? x))))
                recurse?: (lambda (x) (not (member (path-strip-directory x) exclude-dirs))))))
@@ -51,15 +54,13 @@
   (set-default-entry-point! 'compile)
   (current-program (path-strip-directory script-path)))
 
-(defrule (%init-build-environment! ctx args ...)
-  (begin
-    (def here (this-source-file ctx))
-    (with-id ctx (main)
-      (define-multicall-main ctx)
-      (%set-build-environment! here args ...))))
-
-(defsyntax (init-build-environment! stx)
-  (syntax-case stx () ((ctx args ...) #'(%init-build-environment! ctx args ...))))
+(defrules init-build-environment! ()
+  ((ctx args ...)
+   (begin
+     (def here (this-source-file ctx))
+     (with-id ctx (main)
+       (define-multicall-main ctx)
+       (%set-build-environment! here args ...)))))
 
 (def ($ cmd)
   (match (shell-command cmd #t)
