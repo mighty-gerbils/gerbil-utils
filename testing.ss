@@ -94,17 +94,13 @@
   (set-default-entry-point! 'unit-tests)
   (current-program (path-strip-directory script-path)))
 
-(defrule (%init-test-environment! ctx)
+(defrules init-test-environment! ()
+  ((ctx)
    (begin
      (def here (this-source-file ctx))
      (with-id ctx (main)
        (define-multicall-main ctx)
-       (%set-test-environment! here))))
-
-(defsyntax (init-test-environment! stx)
-  (syntax-case stx ()
-    ((ctx) #'(%init-test-environment! ctx))
-    ((_ ctx) #'(%init-test-environment! ctx))))
+       (%set-test-environment! here)))))
 
 (define-entry-point (test . files)
   (help: "Run specific tests"
@@ -134,6 +130,7 @@
   (!> 0x hex-decode 6u32<-bytes list->vector (cut random-source-state-set! rs <>)))
 
 ;; Call this function at the beginning of any test involving randomness.
+;; TODO: handle choice between pseudo-random and crypto random sources.
 (def (init-test-random-source!)
   (cond ((getenv "GERBIL_TEST_RANDOM_SOURCE" #f) => random-source<-0x!)
         (else (random-source-randomize! default-random-source)))
