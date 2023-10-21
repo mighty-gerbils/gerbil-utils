@@ -5,24 +5,27 @@
 (export (except-out #t errorf warnf infof debugf verbosef))
 
 (import
-  :gerbil/gambit
-  :std/format
-  :std/io
-  :std/logger
-  :std/misc/list
-  :std/misc/path
-  :std/misc/number
-  :std/misc/ports
-  :std/misc/process
-  :std/misc/sync
-  :std/srfi/13
-  :std/sugar
-  :std/text/json
-  :std/text/basic-parsers
-  ./base ./concurrency ./timestamp ./filesystem ./generator
-  ./json ./list ./memo ./path-config ./versioning)
-
-(deflogger clan)
+  (only-in :std/format eprintf)
+  (only-in :std/io PeekableStringReader open-string-reader)
+  (only-in :std/misc/alist plist->alist)
+  (only-in :std/misc/list-builder with-list-builder)
+  (only-in :std/misc/number increment!)
+  (only-in :std/misc/path subpath)
+  (only-in :std/misc/process run-process)
+  (only-in :std/misc/walist walist)
+  (only-in :std/sugar try catch while until when-let)
+  (only-in :std/text/json write-json)
+  (only-in :std/text/basic-parsers parse-line string-reader-eof?)
+  (only-in ./base ensure-function)
+  (only-in ./concurrency sequentialize)
+  (only-in ./timestamp one-day period-start parse-timestamp display-timestamp
+           date-string<-unix-time caching-adjustment<-tai-time caching-date-string<-unix-time
+           current-tai-timestamp unix-time<-tai-timestamp tai-time<-tai-timestamp)
+  (only-in ./generator in-cothread/peekable)
+  (only-in ./json write-json-ln json<-string)
+  (only-in ./memo define-memo-function)
+  (only-in ./path-config log-directory data-directory)
+  (only-in ./versioning software-name software-version machine-name))
 
 ;;; Logging text to a series of log files.
 ;; Start a new logger, with given name (optional) and a hook to call when switching files.
@@ -36,7 +39,7 @@
    ['text-logger name]
    (let ((current-port #f)
          (new-file-hook (ensure-function on-new-file)))
-     (λ (file text on-new-file: (on-new-file new-file-hook))
+     (lambda (file text on-new-file: (on-new-file new-file-hook))
        (let* ((previous-port current-port)
               (previous-file (and previous-port (##port-name previous-port))))
          (unless (and previous-port (equal? previous-file file))
@@ -55,7 +58,7 @@
 
 (def (log-line<-json timestamp json)
   (call-with-output-string
-   [] (λ (o) (display-timestamp timestamp o) (display " " o)
+   [] (lambda (o) (display-timestamp timestamp o) (display " " o)
          (write-json json o) (newline o))))
 
 
@@ -71,7 +74,7 @@
 ;; is called whe the file name changed.
 ;; (<- Any (Optional Timestamp)) <- String top: (Optional String) name: (Optional Any)
 (define-memo-function ((json-logger
-                        normalization: (λ (path top: (top (log-directory)) name: (name #f))
+                        normalization: (lambda (path top: (top (log-directory)) name: (name #f))
                                          [path top name]))
                        path top name)
   (def directory (subpath top path))
@@ -80,7 +83,7 @@
   (def caching-adjustment<-tai (caching-adjustment<-tai-time))
   (sequentialize
    ['json-logger (or name path)]
-   (λ (json (tai-timestamp (current-tai-timestamp)))
+   (lambda (json (tai-timestamp (current-tai-timestamp)))
      (let* ((text (log-line<-json tai-timestamp json))
             (tai-time (tai-time<-tai-timestamp tai-timestamp))
             (unix-time (- tai-time (caching-adjustment<-tai tai-time)))
@@ -88,7 +91,7 @@
             (file (string-append directory "/" date ".log")))
        (log file text
             on-new-file:
-            (λ (previous-file: _ previous-port: _ current-file: _ current-port: port)
+            (lambda (previous-file: _ previous-port: _ current-file: _ current-port: port)
               (display (log-line<-json tai-timestamp (metadata name: (or name path))) port)))))))
 
 ;;; Logging JSON into a directory named after the arguments under the data-directory
@@ -191,13 +194,13 @@
       entry-processor
       object-decoder: (object-decoder identity)
       metadata-hook: (metadata-hook void))
-  (λ-match
+  (match <>
    ([timestamp . line]
     (let-syntax ((delay-warn
                   (syntax-rules ()
                     ((_ form) (delay (try form
                                           (catch (_)
-                                            (warnf "Bad log entry ~a ~a" timestamp line)
+                                            (eprintf "Bad log entry ~a ~a\n" timestamp line)
                                             (void))))))))
       (if (metadata-line? line)
         (metadata-hook timestamp (delay-warn (json<-string line)))
@@ -224,7 +227,7 @@
       object-decoder: (object-decoder identity)
       metadata-hook: (metadata-hook void))
   (in-cothread/peekable
-   (λ (yield)
+   (lambda (yield)
      (for-each-xz-logdir-entry!
       file<-date-string start-timestamp end-timestamp
       (processing-log-object yield object-decoder: object-decoder metadata-hook: metadata-hook)))))
@@ -237,10 +240,10 @@
 ;; : (List String) <- String *
 (def (metadata . keys)
   ["metadata"
-   "software" (software-name)
-   "version" (software-version)
-   "machine" (machine-name)
-   . keys])
+   (walist `(("software" .,(software-name))
+             ("version" .,(software-version))
+             ("machine" .,(machine-name))
+             ,@(plist->alist keys)))])
 
 ;; Convert a metadata list to an array. Return #f if it was not metadata
 ;; (Or (Table String String) '#f) <- (List String)
@@ -261,7 +264,7 @@
 ;; TODO: Move this utility somewhere else?
 ;; It's useful to force the promises from logs, but isn't specific to loggers.
 (def force-pairs
-  (λ-match
+  (match <>
    ([a . b] (cons (force-pairs a) (force-pairs b)))
    (x (force x))))
 

@@ -71,7 +71,7 @@
              (return-ticket now ticket)))
           ,(@ping)
           ,(@shutdown exit)
-          ,(@unexpected warnf)))))
+          ,(@unexpected eprintlnf)))))
 
 (def +limiter-server-address+ (values "/tmp/limiter-server.sock"))
 
@@ -160,7 +160,7 @@
                (when found
                  (unless (equal? ticket found)
                    (error "ticket mismatch" name number ticket found))
-                 (warnf "~a ticket expired: ~s" name ticket)
+                 (eprintlnf "~a ticket expired: ~s" name ticket)
                  (return-ticket timestamp ['ticket number tokens timestamp])))
              (loop)))
           (bogus (error "ticket-timeouts mismatch" name bogus)))))
@@ -203,7 +203,7 @@
          (cond
           ((not found)
            (if (<= timestamp now)
-             (warnf "~a ticket returned after it expired: ~s" name ticket)
+             (eprintlnf "~a ticket returned after it expired: ~s" name ticket)
              (error "~a ticket returned but not found (double return?): ~s" name ticket)))
           ((not (equal? [tokens timestamp] found))
            (error "~a ticket returned but doesn't match!: ~s vs ~s" name ticket found))

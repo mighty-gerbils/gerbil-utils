@@ -2,24 +2,24 @@
 ;;;; General-purpose logging facility.
 ;; TODO: modify the interface to allow for actions on log rotation.
 
-(export (except-out #t errorf warnf infof debugf verbosef))
+(export #t)
 
 (import
-  :gerbil/gambit
-  :std/error :std/format :std/logger
-  ./base ./exception)
-
-(deflogger clan)
+  (only-in :std/format eprintf)
+  (only-in ./exception string<-exception))
 
 (def (warn-and-err format type . args)
-  (apply warnf format type args)
+  (apply eprintlnf format type args)
   (apply error type args))
 
-(def (abort! code msg . args)
-  (apply eprintf msg args)
+(def (abort! code fmt . args)
+  (apply eprintlnf fmt args)
   (exit code))
 
 (def current-error-context (make-parameter '()))
 
+(def (eprintlnf fmt . args)
+  (apply eprintf (string-append fmt "\n") args))
+
 (def (log-error what exn)
-  (errorf "~a: ~a" what (string<-exception exn)))
+  (eprintlnf "~a: ~a" what (string<-exception exn)))

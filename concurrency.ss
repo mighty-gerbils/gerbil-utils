@@ -1,15 +1,22 @@
 ;; -*- Gerbil -*-
 ;;;; Utilities for concurrency
 
-(export (except-out #t errorf warnf infof debugf verbosef))
+(export #t)
 
 (import
-  :gerbil/gambit
-  :std/actor :std/assert :std/error :std/format :std/logger
-  :std/misc/bytes :std/misc/completion :std/misc/list :std/misc/repr :std/sugar
-  ./base ./error ./exception)
-
-(deflogger clan)
+  (only-in :gerbil/gambit random-real thread-mailbox-extract-and-rewind
+           thread-group->thread-list thread-group->thread-group-list)
+  (only-in :std/format eprintf)
+  (only-in :std/actor <- -> -->? with-result !ok !error defmessage !shutdown shutdown!
+           @ping @shutdown @unexpected ShutdownError)
+  (only-in :std/error deferror-class check-argument dump-stack-trace! with-exception-stack-trace)
+  (only-in :std/misc/completion make-completion completion-post! completion-wait!)
+  (only-in :std/misc/list with-list-builder)
+  (only-in :std/misc/repr repr)
+  (only-in :std/sugar defrule while try catch finally)
+  (only-in ./base nest)
+  (only-in ./error abort! eprintlnf log-error)
+  (only-in ./exception thunk-with-logged-exceptions))
 
 ;;; Protocol for process shutdown: periodically check for the (shutdown?) flag,
 ;; so you can shutdown gracefully after having received a signal,
@@ -19,8 +26,7 @@
 (def (add-shutdown-predicate pred)
   (let ((previous (current-shutdown-predicate)))
     (current-shutdown-predicate
-     (λ () (and (pred) (previous))))))
-
+     (lambda () (and (pred) (previous))))))
 
 ;;; Basic protocol for managing process trees.
 ;;; XXX vyzo: this is best accomplished with thread-groups
@@ -37,7 +43,7 @@
   (let ((subprocess
          (spawn/name
           name
-          (λ () (parameterize ((current-subprocesses (make-hash-table)))
+          (lambda () (parameterize ((current-subprocesses (make-hash-table)))
                   (try
                    (apply function args)
                    (finally
@@ -49,7 +55,8 @@
 
 (def (unregister-subprocess subprocess)
   (let ((subprocesses (current-subprocesses)))
-    (assert! (hash-get subprocesses subprocess))
+    (check-argument (hash-key? subprocesses subprocess)
+                    "registered subprocess" [subprocess subprocesses])
     (hash-remove! subprocesses subprocess)
     (void)))
 
@@ -62,7 +69,7 @@
 
 ;;; Function to indefinitely repeat a function call.
 (def (indefinitely fun . args)
-  (λ more-args
+  (lambda more-args
     (while #t
       (try
        (apply fun (append args more-args))
@@ -86,13 +93,13 @@
            (-->? (begin/result (apply fun arguments))))
           ,(@ping)
           ,(@shutdown exit)
-          ,(@unexpected warnf))
+          ,(@unexpected eprintlnf))
       (loop))))
 
 ;; TODO: does this leak resources when this wrapper is garbage collected but maybe not the actor?
 (def (sequentialize/actor name fun)
   (let ((actor (spawn/name/logged name (lambda () (applicable-actor fun)))))
-    (λ arguments (-> actor (!apply arguments)))))
+    (lambda arguments (-> actor (!apply arguments)))))
 
 ;; vyzo: this is a version of sequentialize that uses a plain mutex
 ;; + much more efficient
@@ -117,7 +124,7 @@
 ;; finished faster); they may describe an actor that may also receive shutdown messages.
 
 (defrules with-race ()
-  ((_ (shutdown?) (name form) ...) (race/list [[name (λ (shutdown?) form)] ...])))
+  ((_ (shutdown?) (name form) ...) (race/list [[name (lambda (shutdown?) form)] ...])))
 
 ;; Return an A given a list of tasks that produce A, where each task is a tuple
 ;; of a name (any printable object) and a function that returns an A given a predicate
@@ -128,13 +135,13 @@
     (with-result
      (thread-join!
       (spawn
-       (λ ()
+       (lambda ()
          (def referee (current-thread))
          (def done? #f)
          (def (shutdown?) done?)
          (def process<-fun
-           (nest (λ-match) ([name fun])
-                 (spawn/name name) (λ ())
+           (nest (match <>) ([name fun])
+                 (spawn/name name) (lambda ())
                  (-> referee) (begin/result) (values->list)
                  (fun shutdown?)))
          (def subprocesses (map process<-fun task-list))
@@ -152,13 +159,13 @@
 
 ;; Parallel version of map
 (def (parallel-map f . ls)
-  (map thread-join! (apply map (λ es (apply spawn f es)) ls)))
+  (map thread-join! (apply map (lambda es (apply spawn f es)) ls)))
 
 ;; Parallel version of hash-value-map
 (def (parallel-hash-value-map h f)
   (list->hash-table
    (parallel-map
-    (λ-match ([k . v] (cons k (f v))))
+    (match <> ([k . v] (cons k (f v))))
     (hash->list h))))
 
 ;; Find a thread by name.
@@ -172,7 +179,7 @@
       (for-each loop (thread-group->thread-group-list g)))))
 
 (def (thread-named name)
-  (find (λ (t) (equal? (thread-name t) name)) (all-threads)))
+  (find (lambda (t) (equal? (thread-name t) name)) (all-threads)))
 
 (def (all-threads-named name)
   (filter (lambda (t) (equal? (thread-name t) name)) (all-threads)))
@@ -182,7 +189,7 @@
   (with-exception-stack-trace thunk))
 
 (defrules with-stack-trace-dumping ()
-  ((_ body ...) (call-with-stack-trace-dumping (λ () body ...))))
+  ((_ body ...) (call-with-stack-trace-dumping (lambda () body ...))))
 
 ;; Run without interaction
 (def (call-without-interaction thunk)
@@ -192,7 +199,7 @@
    (catch (exn) (abort! 42 "Caught exception ~a" (repr exn)))))
 
 (defrules without-interaction ()
-  ((_ body ...) (call-without-interaction (λ () body ...))))
+  ((_ body ...) (call-without-interaction (lambda () body ...))))
 
 ;; Join a list of threads. TODO: do it without blocking sequentially on each thread?
 (def (join-threads! threads)
