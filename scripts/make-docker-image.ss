@@ -344,7 +344,8 @@
   (def mukn/dependencies (build-nix-image mukn/nix "mukn/dependencies"
                                           install: user-paths dependency-paths))
   (def mukn/gerbil (build-nix-image mukn/dependencies "mukn/gerbil"
-                                    changes: ["ENV GERBIL_LOADPATH /root/.nix-profile/gerbil/lib"]
+                                    changes: ["ENV GERBIL_PATH /root/.gerbil"
+                                              "ENV GERBIL_LOADPATH /root/.gerbil/lib:/root/.nix-profile/gerbil/lib"]
                                     gerbil-paths
                                     "gxi -e '(displayln (* 6 7))'"))
   (def mukn/glow (build-nix-image mukn/gerbil "mukn/glow"
