@@ -1,5 +1,6 @@
 build-deps
 version.ss
+manifest.ss
 run/
 
 result
