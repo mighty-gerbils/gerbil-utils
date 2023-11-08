@@ -1,11 +1,11 @@
 ;; -*- Gerbil -*-
 ;;; Autocurrying of functions, to enable Categorical Functional Programming in Scheme
-;; * Functions defined with fun and defn will be semantically unary (single-argument)
+;; * Functions defined with fn and defn will be semantically unary (single-argument)
 ;; * If more than one argument is specified, each argument passed but the last
 ;;   will create a closure that remembers previous arguments and waits for the next.
 ;; * When the last argument is provided (or when there is no argument),
 ;;   the body will be evaluated in a begin form.
-;; * Furthermore, each function defined with defn and each argument received by fun or defn
+;; * Furthermore, each function defined with defn and each argument received by fn or defn
 ;;   will be autocurrying when called.
 ;; * Also, a single unparenthesized argument will be treated the same as if were parenthesized,
 ;;   in line with typical lambda-calculus, and differently from Scheme style where it means putting
@@ -28,12 +28,12 @@
 
 #| ;; To fully inhabit that universe:
 (defalias %%app %app)
-(defalias λ fun) ;; Unicode symbol
-(defalias lambda fun) ;; l-a-m-b-d-a
-(defalias def defn)
+(defalias λ fn) ;; Unicode symbol
+(defalias lambda fn) ;; l-a-m-b-d-a
+(defalias dfn defn)
 
-OR, when you import, say (only rebinding unicode lambda and def):
-(import (rename-in :clan/autocurry (fun λ) (defn def)))
+OR, when you import, say (only rebinding unicode lambda def and @):
+(import (rename-in :clan/autocurry (fn λ) (defn dfn) (%app @))
 |#
 
 (export #t)
@@ -55,19 +55,21 @@ OR, when you import, say (only rebinding unicode lambda and def):
     (_ %app_)))
 
 ;; Autocurrying anonymous function definition
-(define-syntax fun
+(define-syntax fn
   (syntax-rules ()
     ((_ () . body) (begin . body))
     ((_ (x) . body) (lambda (v) (defn x v) . body))
-    ((_ (x . y) . body) (fun (x) (fun y . body)))
-    ((_ v . body) (fun (v) . body)))) ;; also accept a single var without paren, same as with paren
+    ((_ (x . y) . body) (fn (x) (fn y . body)))
+    ((_ v . body) (fn (v) . body)))) ;; also accept a single var without paren, same as with paren
 
 ;; Autocurrying named (potentially recursive) function definition
 (define-syntax defn
   (syntax-rules ()
     ((_ (pat . vars) . body)
-     (defn pat (fun vars . body)))
+     (defn pat (fn vars . body)))
     ((_ v . body)
-     (begin (define tmp (begin . body))
-            (define-syntax v (syntax-rules () ((_ . a) (%app tmp . a))
-                                              (_ tmp)))))))
+     (begin
+       ;; Allow autocurrying self-reference in the definition body as well as afterwards
+       (define-syntax v (syntax-rules () ((_ . a) (%app tmp . a))
+                                      (_ tmp)))
+       (define tmp (let () . body))))))
