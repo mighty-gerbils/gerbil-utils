@@ -3,7 +3,8 @@
 (export #t)
 
 (import
-  :gerbil/gambit)
+  :gerbil/gambit
+  :std/error)
 
 ;; Convert one digit to a roman numeral, given strings for one unit, five units and ten units.
 (def (roman-numeral<-digit digit (i "I") (v "V") (x "X"))
@@ -22,8 +23,8 @@
 
 (def (roman-numeral<-integer n)
   ;; NB: Only works for integer from 1 to 3999.
-  (when (or (not (exact-integer? n)) (< n 1) (> n 3999))
-    (error "I cannot convert ~s to a roman numeral" n))
+  (check-argument (and (exact-integer? n) (<= 1 n 3999))
+                  "integer convertible to roman numeral" n)
   (let* ((units (modulo n 10))
          (n/10 (/ (- n units) 10))
          (tens (modulo n/10 10))

@@ -28,7 +28,7 @@
 (import
   (only-in :std/srfi/141 floor/)
   (only-in :std/misc/path subpath)
-  (only-in ./base ignore-errors)
+  (only-in :std/sugar ignore-errors)
   (only-in ./path-config source-path))
 
 (export #t)

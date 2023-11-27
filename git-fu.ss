@@ -17,7 +17,7 @@
   :std/source
   :std/srfi/1
   :std/sugar
-  ./base ./exit ./filesystem ./io ./list
+  ./base ./filesystem ./io ./list
   ./path-config ./ports ./rpm-versioning ./syntax)
 
 ;; TODO: move that to another file?

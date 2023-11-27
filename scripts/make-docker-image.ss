@@ -7,9 +7,11 @@
 (export #t)
 
 (import
+  (only-in :std/cli/getopt argument optional-argument rest-arguments)
+  (only-in :std/cli/multicall define-multicall-main define-entry-point set-default-entry-point!)
   (only-in :std/crypto/digest make-digest digest::sha256 digest-update! digest-final!)
+  #;(only-in :std/error dump-stack-trace?) ;; Only in v0.19
   (only-in :std/format format fprintf)
-  (only-in :std/getopt argument optional-argument rest-arguments)
   (only-in :std/iter for)
   (only-in :std/misc/list length=n? when/list)
   (only-in :std/misc/path subpath path-simplify path-parent)
@@ -22,11 +24,9 @@
   (only-in :std/srfi/1 lset-difference any first second third remove append-map)
   (only-in :std/srfi/13 string-suffix?)
   (only-in :std/text/hex hex-encode)
-  (only-in :clan/exit backtrace-on-abort?)
   (only-in :clan/files clobber-file)
   (only-in :clan/filesystem path-is-directory?)
   (only-in :clan/memo define-memo-function)
-  (only-in :clan/multicall define-multicall-main define-entry-point set-default-entry-point!)
   (only-in :clan/path-config cache-path set-path-config-root! application-name)
   (only-in :clan/ports output-contents)
   (only-in :clan/shell escape-shell-token)
@@ -166,7 +166,7 @@
 ;;     docker image prune -a
 ;;
 (def (docker-commit-image from to mounts: (mounts []) changes: (changes []) . commands)
-  (def build-name (string-substitute #\- #\/ to))
+  (def build-name (string-substitute to #\- #\/))
   (def build-script (subpath docker-directory (string-append build-name ".sh")))
   (unless (docker-image-id to)
     (create-directory* docker-directory)
@@ -411,7 +411,7 @@
   (make-images nixpkgs))
 
 (set-default-entry-point! 'all)
-(backtrace-on-abort? #f)
+#;(dump-stack-trace? #f) ;; Only in v0.19
 (define-multicall-main)
 
 #|

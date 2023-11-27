@@ -154,11 +154,6 @@
   (λ (data nil cons) ((reduce (map data (curry curry cons)) identity compose) nil)))
 
 
-
-
-;;;; Stupid error non-handling
-(defrule (ignore-errors form ...) (with-catch (λ (_) #f) (λ () form ...)))
-
 ;;;; Basic error cases
 
 ;; Use Undefined where the language requires you to cover a case that is actually

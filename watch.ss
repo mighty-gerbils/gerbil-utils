@@ -25,9 +25,25 @@
 
 (import
   :gerbil/gambit
-  :std/actor :std/format :std/logger :std/misc/list :std/misc/ports :std/misc/process
-  :std/pregexp :std/srfi/13 :std/sugar :std/text/basic-parsers
-  ./base ./timestamp ./ffi ./files ./json ./list ./logger ./path-config)
+  :std/actor
+  :std/format
+  :std/logger
+  :std/misc/list
+  :std/misc/ports
+  :std/misc/process
+  (only-in :std/pregexp pregexp-match)
+  (only-in :std/srfi/13 string-every)
+  (only-in :std/sugar while try finally hash ignore-errors)
+  (only-in :std/text/basic-parsers parse-port
+           parse-and-skip-any-whitespace parse-natural parse-separated parse-eof)
+  ./base
+  ./timestamp
+  ./ffi
+  ./files
+  ./json
+  ./list
+  ./logger
+  ./path-config)
 
 ;; Class Daemon-Status-Register
 (defclass daemon-status-register ())
@@ -124,14 +140,8 @@
      (loop))))
 
 (def (read-integer-list port)
-  (nest
-   (and port)
-   (with-list-builder (c))
-   (let loop ()
-     (parse-and-skip-any-whitespace port))
-   (unless (eof-object? (peek-char port))
-     (c (parse-natural port))
-     (loop))))
+  (let (parser (parse-separated parse-natural parse-and-skip-any-whitespace parse-eof))
+    (and port (parse-port parser port))))
 
 ;; TODO: make it portable beyond Linux. At least make it error out outside Linux.
 ;; TODO: is ignore-errors working? Should we use it?

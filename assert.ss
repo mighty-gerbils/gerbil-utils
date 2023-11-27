@@ -4,7 +4,7 @@
 (export #t)
 
 (import
-  :std/logger :std/sugar
+  (only-in :std/logger warn-and-err)
   ./base ./error)
 
 (defrules assert-comparison! ()

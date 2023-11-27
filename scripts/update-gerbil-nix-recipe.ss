@@ -8,8 +8,9 @@
 
 (import
   :gerbil/gambit
+  :std/cli/getopt
+  :std/cli/multicall
   :std/format
-  :std/getopt
   :std/misc/list
   :std/misc/path
   :std/misc/ports
@@ -20,7 +21,6 @@
   :std/text/basic-parsers
   :clan/base
   :clan/files
-  :clan/multicall
   :clan/timestamp)
 
 ;; Initialize paths from the environment
@@ -148,7 +148,7 @@
     (call-with-input-process
      [path: "nix-prefetch-git"
       ;; TODO: enable this flag & update nix recipe next time gambit breaks gerbil
-      arguments: ["--fetch-submodules"
+      arguments: ["--fetch-submodules" "--no-deepClone" ;;"--sparse-checkout"
                   "--url" (string-append "file://" source-dir) "--rev" latest-commit-hash]
       show-console: #f stderr-redirection: #f]
      (λ (port)

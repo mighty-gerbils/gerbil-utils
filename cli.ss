@@ -1,8 +1,10 @@
 (export #t)
 
 (import
-  :std/getopt :std/srfi/13 :std/sugar
-  ./exit ./hash ./json)
+  :std/srfi/13
+  (only-in :std/cli/getopt flag)
+  (only-in ./hash hash-removed)
+  (only-in ./json read-file-json json<-port json<-string))
 
 ;; Given a string argument designating a JSON object
 ;; Json <- String
@@ -22,4 +24,4 @@
    [(flag 'backtrace "--backtrace"
           help: "enable backtraces for debugging purposes")])
 (def process-opts/backtrace
-  [(lambda (opt) (backtrace-on-abort? (hash-removed opt 'backtrace)))])
+  [(lambda (opt) '(dump-stack-trace? (hash-removed opt 'backtrace)))]) ;; Only in v0.19

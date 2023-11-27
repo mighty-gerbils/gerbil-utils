@@ -2,15 +2,26 @@
 (export #t)
 
 (import
-  :gerbil/gambit
+  (only-in :gerbil/gambit pretty-print shell-command)
   (only-in :gerbil/runtime/init add-load-path)
-  :std/format :std/getopt :std/iter :std/make :std/source
-  :std/misc/list :std/misc/path :std/misc/ports :std/misc/process :std/misc/string
-  :std/pregexp :std/srfi/1 :std/srfi/13 :std/sugar
-  ./exit ./filesystem ./git-fu ./multicall ./nix-fu
-  ./path-config ./ports ./versioning)
+  (only-in :std/cli/getopt flag)
+  (only-in :std/cli/multicall define-entry-point set-default-entry-point!
+           current-program define-multicall-main)
+  #;(only-in :std/error dump-stack-trace?) ;; only in v0.19
+  (only-in :std/make make)
+  (only-in :std/source this-source-file)
+  (only-in :std/misc/list when/list)
+  (only-in :std/misc/path path-maybe-normalize subpath path-extension-is?)
+  (only-in :std/misc/string string-trim-eol)
+  (only-in :std/srfi/1 lset-difference)
+  (only-in ./filesystem find-files path-is-script?)
+  (only-in ./git-fu update-version-from-git)
+  (only-in ./nix-fu gerbil-is-nix?)
+  (only-in ./path-config set-path-config-root!
+           application-source-directory application-home-directory)
+  (only-in ./ports set-current-ports-encoding-standard-unix!))
 
-(def default-exclude '("main.ss"))
+(def default-exclude '("main.ss" "manifest.ss"))
 (def default-exclude-dirs '("run" "t" ".git" "_darcs" ".gerbil"))
 
 (def (all-gerbil-modules exclude: (exclude default-exclude)
@@ -58,9 +69,9 @@
   ((ctx args ...)
    (begin
      (def here (this-source-file ctx))
-     (with-id ctx (main)
-       (define-multicall-main ctx)
-       (%set-build-environment! here args ...)))))
+     ;;(with-id ctx (main) (def main call-entry-point))
+     (define-multicall-main ctx)
+     (%set-build-environment! here args ...))))
 
 (def ($ cmd)
   (match (shell-command cmd #t)
@@ -135,4 +146,5 @@
   (def optimize? (not no-optimize))
   (pretty-print (build-spec tcc: tcc optimize: optimize?)))
 
-(backtrace-on-abort? #f)
+#;(dump-stack-trace? #f) ;; Only in v0.19
+

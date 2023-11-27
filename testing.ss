@@ -8,24 +8,26 @@
 (export #t)
 
 (import
-  :gerbil/gambit
-  :gerbil/expander
+  (only-in :gerbil/gambit random-source-randomize! default-random-source
+           random-source-state-ref random-source-state-set!)
+  (only-in :gerbil/expander import-module)
   (only-in :gerbil/runtime/init add-load-path)
-  :std/error
-  :std/format
-  :std/getopt
-  :std/iter
-  :std/misc/bytes
-  :std/misc/path
-  :std/misc/process
-  :std/misc/repr
-  :std/sort
-  :std/source
-  :std/stxutil
-  :std/sugar
-  :std/test
-  :std/text/hex
-  ./base ./exit ./filesystem ./git-fu ./io ./multicall
+                                        (only-in :std/cli/getopt rest-arguments)
+  (only-in :std/cli/multicall define-entry-point set-default-entry-point!
+           current-program define-multicall-main)
+  (only-in :std/cli/print-exit silent-exit)
+  (only-in :std/error Error? Error-message)
+  (only-in :std/format printf)
+  (only-in :std/iter for/collect in-range)
+  (only-in :std/misc/path subpath path-maybe-normalize path-enough path-simplify)
+  (only-in :std/misc/process)
+  (only-in :std/misc/repr repr)
+  (only-in :std/sort sort)
+  (only-in :std/source this-source-file)
+  (only-in :std/sugar with-id)
+  (only-in :std/test run-tests! test-report-summary! test-result)
+  (only-in :std/text/hex hex-decode hex-encode)
+  ./base ./filesystem ./git-fu ./io
   ./path-config ./ports ./versioning)
 
 ;; Given a directory name (with no trailing /), is it a test directory named "t"?
@@ -121,12 +123,12 @@
 
 (def (0x<-random-source (rs default-random-source))
   (def (bytes<-6u32 l)
-    (call-with-output-u8vector (lambda (port) (for-each (lambda (x) (write-nat-u8vector x 4 port)) l))))
+    (call-with-output-u8vector (lambda (port) (for-each (lambda (x) (write-uint-u8vector x 4 port)) l))))
   (!> rs random-source-state-ref vector->list bytes<-6u32 hex-encode))
 
 (def (random-source<-0x! 0x (rs default-random-source))
   (def (6u32<-bytes b) (call-with-input-u8vector
-                        b (lambda (port) (for/collect (_ (in-range 6)) (read-nat-u8vector 4 port)))))
+                        b (lambda (port) (for/collect (_ (in-range 6)) (read-uint-u8vector 4 port)))))
   (!> 0x hex-decode 6u32<-bytes list->vector (cut random-source-state-set! rs <>)))
 
 ;; Call this function at the beginning of any test involving randomness.

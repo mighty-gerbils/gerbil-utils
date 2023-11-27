@@ -4,10 +4,12 @@
 (export #t)
 
 (import
-  :std/format :std/getopt :std/logger :std/iter
+  :std/cli/getopt
+  :std/cli/multicall
+  :std/format :std/logger :std/iter
   :std/misc/list :std/misc/process :std/srfi/1 :std/sugar
   :clan/base :clan/error :clan/list
-  :clan/filesystem :clan/multicall :clan/random)
+  :clan/filesystem :clan/random)
 
 (define-entry-point (random-run . arguments)
   (help: "Run a command with arguments in random order"

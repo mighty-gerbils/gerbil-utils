@@ -18,14 +18,14 @@
 (def json-test
   (test-suite "test suite for clan/json"
     (test-case "trivial-json<-struct, trivial-struct<-json"
-      (defrule (t struct json)
+      (defrule (t struct alist)
         (begin
-          (checkf equal-struct? (json-rpc-error<-json json) struct)
-          (check-equal? {:json struct} json)))
+          (checkf equal-struct? (json-rpc-error<-json (list->hash-table alist)) struct)
+          (check-equal? {:json struct} (list->hash-table alist)))) ;; in v0.19: walist
       (parameterize ((json-symbolic-keys #t))
         (check equal-struct? (json-rpc-error -1 "foo" [42]) (json-rpc-error -1 "foo" [42]))
-        (t (json-rpc-error -1 "foo" [42]) (hash (code -1) (message "foo") (data [42])))
-        (t (json-rpc-error -100 "bar" (void)) (hash (code -100) (message "bar") (data (void))))
+        (t (json-rpc-error -1 "foo" [42]) '((code . -1) (message . "foo") (data . (42))))
+        (t (json-rpc-error -100 "bar" (void)) '((code . -100) (message . "bar") (data . #!void)))
         (check equal-struct?
                (json-rpc-error<-json (hash (code -2) (message "x")))
                (json-rpc-error -2 "x" (void)))))

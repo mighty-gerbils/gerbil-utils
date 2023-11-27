@@ -1,4 +1,4 @@
-# gerbil-nix-env.sh -*- Shell -*-
+# gerbil-nix-env.sh -*- shell-mode -*-
 # Copyright 2017 Francois-Rene Rideau <fare@tunes.org>
 # This file is published under both LGPLv2.1 and Apache 2.0 licenses.
 #
@@ -49,13 +49,15 @@ export NIX_GERBIL_LOADPATH=$HOME/.nix-profile/gerbil:/nix/var/nix/profiles/defau
 export GERBIL_LOADPATH=$NIX_GERBIL_LOADPATH
 
 # Get the flags for compiling and linking against openssl and other libraries.
-eval "$(nix-shell '<nixpkgs>' --pure --attr ${GERBIL_PACKAGE} --command \
-  'echo "export \
-     NIX_SHELL_PATH=\"$PATH\" \
-     NIX_LDFLAGS=\"$NIX_LDFLAGS\" \
-     NIX_BINTOOLS=\"$NIX_BINTOOLS\" \
-     NIX_CC=\"$NIX_CC\" \
-     NIX_CFLAGS_COMPILE=\"$NIX_CFLAGS_COMPILE\""')"
+function gerbil_compile_env () {
+  eval "$(nix-shell '<nixpkgs>' --pure --attr ${GERBIL_PACKAGE} --command \
+    'echo "export \
+       NIX_SHELL_PATH=\"$PATH\" \
+       NIX_LDFLAGS=\"$NIX_LDFLAGS\" \
+       NIX_BINTOOLS=\"$NIX_BINTOOLS\" \
+       NIX_CC=\"$NIX_CC\" \
+       NIX_CFLAGS_COMPILE=\"$NIX_CFLAGS_COMPILE\""')"
+}
 
 : ${ORIG_PATH:=$PATH}
 export ORIG_PATH

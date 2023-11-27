@@ -4,7 +4,9 @@
 (import
   :gerbil/expander
   (only-in :gerbil/runtime/init add-load-path)
-  :std/getopt
+  #;(only-in :std/error dump-stack-trace?) ;; Only in v0.19
+  (only-in :std/cli/getopt rest-arguments option)
+  (only-in :std/cli/multicall define-entry-point call-entry-point define-multicall-main)
   :std/misc/list
   :std/misc/process
   :std/source
@@ -30,31 +32,31 @@
  srcdir
  name: "Gerbil-utils"
  spec: files)
+(define-multicall-main)
 
-(def (build-nix . opts)
+(define-entry-point (nix . opts)
+  (help: "build using nix-build"
+   getopt: [(rest-arguments 'nix-options help: "options to pass on to nix")])
   (clan/building#create-version-file)
   (run-process ["nix-build" opts ...])
   (void))
-(clan/multicall#register-entry-point
- build-nix name: "nix" help: "build using nix-build"
- getopt: [(rest-arguments 'nix-options help: "options to pass on to nix")])
 
-(def (build-docker . opts)
+(define-entry-point (docker . opts)
+  (help: "build a Gerbil NixOS docker image"
+   getopt: [(rest-arguments 'docker-options help: "options to pass on to docker")])
   (void (run-process ["./scripts/make-docker-image.ss" opts ...]
                      stdin-redirection: #f stdout-redirection: #f)))
-(clan/multicall#register-entry-point
- build-docker name: "docker" help: "build a Gerbil NixOS docker image"
- getopt: [(rest-arguments 'docker-options help: "options to pass on to docker")])
 
-(def (build-nixpkgs nixpkgs-file: (nixpkgs-file #f))
+(define-entry-point (nixpkgs nixpkgs-file: (nixpkgs-file #f))
+  (help: "build all gerbil packages and their dependencies"
+   getopt: [(option 'nixpkgs-file "-f" "--file" help: "path or url for nixpkgs")])
   (void (run-process ["nix-env" "--show-trace"
                       (when/list nixpkgs-file ["--file" nixpkgs-file])...
                       "-iA" "gerbil-unstable" "gerbilPackages-unstable"])))
-(clan/multicall#register-entry-point
- build-nixpkgs name: "nixpkgs" help: "build all gerbil packages and their dependencies"
- getopt: [(option 'nixpkgs-file "-f" "--file" help: "path or url for nixpkgs")])
 
-(def (publish-nixpkgs nixpkgs-file: (nixpkgs-file #f))
+(define-entry-point (publish-nixpkgs nixpkgs-file: (nixpkgs-file #f))
+  (help: "publish all gerbil packages and their dependencies to cachix"
+   getopt: [(option 'nixpkgs-file "-f" "--file" help: "path or url for nixpkgs")])
   (clan/base#!>
    (run-process ["nix" "path-info"
                  (when/list nixpkgs-file ["--file" nixpkgs-file])...
@@ -63,11 +65,5 @@
    (cut cons* "cachix" "push" "mukn" <>)
    (cut run-process/batch <>)
    void))
-(clan/multicall#register-entry-point
- publish-nixpkgs name: "publish"
- help: "publish all gerbil packages and their dependencies to cachix"
- getopt: [(option 'nixpkgs-file "-f" "--file" help: "path or url for nixpkgs")])
 
-(def main clan/multicall#call-entry-point)
-(clan/multicall#current-program "build.ss")
-(clan/exit#backtrace-on-abort? #t)
+#;(dump-stack-trace? #t) ;; Only in v0.19

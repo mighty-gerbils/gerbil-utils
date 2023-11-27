@@ -20,10 +20,22 @@
   call-limiter-loop)
 
 (import
-  :std/actor :std/format :std/getopt :std/logger
-  :std/misc/list :std/misc/number :std/misc/pqueue :std/sort
-  :std/srfi/1 :std/srfi/19 :std/sugar
-  ./base ./concurrency ./error ./timestamp ./multicall)
+  :std/actor
+  :std/cli/getopt
+  :std/cli/multicall
+  :std/format
+  :std/logger
+  :std/misc/list
+  :std/misc/number
+  :std/misc/pqueue
+  :std/sort
+  :std/srfi/1
+  :std/srfi/19
+  :std/sugar
+  ./base
+  ./concurrency
+  ./error
+  ./timestamp)
 
 (deflogger clan)
 

@@ -6,5 +6,5 @@
 
 (def random-test
   (test-suite "test suite for clan/random"
-    (test-case "test random-nat"
-      (check-equal? (<= 0 (random-nat 100) 99) #t))))
+    (test-case "test random-uint"
+      (check-equal? (<= 0 (random-uint 100) 99) #t))))

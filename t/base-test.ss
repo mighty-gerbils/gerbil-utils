@@ -1,6 +1,7 @@
 (export base-test)
 
 (import
+  :std/sugar
   :std/test
   ../base)
 

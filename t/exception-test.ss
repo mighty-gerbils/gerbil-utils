@@ -35,8 +35,8 @@
                exn-in-ctx backtrace)
       (check
        exn-in-ctx ?
-       (lambda (x) (string-prefix? "*** ERROR IN clan/t/exception-test#inside3, \"t/exception-test.ss\"@14.26 -- \n*** ERROR IN ? [Error]: inside4\n--- irritants: \"arg\" \n--- continuation backtrace:\n" x)))
+       (lambda (x) (string-prefix? "*** ERROR IN clan/t/exception-test#inside3, \"t/exception-test.ss\"@14.26-14.44 -- \n*** ERROR IN ? [Error]: inside4\n--- irritants: \"arg\" \n--- continuation backtrace:\n" x)))
       (check
        backtrace ?
-       (lambda (x) (string-prefix? "0  clan/t/exception-test#" x))))
+       (lambda (x) (string-prefix? "[0] clan/t/exception-test#" x))))
     ))
