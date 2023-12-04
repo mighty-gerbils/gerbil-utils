@@ -7,7 +7,7 @@
   :gerbil/gambit
   :std/iter :std/misc/alist :std/misc/hash :std/misc/list-builder
   :std/misc/ports :std/misc/plist :std/misc/rtd :std/misc/walist
-  :std/sort :std/srfi/43 :std/sugar :std/text/json :std/text/basic-parsers
+  :std/sort :std/srfi/43 :std/sugar :std/text/json
   ./base ./list ./files)
 
 (def (string<-json object)

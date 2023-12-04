@@ -31,11 +31,11 @@
   :std/misc/list
   :std/misc/ports
   :std/misc/process
+  (only-in :std/parser/ll1
+           ll1/port ll1-skip-space* ll1-uint ll1-separated ll1-eof)
   (only-in :std/pregexp pregexp-match)
   (only-in :std/srfi/13 string-every)
   (only-in :std/sugar while try finally hash ignore-errors)
-  (only-in :std/text/basic-parsers parse-port
-           parse-and-skip-any-whitespace parse-natural parse-separated parse-eof)
   ./base
   ./timestamp
   ./ffi
@@ -140,8 +140,7 @@
      (loop))))
 
 (def (read-integer-list port)
-  (let (parser (parse-separated parse-natural parse-and-skip-any-whitespace parse-eof))
-    (and port (parse-port parser port))))
+  (and port (ll1/port (ll1-separated ll1-uint ll1-skip-space* ll1-eof) port)))
 
 ;; TODO: make it portable beyond Linux. At least make it error out outside Linux.
 ;; TODO: is ignore-errors working? Should we use it?

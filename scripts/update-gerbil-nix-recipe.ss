@@ -14,11 +14,11 @@
   :std/misc/list
   :std/misc/path
   :std/misc/ports
+  :std/parser/ll1
   :std/source
   :std/srfi/13
   :std/sugar
   :std/pregexp
-  :std/text/basic-parsers
   :clan/base
   :clan/files
   :clan/timestamp)
@@ -83,7 +83,7 @@
     (call-with-input-process
      [path: "git" arguments: ["show" "-s" "--pretty=format:%ct" latest-commit-hash]
             directory: source-dir show-console: #f]
-     (cut parse-port parse-natural <> "git output" 'commit-unix-time)))
+     (cut ll1/port ll1-uint <> "git output" 'commit-unix-time)))
 
   (def package-date (string<-unix-time commit-unix-time "~Y-~m-~d"))
   (def package-version (if stable git-version (string-append "unstable-" package-date)))

@@ -6,9 +6,10 @@
 
 (import
   :gerbil/gambit
+  :std/parser/ll1
   :std/srfi/141
   :std/misc/number
-  :std/assert :std/format :std/misc/number :std/srfi/19 :std/sugar :std/text/basic-parsers
+  :std/assert :std/format :std/misc/number :std/srfi/19 :std/sugar
   ./base)
 
 ;; We deal with several time representations:
@@ -250,7 +251,7 @@
 
 ;; Display and parse a timestamp
 (def display-timestamp display)
-(def parse-timestamp parse-natural)
+(def ll1-timestamp ll1-uint)
 
 
 ;; Partial support for tai, which is a TAI timestamp at second resolution only

@@ -13,12 +13,12 @@
   (only-in :std/misc/path subpath)
   (only-in :std/misc/process run-process)
   (only-in :std/misc/walist walist)
+  (only-in :std/parser/ll1 ll1* ll1-begin ll1-char ll1-line peekable-eof?)
   (only-in :std/sugar try catch while until when-let)
   (only-in :std/text/json write-json)
-  (only-in :std/text/basic-parsers parse-line string-reader-eof?)
   (only-in ./base ensure-function)
   (only-in ./concurrency sequentialize)
-  (only-in ./timestamp one-day period-start parse-timestamp display-timestamp
+  (only-in ./timestamp one-day period-start ll1-timestamp display-timestamp
            date-string<-unix-time caching-adjustment<-tai-time caching-date-string<-unix-time
            current-tai-timestamp unix-time<-tai-timestamp tai-time<-tai-timestamp)
   (only-in ./generator in-cothread/peekable)
@@ -108,19 +108,17 @@
 
 ;; Read from a log port a log entry as a cons of a timestamp and
 ;; (skipping leading whitespace) a string containing the rest of the line.
-;; : (Pair Integer String) <- Port
-(def (parse-log-entry reader)
-  ;; TODO: gracefully handle bad input
-  (def timestamp (parse-timestamp reader))
-  (def line (parse-line reader))
-  (cons timestamp line))
+;; TODO: gracefully handle bad input
+;; : (Pair Integer String) <- PeekableStringReader
+(def ll1-log-entry
+  (ll1* cons ll1-timestamp (ll1-begin (ll1-char #\space) ll1-line)))
 
 ;; Call a function on each entry in a log file
 ;; : <- Port (<- (Pair Integer String))
 (def (for-each-port-log-entry! port fun)
   (def reader (PeekableStringReader (open-string-reader port)))
-  (until (string-reader-eof? reader)
-    (fun (parse-log-entry reader))))
+  (until (peekable-eof? reader)
+    (fun (ll1-log-entry reader))))
 
 ;; Return the list of all entries in a log file port
 ;; : (List (Pair Integer String)) <- Port

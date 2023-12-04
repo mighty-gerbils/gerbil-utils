@@ -11,8 +11,9 @@
   :gerbil/gambit
   :std/assert :std/format :std/iter
   :std/misc/list :std/misc/number :std/misc/ports
+  :std/parser/ll1
   :std/pregexp :std/srfi/13 :std/sugar
-  :std/text/basic-parsers :std/text/basic-printers
+  :std/text/basic-printers
   ./base ./random)
 
 (def diceware-file (getenv "DICEWARE_FILE" #f))
@@ -36,8 +37,8 @@
 ;; return the index for an entry in a diceware dictionary.
 ;; : Integer <- String
 (def (diceware-index<-string string)
-  (parse-string (cut parse-natural <> 6)
-                (string-map (cut char+ <> -1) string)))
+  (ll1/string (cut ll1-uint <> 6)
+              (string-map (cut char+ <> -1) string)))
 
 ;; Given an index in a diceware dictionary and the number of dice for the dictionary,
 ;; return the index for the entry as a string of dice numbers from 1 to 6.

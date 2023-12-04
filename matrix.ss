@@ -18,7 +18,7 @@
 			(composer function seed)
 			seed))))
 
-;; Accessing a IxJ matrix M's element at column i line j
+;; Accessing a IxJ matrix M's element at line i column j
 (defrule (Mpos I J i j) (+ (* J i) j))
 (defrule (Mref I J M i j) (vector-ref M (Mpos I J i j)))
 (defrule (Mset! I J M i j v) (vector-set! M (Mpos I J i j) v))
