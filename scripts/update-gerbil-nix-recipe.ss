@@ -140,7 +140,7 @@
 
   (define-values (gambit-git-version gambit-ymd gambit-hms)
     (if (equal? name "gerbil")
-      (values "4.9.5-40-g24201248" "20230917" "182043") ;; TODO: something clever
+      (values "4.9.5-78-g8b18ab69" "20231029" "203035") ;; TODO: something clever
       (values #f #f #f)))
 
   ;; Extract the new hash using nix-prefetch-git (sha256 as a 52(?) character base-36 string).
