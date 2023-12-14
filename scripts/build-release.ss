@@ -112,7 +112,7 @@ sudo mkdir /opt/src ; sudo chown $USER /opt/src"))
     (as-string destination "/" prefix "-" platform ".tar.gz"))
   (build-tarball source-tarball output: binary-tarball)
   (def deps-tarball
-    (as-string destination "/" prefix "-" platform "-deps.tar.gz"))
+    (as-string destination "/" prefix "-" platform "-heroku-extras.tar.gz"))
   (run-process/batch ["sh" "-c"
                       (as-string
                        "tar"

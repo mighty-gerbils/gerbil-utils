@@ -2,8 +2,9 @@
 (export generator-test)
 
 (import
+  :std/misc/vector
   :std/sort :std/test :std/values
-  ../base ../generator ../list ../vector)
+  ../base ../generator ../list)
 
 (def stupid-list [1 2 3 4 5])
 (def (generating-stupid-list) (generating<-list stupid-list))

@@ -60,7 +60,7 @@
 (def machine-name (let (d (delay (##os-host-name))) (cut force d)))
 
 ;; TODO: add a flag for short?
-(define-entry-point (version complete: (complete #f) layer: (layer #f))
+(define-entry-point (version% complete: (complete #f) layer: (layer #f))
   (help: "Print software version"
    getopt: [(flag 'complete "-C" "--complete" help: "also show versions of previous layers")
             (option 'layer "-L" "--layer" help: "show versions for said layer")])

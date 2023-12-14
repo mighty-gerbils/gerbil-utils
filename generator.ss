@@ -56,9 +56,16 @@
 (export #t)
 
 (import
-  :std/actor :std/coroutine :std/iter
-  :std/misc/list :std/misc/number :std/misc/pqueue :std/misc/queue :std/sugar
-  ./base ./list ./peekable-iterator ./vector)
+  :std/actor
+  :std/coroutine
+  :std/iter
+  :std/misc/list
+  :std/misc/number
+  :std/misc/pqueue
+  :std/misc/queue
+  :std/misc/vector
+  :std/sugar
+  ./base ./list ./peekable-iterator)
 
 
 ;; A generating function of type A is a function that each time it is called,
