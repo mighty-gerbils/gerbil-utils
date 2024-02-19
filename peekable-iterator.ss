@@ -17,7 +17,7 @@
 
 ;; status can be #f (no current value cached), 'value (value cached), 'exception (exception cached), 'end (reached the end already)
 (defstruct peekable-iterator (iterator current status)
-  constructor: :init! unchecked: #t final: #t)
+  constructor: :init! final: #t)
 
 (defmethod {:init! peekable-iterator}
   (lambda (self iterator (current #f) (status #f))

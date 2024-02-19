@@ -5,7 +5,7 @@
 (import
   (for-syntax (only-in :std/misc/repr repr))
   (only-in :std/sugar defrule)
-  (only-in :std/error deferror-class defraise/context Exception exception-context))
+  (only-in :std/error deferror-class defraise/context Error exception-context))
 
 ;;;; Basic syntax for control flow
 
@@ -176,7 +176,7 @@
 ;; BEFORE release, probably even before your branch is merged into production
 ;; code. IF THIS CODE APPEARS IN PRODUCTION, YOU LOSE.
 ;; Any <- Any ...
-(defclass (NotImplementedYet Exception) (args) transparent: #t)
+(defclass (NotImplementedYet Error) (args) transparent: #t)
 (defrules NIY ()
   ((_ . args)
    (raise (NotImplementedYet where: (exception-context args) irritants: (list . args) message: "Not Implemented Yet")))

@@ -118,7 +118,7 @@
   (map (cut normalize-spec <> gsc-options) files))
 
 (def compile-getopt
-  [(flag 'verbose "-v" "--verbose"
+  [(flag 'verbose "-V" "--verbose"
          help: "Make the build verbose")
    (flag 'debug "-g" "--debug"
          help: "Include debug information")

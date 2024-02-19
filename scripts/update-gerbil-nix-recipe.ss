@@ -140,7 +140,14 @@
 
   (define-values (gambit-git-version gambit-ymd gambit-hms)
     (if (equal? name "gerbil")
-      (values "4.9.5-78-g8b18ab69" "20231029" "203035") ;; TODO: something clever
+      (let ((stamp (read-file-string (subpath source-dir "src/gambit/include/stamp.h"))))
+        (match (pregexp-match ;; TODO: instead extract the information from git?
+                (string-append
+                 "___STAMP_VERSION \"v([-.0-9a-g]+)\"\n.*\n.*\n.*\n.*"
+                 "___STAMP_YMD ([0-9]+)\n.*\n.*\n.*\n.*"
+                 "___STAMP_HMS ([0-9]+)\n") stamp)
+          ([_ version ymd hms] (values version ymd hms))
+          (else (error "Can't read gambit version from built stamp.h"))))
       (values #f #f #f)))
 
   ;; Extract the new hash using nix-prefetch-git (sha256 as a 52(?) character base-36 string).
