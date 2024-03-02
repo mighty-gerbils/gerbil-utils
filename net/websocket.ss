@@ -1,22 +1,15 @@
 ;; -*- Gerbil -*-
 ;;;; Utilities for using websocket
 (import
-  :gerbil/gambit
-  :std/actor
-  :std/contract
-  :std/crypto/digest
-  :std/error
-  :std/logger
-  :std/misc/queue
-  :std/misc/timeout
-  :std/net/request
-  :std/net/websocket
-  :std/srfi/13
-  :std/sugar
-  :std/text/base64
-  :std/text/json
-  :std/text/utf8
-  :clan/base)
+  (only-in :std/actor defmessage <- -> @shutdown @ping @unexpected)
+  (only-in :std/contract using)
+  (only-in :std/error raise-io-error)
+  (only-in :std/logger warnf)
+  (only-in :std/net/websocket message websocket-connect
+           WebSocket-recv WebSocket-send WebSocket-close)
+  (only-in :std/sugar try catch finally while ignore-errors)
+  (only-in :std/text/json read-json write-json)
+  (only-in :clan/base funcall))
 
 (defmessage !receive (msg))
 (defmessage !send (msg))
