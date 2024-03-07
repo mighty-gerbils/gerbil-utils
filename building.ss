@@ -11,7 +11,7 @@
   (only-in :std/make make)
   (only-in :std/source this-source-file)
   (only-in :std/misc/list when/list)
-  (only-in :std/misc/path path-maybe-normalize subpath path-extension-is?)
+  (only-in :std/misc/path path-maybe-normalize subpath path-extension-is? path-default-extension)
   (only-in :std/misc/string string-trim-eol)
   (only-in :std/srfi/1 lset-difference)
   (only-in ./filesystem find-files path-is-script?)
@@ -29,6 +29,21 @@
   ((cut lset-difference equal? <> exclude)
    (find-files "" (lambda (x) (and (path-extension-is? x ".ss") (not (path-is-script? x))))
                recurse?: (lambda (x) (not (member (path-strip-directory x) exclude-dirs))))))
+
+(def (source-file-matcher file (ext ".ss"))
+  (def f (path-default-extension file ext))
+  (def s (path-strip-extension f))
+  (lambda (g) (or (equal? f g) (equal? s g))))
+
+(def (remove-build-file files file) ;; TODO: handle foo vs foo.ss ?
+  (def f? (source-file-matcher file))
+  (filter (match <>
+            ((? f?) #f)
+            ([gxc: (? f?) . _] #f)
+            (_ #t)) files))
+
+(def (add-build-options files file . options)
+  (cons (cons* gxc: file options) (remove-build-file files file)))
 
 (def %name #f)
 (def %repo #f)
