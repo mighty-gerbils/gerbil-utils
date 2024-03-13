@@ -3,7 +3,6 @@
   (for-syntax :std/iter
               :std/srfi/1)
   :gerbil/gambit
-  <expander-runtime>
   :gerbil/expander
   :std/misc/path
   :std/misc/ports

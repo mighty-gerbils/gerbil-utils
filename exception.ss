@@ -26,7 +26,7 @@
 ;; and display-continuation-backtrace
 ;; with-catch/cont : [Exception Continuation -> A] [-> A] -> A
 (def (with-catch/cont handler thunk)
-  (let/esc outside
+  (let/cc outside
     (def E (current-exception-handler))
     (def (escaping-handler exn)
       (##continuation-capture
