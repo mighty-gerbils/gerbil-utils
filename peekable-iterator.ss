@@ -9,7 +9,11 @@
 
 (import
   :gerbil/gambit
-  :std/coroutine :std/generic :std/iter :std/sugar
+  :std/coroutine
+  :std/generic
+  :std/hash-table
+  :std/iter
+  :std/sugar
   ./base)
 
 ;; Keep raising
@@ -34,14 +38,14 @@
 (defgeneric :peekable-iter)
 (defmethod (:peekable-iter (pi peekable-iterator)) pi)
 (defmethod (:peekable-iter (it iterator)) (make-peekable-iterator it))
-(defmethod (:peekable-iter (obj <pair>)) (make-peekable-iterator (:iter obj)))
-(defmethod (:peekable-iter (obj <null>)) (make-peekable-iterator (:iter obj)))
-(defmethod (:peekable-iter (obj <vector>)) (make-peekable-iterator (:iter obj)))
-(defmethod (:peekable-iter (obj <string>)) (make-peekable-iterator (:iter obj)))
-(defmethod (:peekable-iter (obj <hash-table>)) (make-peekable-iterator (:iter obj)))
-(defmethod (:peekable-iter (obj <procedure>)) (make-peekable-iterator (:iter obj)))
-(defmethod (:peekable-iter (obj <port>)) (make-peekable-iterator (:iter obj)))
-(defmethod (:peekable-iter (obj <object>)) (make-peekable-iterator (:iter obj)))
+(defmethod (:peekable-iter (obj :pair)) (make-peekable-iterator (:iter obj)))
+(defmethod (:peekable-iter (obj :null)) (make-peekable-iterator (:iter obj)))
+(defmethod (:peekable-iter (obj :vector)) (make-peekable-iterator (:iter obj)))
+(defmethod (:peekable-iter (obj :string)) (make-peekable-iterator (:iter obj)))
+(defmethod (:peekable-iter (obj HashTable)) (make-peekable-iterator (:iter obj)))
+(defmethod (:peekable-iter (obj :procedure)) (make-peekable-iterator (:iter obj)))
+(defmethod (:peekable-iter (obj :port)) (make-peekable-iterator (:iter obj)))
+(defmethod (:peekable-iter (obj :object)) (make-peekable-iterator (:iter obj)))
 
 (def (peekable-iterator-fill-cache pi)
   (let ((it (&peekable-iterator-iterator pi)))

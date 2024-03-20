@@ -1,6 +1,5 @@
-(import
+ (import
   (only-in :std/error deferror-class raise/context exception-context)
-  (only-in :std/generic type-of)
   (only-in :std/sugar defrule with-id))
 
 (import :std/misc/ports)
@@ -18,7 +17,7 @@
      (raise (PrivateDataError
              (as-string "Error processing private data: " msg)
              where: where
-             irritants: [x (type-of e)])))
+             irritants: [x (class-of e)])))
    thunk))
 
 (defrule (new-struct-functions name (slots ...))

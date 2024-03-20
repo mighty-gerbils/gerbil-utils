@@ -3,7 +3,6 @@
 
 (import
   :gerbil/expander
-  (only-in :gerbil/runtime/init add-load-path)
   #;(only-in :std/error dump-stack-trace?) ;; Only in v0.19
   (only-in :std/cli/getopt rest-arguments option)
   (only-in :std/cli/multicall define-entry-point call-entry-point define-multicall-main)
@@ -15,7 +14,7 @@
 
 (def srcdir (path-normalize (path-directory (this-source-file))))
 (current-directory srcdir)
-(add-load-path srcdir)
+(add-load-path! srcdir)
 
 (import-module ':clan/building #t #t)
 

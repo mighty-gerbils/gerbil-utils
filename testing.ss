@@ -11,8 +11,7 @@
   (only-in :gerbil/gambit random-source-randomize! default-random-source
            random-source-state-ref random-source-state-set!)
   (only-in :gerbil/expander import-module)
-  (only-in :gerbil/runtime/init add-load-path)
-                                        (only-in :std/cli/getopt rest-arguments)
+  (only-in :std/cli/getopt rest-arguments)
   (only-in :std/cli/multicall define-entry-point set-default-entry-point!
            current-program define-multicall-main)
   (only-in :std/cli/print-exit silent-exit)
@@ -89,7 +88,7 @@
   (set-current-ports-encoding-standard-unix!)
   (def src (path-directory (path-maybe-normalize script-path)))
   (current-directory src)
-  (add-load-path src)
+  (add-load-path! src)
   (set-path-config-root! (subpath src "run"))
   (set! application-source-directory (lambda () src))
   (set! application-home-directory (lambda () src))

@@ -3,7 +3,6 @@
 
 (import
   (only-in :gerbil/gambit pretty-print shell-command)
-  (only-in :gerbil/runtime/init add-load-path)
   (only-in :std/cli/getopt flag)
   (only-in :std/cli/multicall define-entry-point set-default-entry-point!
            current-program define-multicall-main)
@@ -66,7 +65,7 @@
   (set-current-ports-encoding-standard-unix!)
   (set! %srcdir (path-maybe-normalize (path-directory script-path)))
   (current-directory %srcdir)
-  (add-load-path %srcdir)
+  (add-load-path! %srcdir)
   (set-path-config-root! (subpath %srcdir "run"))
   (set! application-source-directory (lambda () %srcdir))
   (set! application-home-directory (lambda () %srcdir))
