@@ -21,7 +21,7 @@
       (defrule (t struct alist)
         (begin
           (checkf equal-struct? (json-rpc-error<-json (list->hash-table alist)) struct)
-          (check-equal? {:json struct} (list->hash-table alist)))) ;; in v0.19: walist
+          (check-equal? (string<-json struct) (string<-json (walist alist)))))
       (parameterize ((json-symbolic-keys #t))
         (check equal-struct? (json-rpc-error -1 "foo" [42]) (json-rpc-error -1 "foo" [42]))
         (t (json-rpc-error -1 "foo" [42]) '((code . -1) (message . "foo") (data . (42))))
