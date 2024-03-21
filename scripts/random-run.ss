@@ -1,3 +1,4 @@
+#!/usr/bin/env gxi
 ;; -*- Gerbil -*-
 ;;;; Utilities to run a command in random order
 
