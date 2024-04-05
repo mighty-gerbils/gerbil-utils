@@ -88,7 +88,7 @@
   (set-current-ports-encoding-standard-unix!)
   (def src (path-directory (path-maybe-normalize script-path)))
   (current-directory src)
-  (add-load-path! src)
+  (set-load-path! [(load-path)... src])
   (set-path-config-root! (subpath src "run"))
   (set! application-source-directory (lambda () src))
   (set! application-home-directory (lambda () src))
