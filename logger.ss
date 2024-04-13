@@ -91,7 +91,7 @@
             (file (string-append directory "/" date ".log")))
        (log file text
             on-new-file:
-            (lambda (previous-file: _ previous-port: _ current-file: _ current-port: port)
+            (lambda (previous-file: _pf previous-port: _pp current-file: _cf current-port: port)
               (display (log-line<-json tai-timestamp (metadata name: (or name path))) port)))))))
 
 ;;; Logging JSON into a directory named after the arguments under the data-directory
