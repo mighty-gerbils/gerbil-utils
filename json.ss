@@ -11,16 +11,23 @@
   ./base ./list ./files)
 
 (def (string<-json object)
-  (parameterize ((json-sort-keys #t))
+  (parameterize (#;(write-json-sort-keys? #t)
+                 (json-sort-keys #t))
     (json-object->string object)))
 
 (def (json<-string str)
-  (parameterize ((json-symbolic-keys #f))
+  (parameterize ((json-symbolic-keys #f)
+                 #;(read-json-key-as-symbol? #f)
+                 #;(read-json-array-as-vector? #f)
+                 #;(read-json-object-as-walist? #f))
     (string->json-object str)))
 
 ;; TODO: rename to safe-read-json or read-json/string-keys or something
 (def (json<-port port)
-  (parameterize ((json-symbolic-keys #f))
+  (parameterize ((json-symbolic-keys #f)
+                 #;(read-json-key-as-symbol? #f)
+                 #;(read-json-array-as-vector? #f)
+                 #;(read-json-object-as-walist? #f))
     (port->json-object port)))
 
 ;; For better performance when skipping, parse json lazily.
@@ -37,14 +44,16 @@
   (call-with-input-file (cons* path: file settings) json<-port))
 
 (def (write-file-json file json . settings)
-  (parameterize ((json-sort-keys #t))
+  (parameterize (#;(write-json-sort-keys? #t)
+                 (json-sort-keys #t))
     (clobber-file file (curry write-json json) settings: settings)))
 
 (def (json-normalize x)
   (json<-string (string<-json x)))
 
 (def (write-json-ln x (port (current-output-port)))
-  (parameterize ((json-sort-keys #t))
+  (parameterize (#;(write-json-sort-keys? #t)
+                 (json-sort-keys #t))
     (write-json x port) (newline port)))
 
 (def (parse-json-file <-json file)

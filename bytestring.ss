@@ -9,17 +9,17 @@
   (and (fixnum? x) (<= 0 x 255)))
 (def (b x)
   (cond
+   ((byte? x) x)
    ((char? x) (char->integer x))
    ((string? x) (string->bytes x 'ISO-8859-1))
    ((u8vector? x) x)
-   ((byte? x) x)
    (else (error "Not byteable" x))))
 (def (c x)
   (cond
    ((byte? x) (integer->char x))
+   ((char? x) x)
    ((u8vector? x) (bytes->string x 'ISO-8859-1))
    ((string? x) x)
-   ((char? x) x)
    (else (error "Not charable" x))))
 
 ;;; constants

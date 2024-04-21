@@ -7,6 +7,7 @@
 (import
   :gerbil/gambit
   :std/format
+  (only-in :std/os/fdio SEEK_END)
   :std/misc/path
   :std/misc/ports
   :std/sugar
@@ -17,6 +18,13 @@
 
 ;; Atomically replace a file by one produced from the contents using output-contents
 ;; If salt? is true, also salt the previous contents of the file.
+;; Note that there is a small race condition between the time the named file is replaced
+;; by a new so-far-temporary version (with a new inode), and the time the old file
+;; (with the old inode) is salted. If the OS is interrupted in the middle, the old file
+;; will be deleted already but its content not salted on disk. If that is a strong security
+;; issue, use a different method, e.g. one that invalidates the file first (in a separate
+;; transaction on a database), salts its, then finally replaces it, and finishes validating
+;; the new one in some kind of two-phase commit that remembers the desired sha256sum.
 (def (clobber-file file contents settings: (settings '()) salt?: (salt? #f))
   (let* ((target (path-maybe-normalize file))
          (directory (path-directory target)))
@@ -34,9 +42,7 @@
                                                        direction: 'input-output buffering: #f])))
                          (rename-file path target)
                          (when port
-                           ;; TODO: is there a more portable and robust way to get the SEEK_END
-                           ;; constant than hardcoding 2?
-                           (set! len (input-port-byte-position port 0 2))
+                           (set! len (input-port-byte-position port 0 SEEK_END))
                            (output-port-byte-position port 0 0)
                            (write-u8vector (random-bytes len) port))
                          (finally (when (port? port) (close-port port)))))

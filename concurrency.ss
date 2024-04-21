@@ -155,7 +155,7 @@
                 (!ok arguments))
                (!shutdown
                 (shutdown!)
-                (!error (ShutdownError)))))))))))
+                (!error (ShutdownError "shutdown" irritants: [])))))))))))
 
 ;; Parallel version of map
 (def (parallel-map f . ls)

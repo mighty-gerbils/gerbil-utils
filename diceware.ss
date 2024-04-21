@@ -18,12 +18,8 @@
 
 (def diceware-file (getenv "DICEWARE_FILE" #f))
 
-(def *diceware-words* #f)
-
-(def (get-diceware-words)
-  (unless *diceware-words*
-    (set! *diceware-words* (parse-diceware-file diceware-file)))
-  *diceware-words*)
+(defonce (get-diceware-words)
+  (parse-diceware-file diceware-file))
 
 ;; Add an offset to a char's encoding, return a new char.
 ;; Return #f if the new index is out of bounds.

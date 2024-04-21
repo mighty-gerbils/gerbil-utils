@@ -42,7 +42,8 @@
 
 ;; Given a path to a file that exists on the filesystem, return
 ;; a normalized absolute or relative path to it, whichever is shortest
-(def (shorten-path x) (path-normalize x 'shortest))
+(def (shorten-path x (origin (current-directory)))
+  (path-normalize x #t origin))
 
 ;; Given a path, visit the path.
 ;; When the path is a directory and recurse? returns true when called with the path,

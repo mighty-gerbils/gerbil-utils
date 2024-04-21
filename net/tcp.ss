@@ -1,4 +1,3 @@
-
 (export tcp-listener?
         tcp-listen
         tcp-client-port?
@@ -23,7 +22,8 @@
 ;; tcp-connection-ready? : Tcp-Client-Port -> Bool
 (def (tcp-connection-ready? port)
   (and (tcp-client-port? port)
-       (try (##wait-output-port port) (boolean? (u8-ready? port))
+       (try (##wait-output-port port)
+            (u8-ready? port)
          (catch (os-exception:tcp-client-port? e) #f))))
 
 ;; A Tcp-Listener is a (tcp-listener Tcp-Server-Port)
