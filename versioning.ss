@@ -29,7 +29,7 @@
   ;; Update the name and version to just the topmost software layer (application)
   (set! software-layers [[name . version] . software-layers]) ;; (aset software-layers name version)
   ;; Update the Gerbil-Greeting to the latest layer
-  (set! gerbil-greeting (format "~a ~a" name version)))
+  (gerbil-greeting-set! (format "~a ~a" name version)))
 
 ;; : String <-
 (def (software-identifier complete: (complete #f) layer: (layer #f))
