@@ -17,6 +17,7 @@
   (only-in :std/misc/path subpath path-simplify path-parent)
   (only-in :std/misc/ports read-all-as-lines)
   (only-in :std/misc/process run-process run-process/batch)
+  (only-in :std/misc/string string-substitute-char)
   (only-in :std/net/request.ss http-get-content)
   (only-in :std/misc/string string-trim-prefix string-trim-eol)
   (only-in :std/pregexp pregexp-match)
@@ -30,7 +31,6 @@
   (only-in :clan/path-config cache-path set-path-config-root! application-name)
   (only-in :clan/ports output-contents)
   (only-in :clan/shell escape-shell-token)
-  (only-in :clan/string string-substitute)
   (only-in :clan/poo/cli make-options))
 
 (set! application-name (lambda () "make-docker-image"))
@@ -69,7 +69,7 @@
       curl openssh rsync cacert ;; basic networking
       racket multimarkdown ;; needed by documentation generation
       go-ethereum solc ;; needed by gerbil-ethereum
-      go-libp2p-daemon ;; needed by gerbil-libp2p
+      ;; go-libp2p-daemon ;; needed by gerbil-libp2p -- disabled for now
       unzip patchelf zlib.dev ;; will be downloaded during testing if not present here(!?)
       strace man ;; debugging help
       )))
@@ -83,7 +83,7 @@
       curl.dev curl.man nghttp2 nghttp2.lib nghttp2.dev nghttp2.man
       bashInteractive.dev bashInteractive.man
       libssh2 libssh2.dev libkrb5 libkrb5.dev
-      zsh.man attr.man gnumake.man xz.man openssl.man
+      zsh.man attr.man gnumake.man xz.man openssl.man less.man
     )))
 
 (def all-target-packages
@@ -166,7 +166,7 @@
 ;;     docker image prune -a
 ;;
 (def (docker-commit-image from to mounts: (mounts []) changes: (changes []) . commands)
-  (def build-name (string-substitute to #\- #\/))
+  (def build-name (string-substitute-char to #\- #\/))
   (def build-script (subpath docker-directory (string-append build-name ".sh")))
   (unless (docker-image-id to)
     (create-directory* docker-directory)
