@@ -8,6 +8,15 @@
 ;;(def (write-u8vector v p) (write-subu8vector v 0 (u8vector-length v) p))
 ;;(def (read-u8vector v p) (def l (u8vector-length v)) (read-subu8vector v 0 l p l))
 
+(def (write-u8vector* v p)
+  (if (zero? (u8vector-length v))
+    0
+    (write-u8vector v p)))
+(def (read-u8vector* v p)
+  (if (zero? (u8vector-length v))
+    0
+    (read-u8vector v p)))
+
 ;; : UInt16 <- In
 (def (unmarshal-uint16 port) ;; big endian
   (def hi (read-u8 port))
@@ -25,7 +34,7 @@
   (if (zero? size)
     #u8()
     (let ((bs (make-u8vector size)))
-      (assert! (= size (read-u8vector bs port)))
+      (assert! (= size (read-u8vector* bs port)))
       bs)))
 
 ;; : <- UInt16 Out
@@ -33,12 +42,12 @@
   (assert! (<= 0 n 65535))
   (def u8vector (make-u8vector 2 0))
   (u8vector-u16-set! u8vector 0 n big)
-  (write-u8vector u8vector port))
+  (write-u8vector* u8vector port))
 
 ;; : <- U8vector Out
 (def (marshal-sized16-u8vector u8vector port)
   (marshal-uint16 (u8vector-length u8vector) port)
-  (write-u8vector u8vector port))
+  (write-u8vector* u8vector port))
 
 ;; : (U8vector <- 'a) <- (<- 'a Out)
 (def (u8vector<-<-marshal marshal)
@@ -56,7 +65,7 @@
 
 ;; : (<- 'a Out) <- (U8vector <- 'a)
 (def (marshal<-u8vector<- u8vector<-)
-  (lambda (x port) (write-u8vector (u8vector<- x) port)))
+  (lambda (x port) (write-u8vector* (u8vector<- x) port)))
 
 ;; : ('a <- In) <- ('a <- U8vector) UInt
 (def (unmarshal<-<-u8vector <-u8vector n)
@@ -68,7 +77,7 @@
 
 ;; : <- Int UInt+ Out
 (def (write-uint-u8vector x length-in-u8 out)
-  (write-u8vector (uint->u8vector x big length-in-u8) out))
+  (write-u8vector* (uint->u8vector x big length-in-u8) out))
 
 ;; Encoding and decoding integers into self-delimited byte streams, preserving lexicographic order
 ;; supposing the first byte is compared signed and the rest unsigned.

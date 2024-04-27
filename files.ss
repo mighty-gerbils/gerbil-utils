@@ -13,6 +13,7 @@
   :std/sugar
   :std/pregexp
   ./base
+  ./io
   ./ports
   ./temporary-files)
 
@@ -44,7 +45,7 @@
                          (when port
                            (set! len (input-port-byte-position port 0 SEEK_END))
                            (output-port-byte-position port 0 0)
-                           (write-u8vector (random-bytes len) port))
+                           (write-u8vector* (random-bytes len) port))
                          (finally (when (port? port) (close-port port)))))
                       (rename-file path target)))))) ;; should be atomic, at least on Unix
 
