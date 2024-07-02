@@ -106,6 +106,16 @@
   ;; (darwin (subpath (user-home) "Library/Preferences"))
   (else (subpath (user-home) ".config")))
 
+;; Returns an absolute pathname for the directory where (from XDG Base Directory Specification v0.8)
+;; user-specific state files should be written (analogous to /var/lib).
+;; XDG basedir spec: " There is a single base directory relative to which user-specific state data should be written. This directory is defined by the environment variable $XDG_STATE_HOME. "
+;; "$XDG_STATE_HOME defines the base directory relative to which user-specific state files should be stored. If $XDG_STATE_HOME is either not set or empty, a default equal to $HOME/.local/state should be used."
+;; PathString <- PathComponentString ...
+(defxdgdir xdg-state-home "XDG_STATE_HOME"
+  (windows (get-folder-path "LocalAppData")) ;; should it be more specific?
+  (darwin (subpath (user-home) "Library")) ;; should it be more specific?
+  (else (subpath (user-home) ".local/state")))
+
 ;; XDG basedir spec: "There is a set of preference ordered base directories relative to which data files should be searched. This set of directories is defined by the environment variable $XDG_DATA_DIRS."
 ;; "$XDG_DATA_DIRS defines the preference-ordered set of base directories to search for data files in addition to the $XDG_DATA_HOME base directory. The directories in $XDG_DATA_DIRS should be seperated with a colon ':'."
 ;; "If $XDG_DATA_DIRS is either not set or empty, a value equal to /usr/local/share/:/usr/share/ should be used."
