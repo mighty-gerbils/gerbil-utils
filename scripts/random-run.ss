@@ -10,7 +10,7 @@
   :std/format :std/logger :std/iter
   :std/misc/list :std/misc/process :std/srfi/1 :std/sugar
   :clan/base :clan/error :clan/list
-  :clan/filesystem :clan/random)
+  :clan/filesystem :clan/ports :clan/random)
 
 (define-entry-point (random-run . arguments)
   (help: "Run a command with arguments in random order"
@@ -18,9 +18,10 @@
   (def gopt
     (getopt
      (option 'log "-l" "--log" default: #f help: "path to random-run log")
-     (option 'number-at-once "-n" "--number-at-once" default: #f help: "number of arguments at once")
-     (option 'files? "-f" "--files" default: #f help: "search for files in listed directories")
+     (option 'number-at-once "-n" "--at-once" default: #f help: "number of arguments at once")
+     (flag 'files? "-f" "--files" help: "search for files in listed directories")
      (option 'regex "-r" "--regex" default: ".*" help: "regexp when using file search")
+     (flag 'echo? "-e" "--echo" help: "echo each command before and after running it?")
      (rest-arguments 'arguments help: "arguments, followed by -- then random arguments")))
   (start-logger!)
   (try
@@ -29,6 +30,7 @@
           (number-at-once (hash-get opt 'number-at-once))
           (files? (hash-get opt 'files?))
           (regex (hash-get opt 'regex))
+          (echo? (hash-get opt 'echo?))
           (arguments (hash-get opt 'arguments))
           (pos (list-index (looking-for "--") arguments))
           (_ (unless pos (abort! 2 "Missing -- delimiter among arguments")))
@@ -41,13 +43,16 @@
           (randomized-arguments (shuffle-list arguments-to-randomize))
           (do-it (λ (logger)
                    (for (args (if number-at-once
-                                (group-n-consecutive number-at-once randomized-arguments)
+                                (group-n-consecutive (string->number number-at-once)
+                                                     randomized-arguments)
                                 [randomized-arguments]))
                      (let ((command (append prefix args)))
                        (logger command)
-                       (run-process/batch command))))))
+                       (when echo? (writeln command))
+                       (run-process command)
+                       (when echo? (writeln command)))))))
      (if log
-       (call-with-output-file [path: log create: #t append: #t]
+       (call-with-output-file [path: log create: 'maybe append: #t]
          (λ (f) (do-it (λ (command) (fprintf f "~S~%" command)))))
        (do-it void)))
    (catch (getopt-error? exn)
