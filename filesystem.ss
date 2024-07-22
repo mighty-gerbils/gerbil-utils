@@ -95,6 +95,5 @@
                     (collect! path))))))))
 
 (def (modification-time file)
-  (let/cc return
-    (def info (with-catch false (cut file-info file #t)))
-    (time->seconds (file-info-last-modification-time info))))
+  (with-catch false
+    (cut time->seconds (file-info-last-modification-time (file-info file #t)))))

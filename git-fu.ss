@@ -59,7 +59,7 @@
    (else (error "Not a recognized git url" url))))
 
 (def (git-repo-url repo)
-  (if (string-index repo ":") repo
+  (if (string-index repo #\:) repo
       (run-process ["git" "config" "--get" (format "remote.~a.url" repo)] coprocess: read-line)))
 
 (def (number-of-commits-from-gitlab repo from to)
