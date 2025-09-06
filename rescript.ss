@@ -4,7 +4,7 @@
 
 (export #t)
 
-(import :std/iter :std/misc/hash :std/srfi/13 :std/sugar
+(import :std/iter (only-in :std/misc/func always) :std/misc/hash :std/srfi/13 :std/sugar
         :clan/base :clan/ports)
 
 (def (make-script-table original translated reverse?: (reverse? #f))
@@ -23,10 +23,11 @@
              (process-char #'name "-character"))
      (begin
        (def table (make-script-table original translated reverse?: reverse?))
-       (def (process-char c)
-         (hash-ref/default table c (cut error "Cannot process char" 'process-char c)))
-       (def (name s)
-         (def t (with-output (o #f) (for (c s) (display (process-char c) o))))
+       (def (process-char c error?: (error? #f))
+         (hash-ref/default table c
+                           (if error? (cut error "Cannot process char" 'process-char c) (always c))))
+       (def (name s error?: (error? #f))
+         (def t (with-output (o #f) (for (c s) (display (process-char c error?: error?) o))))
          (if reverse? (string-reverse t) t))))))
 
 (define-script-translation superscriptize
@@ -59,6 +60,8 @@
   " abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789&_?!\"'.,;" ; nah: ԁг
   " аbсdеfghіјklmոοрԛrѕtυѵԝхуzАВСDЕFGHӀЈКLМNОРԚRЅТUѴԜXҮZ0123456789&_?!\"'.,;") ; асеіјոοрԛυѵѕԝхуAВСЕКӀЈМОРԚЅТѴԜХҮ
 
+(define bold bold-serif)
+(define italic italic-serif)
 (define-script-translation bold-serif
   " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
   " 𝐀𝐁𝐂𝐃𝐄𝐅𝐆𝐇𝐈𝐉𝐊𝐋𝐌𝐍𝐎𝐏𝐐𝐑𝐒𝐓𝐔𝐕𝐖𝐗𝐘𝐙𝐚𝐛𝐜𝐝𝐞𝐟𝐠𝐡𝐢𝐣𝐤𝐥𝐦𝐧𝐨𝐩𝐪𝐫𝐬𝐭𝐮𝐯𝐰𝐱𝐲𝐳𝟎𝟏𝟐𝟑𝟒𝟓𝟔𝟕𝟖𝟗")
