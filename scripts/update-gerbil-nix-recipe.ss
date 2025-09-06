@@ -14,6 +14,7 @@
   :std/misc/list
   :std/misc/path
   :std/misc/ports
+  :std/misc/process
   :std/parser/ll1
   :std/source
   :std/srfi/13
@@ -73,17 +74,14 @@
 (def (get-version-ymd-hms source-dir latest-commit-hash stable)
   ;; Extract version string
   (def git-version
-    (call-with-input-process
-     [path: "git" arguments: ["describe" "--tags" "--always" latest-commit-hash]
-            directory: source-dir show-console: #f]
-     ;; strip the leading v: nix can't find the version if there is a v
-     (λ (port) (pregexp-replace "^v(.*)$" (read-line port) "\\1"))))
-
+    (run-process ["git" "describe" "--tags" "--always" latest-commit-hash]
+                 directory: source-dir
+                 ;; strip the leading v: nix can't find the version if there is a v
+                 coprocess: (λ (port) (pregexp-replace "^v(.*)$" (read-line port) "\\1"))))
   (def commit-unix-time
-    (call-with-input-process
-     [path: "git" arguments: ["show" "-s" "--pretty=format:%ct" latest-commit-hash]
-            directory: source-dir show-console: #f]
-     (cut ll1/port ll1-uint <> "git output" 'commit-unix-time)))
+    (run-process
+     ["git" "show" "-s" "--pretty=format:%ct" latest-commit-hash]
+     directory: source-dir coprocess: (cut ll1/port ll1-uint <> "git output" 'commit-unix-time)))
 
   (def package-date (string<-unix-time commit-unix-time "~Y-~m-~d"))
   (def package-version (if stable git-version (string-append "unstable-" package-date)))
@@ -123,31 +121,35 @@
     (error/dir-not-found name source-dir cmdopts))
 
   ;; Update source directory via git fetch
-  (call-with-input-process
-   [path: "git" arguments: ["fetch" "--tags" repo-url (when/list git-tree [git-tree]) ...]
-          directory: source-dir show-console: #f]
-   read-all-as-string)
+  (run-process
+   ["git" "fetch" "--tags" repo-url (when/list git-tree [git-tree]) ...]
+   directory: source-dir)
 
   ;; Extract top commit ID (SHA1 as 40 hex character string)
   (def latest-commit-hash
-    (call-with-input-process
-     [path: "git" arguments: ["log" "-1" "--pretty=oneline" "FETCH_HEAD"]
-            directory: source-dir show-console: #f]
-     (λ (port) (pregexp-replace "^([0-9a-z]+) .*$" (read-line port) "\\1"))))
+    (run-process
+     ["git" "log" "-1" "--pretty=oneline" "FETCH_HEAD"]
+     directory: source-dir
+     coprocess: (λ (port) (pregexp-replace "^([0-9a-z]+) .*$" (read-line port) "\\1"))))
 
   (define-values (git-version package-version package-ymd package-hms)
     (get-version-ymd-hms source-dir latest-commit-hash stable))
 
   (define-values (gambit-git-version gambit-ymd gambit-hms)
     (if (equal? name "gerbil")
-      (let ((stamp (read-file-string (subpath source-dir "src/gambit/include/stamp.h"))))
-        (match (pregexp-match ;; TODO: instead extract the information from git?
-                (string-append
-                 "___STAMP_VERSION \"v([-.0-9a-g]+)\"\n.*\n.*\n.*\n.*"
-                 "___STAMP_YMD ([0-9]+)\n.*\n.*\n.*\n.*"
-                 "___STAMP_HMS ([0-9]+)\n") stamp)
-          ([_ version ymd hms] (values version ymd hms))
-          (else (error "Can't read gambit version from built stamp.h"))))
+      (let ((gambit-dir (path-expand "src/gambit" source-dir)))
+        (values
+         (run-process
+          ["git" "describe" "--tags" "--always"]
+          directory: gambit-dir coprocess:
+          ;; strip the leading v: nix can't find the version if there is a v
+          (λ (port) (pregexp-replace "^v(.*)$" (read-line port) "\\1")))
+         (run-process
+          ["git" "show" "--quiet" "--date=format-local:%Y%m%d" "--format=%cd"]
+          directory: gambit-dir environment: '("TZ=UTC"))
+         (run-process
+          ["git" "show" "--quiet" "--date=format-local:%H%M%S" "--format=%cd"]
+          directory: gambit-dir environment: '("TZ=UTC"))))
       (values #f #f #f)))
 
   ;; Extract the new hash using nix-prefetch-git (sha256 as a 52(?) character base-36 string).
@@ -254,6 +256,10 @@
            help: "git checkout directory for glow")
    (option 'glow-repo "-w" "--glow-repo"
            help: "git repo for glow")
+   (option 'skyprotocol-dir "-K" "--skyprotocol-dir"
+           help: "git checkout directory for skyprotocol")
+   (option 'skyprotocol-repo "-k" "--skyprotocol-repo"
+           help: "git repo for skyprotocol")
    (option 'smug-gerbil-dir "--smug-gerbil-dir"
            help: "git checkout directory for smug-gerbil")
    (option 'smug-gerbil-repo "--smug-gerbil-repo"
@@ -301,6 +307,8 @@
                      gerbil-libyaml-repo: (gerbil-libyaml-repo #f)
                      glow-dir: (glow-dir #f)
                      glow-repo: (glow-repo #f)
+                     skyprotocol-dir: (skyprotocol-dir #f)
+                     skyprotocol-repo: (skyprotocol-repo #f)
                      smug-gerbil-dir: (smug-gerbil-dir #f)
                      smug-gerbil-repo: (smug-gerbil-repo #f)
                      gerbil-libp2p-dir: (gerbil-libp2p-dir #f)
@@ -475,6 +483,16 @@
       nixpkgs-dir: nixpkgs-dir
       stable: stable
       cmdopts: ["--glow-repo" "--glow-dir" "--gerbil-off" "--stable"]))
+   (unless (or gerbil-off stable)
+     (update-recipe
+      name: "skyprotocol"
+      repo: (or glow-repo "github/SkyProtocol-Org/skyprotocol")
+      recipe-path: (recipe-path "gerbil" "skyprotocol")
+      checkouts-dir: checkouts-dir
+      source-dir: skyprotocol-dir
+      nixpkgs-dir: nixpkgs-dir
+      stable: stable
+      cmdopts: ["--skyprotocol-repo" "--skyprotocol-dir" "--gerbil-off" "--stable"]))
    (catch (getopt-error? exn)
      (getopt-display-help (apply getopt getopt-spec) program (current-error-port))
      (exit 2))
