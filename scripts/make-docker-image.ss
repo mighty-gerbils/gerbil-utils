@@ -115,7 +115,9 @@
 ;; : (List String) <- (List String)
 (def (nix-dependencies packages)
   (if (null? packages) []
-      (run-process coprocess: read-all-as-lines ["nix" "path-info" "--recursive" packages ...])))
+      (run-process coprocess: read-all-as-lines
+                   ["nix" "path-info" "--recursive"
+                    (map (cut string-append "nixpkgs#" <>) packages) ...])))
 
 (define-entry-point (clean-docker-directory)
   (help: "Remove the docker directory"
@@ -348,18 +350,18 @@
                                               "ENV GERBIL_LOADPATH /root/.gerbil/lib:/root/.nix-profile/gerbil/lib"]
                                     gerbil-paths
                                     "gxi -e '(displayln (* 6 7))'"))
-  (def mukn/glow (build-nix-image mukn/gerbil "mukn/glow"
+  (def mukn/all (build-nix-image mukn/gerbil "mukn/all"
                                   gerbil-package-paths))
   ;; 4. Install the nixpkgs so you can nix-env install from within the image
   (clean-docker-directory)
   (create-directory* docker-directory)
   (get-nixpkgs docker-directory)
-  (docker-build-image mukn/glow "mukn/glow:devel"
+  (docker-build-image mukn/all "mukn/all:devel"
                       "COPY nixpkgs /root/nixpkgs"
                       "ENTRYPOINT []"
                       "CMD [\"/bin/sh\"]")
-  ;;(run-process/batch ["docker" "tag" mukn/glow ])
-  (def images [mukn/glow mukn/gerbil mukn/dependencies mukn/nix])
+  ;;(run-process/batch ["docker" "tag" mukn/all ])
+  (def images [mukn/all mukn/gerbil mukn/dependencies mukn/nix])
 
   ;; 5. Erase the docker directory
   (clean-docker-directory)
@@ -373,10 +375,12 @@
   (unless integration-test?
     (error "Integration test failed"))
   ;; 9. Push the docker image
-  (run-process/batch ["docker" "push" "mukn/glow:devel"])
+  (run-process/batch ["docker" "push" "mukn/all:devel"])
   ;; 10. Also push to ghcr.io
-  (run-process/batch ["docker" "tag" "mukn/glow:devel" "ghcr.io/glow-lang/glow:devel"])
+  (run-process/batch ["docker" "tag" "mukn/all:devel" "ghcr.io/glow-lang/glow:devel"])
+  (run-process/batch ["docker" "tag" "mukn/all:devel" "ghcr.io/muknsys/all:devel"])
   (run-process/batch ["docker" "push" "ghcr.io/glow-lang/glow:devel"])
+  (run-process/batch ["docker" "push" "ghcr.io/muknsys/all:devel"])
   (newline)
   (apply values images))
 
@@ -386,7 +390,8 @@
   (def good (if (null? containers) '()
                 (map path-strip-directory
                      (run-process coprocess: read-all-as-lines
-                                  ["docker" "container" "inspect" "--format" "{{.Name}}" containers ...]))))
+                                  ["docker" "container" "inspect" "--format" "{{.Name}}"
+                                   containers ...]))))
   (def all (run-process coprocess: read-all-as-lines
                         ["docker" "container" "ls" "-a" "--format" "{{.Names}}"]))
   (def bad (lset-difference equal? all good))
@@ -411,12 +416,12 @@
   (make-images nixpkgs))
 
 (set-default-entry-point! 'all)
-#;(dump-stack-trace? #f) ;; Only in v0.19
+(dump-stack-trace? #f)
 (define-multicall-main)
 
 #|
 # To make a release:
-pushtag () { for i ; do docker tag mukn/glow mukn/glow:$i ; docker push mukn/glow:$i ; done; }
+pushtag () { for i ; do docker tag mukn/all mukn/all:$i ; docker push mukn/all:$i ; done; }
 pushtag latest devel
 
 # Cleanup images:
