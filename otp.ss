@@ -82,8 +82,8 @@ nix-env -f '<nixpkgs>' -iA oath-toolkit
   (printf "~a\n" uri)
   (def view "feh --auto-zoom --fullscreen --draw-actions --draw-filename --draw-tinted")
   (call-with-temporary-file
-   prefix: "tmp.qr."
-   suffix: ".png"
+   prefix: (format "tmp.qr   ~a" uri)
+   suffix: "   .png"
    after-close: (lambda (png)
                   (run-process/batch ["/bin/sh" "-c"
                                       (format "qrencode -s 5 -o ~a ~a && ~a ~a" png uri view png)]))))
