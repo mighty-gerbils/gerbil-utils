@@ -46,11 +46,19 @@ export GAMBOPT=dRr
 
 #export GERBIL_HOME=$(dirname "$(dirname "$(realpath "$(which gxi)")")")
 export NIX_GERBIL_LOADPATH=$HOME/.nix-profile/gerbil:/nix/var/nix/profiles/default/gerbil:/run/current-system/sw/gerbil
+export NIX_LD_LIBRARY_PATH=$HOME/.nix-profile/lib
 export GERBIL_LOADPATH=$NIX_GERBIL_LOADPATH
+export LD_LIBRARY_PATH="${NIX_LD_LIBRARY_PATH}:${LD_LIBRARY_PATH}"
+
+: ${nixpkgs:="<nixpkgs>"}
+
+#nixpkgconfigpath () { echo $(nix path-info -f $nixpkgs $1 2>/dev/null)/lib/pkgconfig ;}
+#nix build -f $nixpkgs --no-link leveldb.dev libxml2.dev libmysqlclient.dev secp256k1
+#export PKG_CONFIG_PATH="$(nixpkgconfigpath leveldb.dev):$(nixpkgconfigpath libxml2.dev):$(nixpkgconfigpath libmysqlclient.dev):$(nixpkgconfigpath secp256k1):${HOME}/.nix-profile/lib/pkgconfig"
 
 # Get the flags for compiling and linking against openssl and other libraries.
 function gerbil_compile_env () {
-  eval "$(nix-shell '<nixpkgs>' --pure --attr ${GERBIL_PACKAGE} --command \
+  eval "$(nix-shell $nixpkgs --pure --attr ${GERBIL_PACKAGE} --command \
     'echo "export \
        NIX_SHELL_PATH=\"$PATH\" \
        NIX_LDFLAGS=\"$NIX_LDFLAGS\" \
