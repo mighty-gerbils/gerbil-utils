@@ -17,14 +17,14 @@ can contribute code, documentation, and suggestions.
 You can install using the Gerbil package manager:
 
 ```
-gxpkg install github.com/fare/gerbil-utils
+gxpkg install git.cons.io/mighty-gerbils/gerbil-utils
 ```
 
 Alternatively, you can clone the repo and build the utils using the build script:
 ```
-$ git clone https://github.com/fare/gerbil-utils.git
+$ git clone https://git.cons.io/mighty-gerbils/gerbil-utils.git
 $ cd gerbil-utils
-$ gxpkg link github.com/fare/gerbil-utils $PWD
+$ gxpkg link git.cons.io/mighty-gerbils/gerbil-utils $PWD
 $ ./build.ss
 ```
 
@@ -66,5 +66,5 @@ Here are the coding conventions for the tests in projects that use `clan/testing
     may depend on helpers or service connections defined in `10-foo-integrationtest.ss`.
   - Your project can use the same convention by defining a file `unit-tests.ss` similar
     to that in this directory.
-  - See [gerbil-ethereum](https://github.com/fare/gerbil-ethereum)
+  - See [gerbil-ethereum](https://git.cons.io/mighty-gerbils/gerbil-ethereum)
     for a more elaborate example of a project using this test infrastructure.
