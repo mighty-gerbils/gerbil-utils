@@ -1,9 +1,12 @@
 #!/usr/bin/env gxi
 ;; -*- Gerbil -*-
 ;;;; Make docker images for Gerbil, etc.
-;;;; Note: you may first need to `docker login registry.gitlab.com` for gitlab
-;;;; Or `docker login ghcr.io` for github
-;;;; Or `docker login docker.io` for docker
+;;;; Note: you may first need to `podman login registry.gitlab.com` for gitlab
+;;;; Or `podman login ghcr.io` for github
+;;;; Or `podman login docker.io` for docker
+;;;;
+;;;; TODO: make registries explicit,
+;;;; stop relying on unqualified-search-registries = ["docker.io"] in /etc/containers/registries.conf
 (export #t)
 
 (import
@@ -23,7 +26,7 @@
   (only-in :std/pregexp pregexp-match)
   (only-in :std/source this-source-directory)
   (only-in :std/srfi/1 lset-difference any first second third remove append-map)
-  (only-in :std/srfi/13 string-suffix?)
+  (only-in :std/srfi/13 string-suffix? string-any)
   (only-in :std/text/hex hex-encode)
   (only-in :clan/files clobber-file)
   (only-in :clan/filesystem path-is-directory?)
@@ -84,6 +87,7 @@
       bashInteractive.dev bashInteractive.man
       libssh2 libssh2.dev libkrb5 libkrb5.dev
       zsh.man attr.man gnumake.man xz.man openssl.man less.man
+      nix.man
     )))
 
 (def all-target-packages
@@ -112,12 +116,18 @@
 ;; : String <- (List String)
 (def (digest-spec spec) (hex-encode (sha256<-bytes (string->bytes (line-join spec)))))
 
+;; : String <- String
+(def (qualify-nix-package string (repo "nixpkgs"))
+  (if (string-any (cut char=? <> #\/) string)
+    string
+    (string-append repo "#" string)))
+
 ;; : (List String) <- (List String)
 (def (nix-dependencies packages)
   (if (null? packages) []
       (run-process coprocess: read-all-as-lines
                    ["nix" "path-info" "--recursive"
-                    (map (cut string-append "nixpkgs#" <>) packages) ...])))
+                    (map (cut qualify-nix-package <> "nixpkgs") packages) ...])))
 
 (define-entry-point (clean-docker-directory)
   (help: "Remove the docker directory"
@@ -130,7 +140,7 @@
 (define-entry-point (docker-image-id name)
   (help: "Extract image ID for a docker image of a given name"
    getopt: (make-options [(argument 'name)]))
-  (match (run-process ["docker" "image" "ls" name] coprocess: read-all-as-lines)
+  (match (run-process ["podman" "image" "ls" name] coprocess: read-all-as-lines)
     ([header line]
      (third (remove string-empty? (string-split line #\space))))
     (else #f)))
@@ -142,7 +152,8 @@
    (lambda (port)
      (fprintf port "FROM ~a\n" from)
      (for (c commands) (output-contents c port) (newline port))))
-  (run-process/batch ["docker" "build" (when/list tag ["--tag" tag])... docker-directory]))
+  (run-process/batch ["podman" "build"
+                      (when/list tag ["--tag" tag])... docker-directory]))
 
 ;; Many ways to install a package
 ;; - Just COPY the data, install, then delete... but then data appears in the history
@@ -177,7 +188,7 @@
     (run-process/batch ["chmod" "a+x" build-script])
     (let (container
           (string-trim-eol
-           (run-process ["docker" "run" "-d"
+           (run-process ["podman" "run" "-d"
                          "--mount" "type=tmpfs,dst=/tmp"
                          (append-map (match <> ([outside inside]
                                                 ["--mount"
@@ -186,12 +197,13 @@
                                      [[docker-directory "/tmp/docker"] mounts ...]) ...
                          from
                          (format "/tmp/docker/~a.sh" build-name)])))
-      (run-process/batch ["docker" "wait" container])
-      (run-process/batch ["docker" "commit"
+      (run-process/batch ["podman" "wait" container])
+      (run-process/batch ["podman" "commit"
+                          "-f" "docker" ;; necessary when using podman, comment out when using docker
                           "--message" to
                           (if (null? changes) [] [(line-join ["--change=" changes ...])]) ...
                           container to])
-      (run-process/batch ["docker" "container" "rm" container]))
+      (run-process/batch ["podman" "container" "rm" container]))
     (delete-file build-script))
   to)
 
@@ -360,7 +372,7 @@
                       "COPY nixpkgs /root/nixpkgs"
                       "ENTRYPOINT []"
                       "CMD [\"/bin/sh\"]")
-  ;;(run-process/batch ["docker" "tag" mukn/all ])
+  ;;(run-process/batch ["podman" "tag" mukn/all ])
   (def images [mukn/all mukn/gerbil mukn/dependencies mukn/nix])
 
   ;; 5. Erase the docker directory
@@ -375,12 +387,12 @@
   (unless integration-test?
     (error "Integration test failed"))
   ;; 9. Push the docker image
-  (run-process/batch ["docker" "push" "mukn/all:devel"])
+  (run-process/batch ["podman" "push" "mukn/all:devel"])
   ;; 10. Also push to ghcr.io
-  (run-process/batch ["docker" "tag" "mukn/all:devel" "ghcr.io/glow-lang/glow:devel"])
-  (run-process/batch ["docker" "tag" "mukn/all:devel" "ghcr.io/muknsys/all:devel"])
-  (run-process/batch ["docker" "push" "ghcr.io/glow-lang/glow:devel"])
-  (run-process/batch ["docker" "push" "ghcr.io/muknsys/all:devel"])
+  (run-process/batch ["podman" "tag" "mukn/all:devel" "ghcr.io/glow-lang/glow:devel"])
+  (run-process/batch ["podman" "tag" "mukn/all:devel" "ghcr.io/muknsys/all:devel"])
+  (run-process/batch ["podman" "push" "ghcr.io/glow-lang/glow:devel"])
+  (run-process/batch ["podman" "push" "ghcr.io/muknsys/all:devel"])
   (newline)
   (apply values images))
 
@@ -390,25 +402,25 @@
   (def good (if (null? containers) '()
                 (map path-strip-directory
                      (run-process coprocess: read-all-as-lines
-                                  ["docker" "container" "inspect" "--format" "{{.Name}}"
+                                  ["podman" "container" "inspect" "--format" "{{.Name}}"
                                    containers ...]))))
   (def all (run-process coprocess: read-all-as-lines
-                        ["docker" "container" "ls" "-a" "--format" "{{.Names}}"]))
+                        ["podman" "container" "ls" "-a" "--format" "{{.Names}}"]))
   (def bad (lset-difference equal? all good))
   (unless (null? bad)
-    (run-process/batch check-status: #f ["docker" "container" "kill" bad ...])
-    (run-process/batch check-status: #f ["docker" "container" "rm" bad ...])))
+    (run-process/batch check-status: #f ["podman" "container" "kill" bad ...])
+    (run-process/batch check-status: #f ["podman" "container" "rm" bad ...])))
 
 (define-entry-point (gc-images . images)
   (help: "Purge all images except specified ones"
    getopt: (make-options [(rest-arguments 'images)]))
   ;; Start dummy containers for all images we want to preserve
   (def containers
-    (map (lambda (i) (substring (run-process ["docker" "run" "-d" i "sleep" "999999999"]) 0 12)) images))
-  (run-process/batch check-status: #f ["docker" "image" "prune" "-a" "-f"])
+    (map (lambda (i) (substring (run-process ["podman" "run" "-d" i "sleep" "999999999"]) 0 12)) images))
+  (run-process/batch check-status: #f ["podman" "image" "prune" "-a" "-f"])
   (unless (null? containers)
-    (run-process/batch check-status: #f ["docker" "container" "stop" "-t" "0" containers ...])
-    (run-process/batch check-status: #f ["docker" "container" "rm" containers ...])))
+    (run-process/batch check-status: #f ["podman" "container" "stop" "-t" "0" containers ...])
+    (run-process/batch check-status: #f ["podman" "container" "rm" containers ...])))
 
 (define-entry-point (all (nixpkgs default-nixpkgs))
   (help: "Rebuild all images"
